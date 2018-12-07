@@ -1,5 +1,7 @@
 package org.matcher.com;
 
+import java.util.ArrayList;
+
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLAnnotation;
 import org.semanticweb.owlapi.model.OWLAnnotationAssertionAxiom;
@@ -16,13 +18,14 @@ import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.trainer.com.Trainer;
 
+
 public class CandidateFinder {
 	OWLOntology onto1;
 	OWLOntology onto2;
 	OWLOntology mappings;
 	OWLDataFactory mappingsFactory;
 	OWLOntologyManager mappingsManager;
-	final double DIST_LIMIT = 0.5;
+	final double DIST_LIMIT = 0.8;
 	Trainer trainer;
 	final String modelPath = "/home/ole/master/word2vec/models/fil9.model";
 
@@ -132,6 +135,7 @@ public class CandidateFinder {
 
 	private void generateClassCandidates() {
 		int numCandidates = 0;
+		ArrayList<OWLClass> usedClassesFromSecondOntology = new ArrayList<>();
 
 		for (OWLClass classFromFirstOntology : onto1.getClassesInSignature()) {
 			double maxSimilarity = 0;
@@ -141,6 +145,9 @@ public class CandidateFinder {
 			String commentFromFirstOntology = normalizeString(findAnnotation(classFromFirstOntology, onto1, "comment"));
 
 			for (OWLClass classFromSecondOntology : onto2.getClassesInSignature()) {
+				if (usedClassesFromSecondOntology.contains(classFromSecondOntology)) {
+					continue; // this class is already added
+				}
 				String iriFromSecondOntology = normalizeIRI(classFromSecondOntology.getIRI().getFragment());
 				String labelFromSecondOntology = normalizeString(
 						findAnnotation(classFromSecondOntology, onto2, "label"));
@@ -174,7 +181,6 @@ public class CandidateFinder {
 			if (maxSimilarity > DIST_LIMIT) {
 				OWLEquivalentClassesAxiom equivalentClassAxiom = mappingsFactory
 						.getOWLEquivalentClassesAxiom(classFromFirstOntology, candidate);
-				System.out.println("Found mapping: " + equivalentClassAxiom);
 				mappings.add(equivalentClassAxiom);
 
 				OWLLiteral confidenceLiteral = mappingsFactory.getOWLLiteral(maxSimilarity);
@@ -184,7 +190,9 @@ public class CandidateFinder {
 						.getOWLAnnotationAssertionAxiom(classFromFirstOntology.getIRI(), annotation);
 
 				mappings.add(annotationAssertionAxiom);
+				usedClassesFromSecondOntology.add(candidate);
 
+//				System.out.println("Found mapping: " + equivalentClassAxiom);
 				numCandidates++;
 			}
 		} // finished classFromFirstOntology
@@ -194,6 +202,7 @@ public class CandidateFinder {
 
 	private void generateObjectProperties() {
 		int numCandidates = 0;
+		ArrayList<OWLObjectProperty> usedPropertiesFromSecondOntology = new ArrayList<>();
 
 		for (OWLObjectProperty propertyFromFirstOntology : onto1.getObjectPropertiesInSignature()) {
 			String iriFromFirstOntology = normalizeIRI(propertyFromFirstOntology.getIRI().getFragment());
@@ -204,13 +213,16 @@ public class CandidateFinder {
 			OWLObjectProperty candidate = null;
 
 			for (OWLObjectProperty propertyFromSecondOntology : onto2.getObjectPropertiesInSignature()) {
+				if (usedPropertiesFromSecondOntology.contains(propertyFromSecondOntology)) {
+					continue; // already used
+				}
 				String iriFromSecondOntology = normalizeIRI(propertyFromSecondOntology.getIRI().getFragment());
 				String labelFromSecondOntology = normalizeString(
 						findAnnotation(propertyFromSecondOntology, onto2, "label"));
 				String commentFromSecondOntology = normalizeString(
 						findAnnotation(propertyFromSecondOntology, onto2, "comment"));
 
-				double iriCosine = trainer.getCosine(iriFromFirstOntology, iriFromSecondOntology);
+				double iriCosine = trainer.getAvgVectorCosine(iriFromFirstOntology.split(" "), iriFromSecondOntology.split(" "));
 				if (Double.isNaN(iriCosine)) {
 					iriCosine = 0;
 				}
@@ -227,18 +239,18 @@ public class CandidateFinder {
 				}
 
 				double currentSimilarity = max(iriCosine, labelCosine, commentCosine);
+//				System.out.println(iriFromFirstOntology + " and " + iriFromSecondOntology + " got " + currentSimilarity);
 
 				if (currentSimilarity > maxSimilarity) {
 					maxSimilarity = currentSimilarity;
 					candidate = propertyFromSecondOntology;
 				}
 			} // finished propertyFromSecondOntology
-			System.out.println("Object property max similarity: " + maxSimilarity);
+//			System.out.println("Object property max similarity: " + maxSimilarity);
 
 			if (maxSimilarity > DIST_LIMIT) {
 				OWLEquivalentObjectPropertiesAxiom equivalentPropertiesAxiom = mappingsFactory
 						.getOWLEquivalentObjectPropertiesAxiom(propertyFromFirstOntology, candidate);
-				System.out.println("Found mapping: " + equivalentPropertiesAxiom);
 				mappings.add(equivalentPropertiesAxiom);
 
 				OWLLiteral confidenceLiteral = mappingsFactory.getOWLLiteral(maxSimilarity);
@@ -247,8 +259,10 @@ public class CandidateFinder {
 				OWLAnnotationAssertionAxiom annotationAssertionAxiom = mappingsFactory
 						.getOWLAnnotationAssertionAxiom(propertyFromFirstOntology.getIRI(), annotation);
 
-				System.out.println("Found mapping: " + equivalentPropertiesAxiom);
+//				System.out.println("Found mapping: " + equivalentPropertiesAxiom);
+//				System.out.println("With a similarity of: " + maxSimilarity);
 				mappings.add(annotationAssertionAxiom);
+				usedPropertiesFromSecondOntology.add(candidate);
 
 				numCandidates++;
 			}
@@ -258,6 +272,7 @@ public class CandidateFinder {
 
 	private void generateDataProperties() {
 		int numCandidates = 0;
+		ArrayList<OWLDataProperty> usedPropertyFromSecondOntology = new ArrayList<>();
 
 		for (OWLDataProperty propertyFromFirstOntology : onto1.getDataPropertiesInSignature()) {
 			String iriFromFirstOntology = normalizeIRI(propertyFromFirstOntology.getIRI().getFragment());
@@ -268,13 +283,16 @@ public class CandidateFinder {
 			OWLDataProperty candidate = null;
 
 			for (OWLDataProperty propertyFromSecondOntology : onto2.getDataPropertiesInSignature()) {
-				String iriFromSecondOntology = normalizeIRI(propertyFromFirstOntology.getIRI().getFragment());
+				if (usedPropertyFromSecondOntology.contains(propertyFromSecondOntology)) {
+					continue;
+				}
+				String iriFromSecondOntology = normalizeIRI(propertyFromSecondOntology.getIRI().getFragment());
 				String labelFromSecondOntology = normalizeString(
-						findAnnotation(propertyFromFirstOntology, onto2, "label"));
+						findAnnotation(propertyFromSecondOntology, onto2, "label"));
 				String commentFromSecondOntology = normalizeString(
 						findAnnotation(propertyFromSecondOntology, onto2, "comment"));
 
-				double iriCosine = trainer.getCosine(iriFromFirstOntology, iriFromSecondOntology);
+				double iriCosine = trainer.getAvgVectorCosine(iriFromFirstOntology.split(" "), iriFromSecondOntology.split(" "));
 				if (Double.isNaN(iriCosine)) {
 					iriCosine = 0;
 				}
@@ -291,17 +309,18 @@ public class CandidateFinder {
 				}
 
 				double currentSimilarity = max(iriCosine, labelCosine, commentCosine);
+//				System.out.println(iriFromFirstOntology + " and " + iriFromSecondOntology + " got " + currentSimilarity);
+
 
 				if (currentSimilarity > maxSimilarity) {
 					maxSimilarity = currentSimilarity;
 					candidate = propertyFromSecondOntology;
 				}
 			} // finished propertyFromSecondOntology
-			System.out.println("Data property max similarity: " + maxSimilarity);
+//			System.out.println("Data property max similarity: " + maxSimilarity);
 			if (maxSimilarity > DIST_LIMIT) {
 				OWLEquivalentDataPropertiesAxiom equivalentPropertiesAxiom = mappingsFactory
 						.getOWLEquivalentDataPropertiesAxiom(propertyFromFirstOntology, candidate);
-				System.out.println("Found mapping: " + equivalentPropertiesAxiom);
 				mappings.add(equivalentPropertiesAxiom);
 
 				OWLLiteral confidenceLiteral = mappingsFactory.getOWLLiteral(maxSimilarity);
@@ -310,8 +329,10 @@ public class CandidateFinder {
 				OWLAnnotationAssertionAxiom annotationAssertionAxiom = mappingsFactory
 						.getOWLAnnotationAssertionAxiom(propertyFromFirstOntology.getIRI(), annotation);
 
-				System.out.println("Found mapping: " + equivalentPropertiesAxiom);
+//				System.out.println("Found mapping: " + equivalentPropertiesAxiom);
+//				System.out.println("With a similarity of: " + maxSimilarity);
 				mappings.add(annotationAssertionAxiom);
+				usedPropertyFromSecondOntology.add(candidate);
 
 				numCandidates++;
 			}
