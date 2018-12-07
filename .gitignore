@@ -3,6 +3,7 @@
 *.classpath
 *.project
 *.tag
+*.swp
 .settings/
 log/
 target/
