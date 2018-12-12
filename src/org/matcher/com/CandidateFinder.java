@@ -16,7 +16,7 @@ import org.semanticweb.owlapi.model.OWLNamedObject;
 import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
-import org.trainer.com.Trainer;
+import org.trainer.com.WordEmbeddingsTrainer;
 
 
 public class CandidateFinder {
@@ -26,13 +26,13 @@ public class CandidateFinder {
 	OWLDataFactory mappingsFactory;
 	OWLOntologyManager mappingsManager;
 	final double DIST_LIMIT = 0.8;
-	Trainer trainer;
+	WordEmbeddingsTrainer trainer;
 	final String modelPath = "/home/ole/master/word2vec/models/fil9.model";
 
 	public CandidateFinder(OWLOntology o1, OWLOntology o2) throws Exception {
 		onto1 = o1;
 		onto2 = o2;
-		trainer = new Trainer("/home/ole/out.csv", modelPath);
+		trainer = new WordEmbeddingsTrainer("/home/ole/out.csv", modelPath);
 		trainer.loadModel();
 	}
 
@@ -181,7 +181,8 @@ public class CandidateFinder {
 			if (maxSimilarity > DIST_LIMIT) {
 				OWLEquivalentClassesAxiom equivalentClassAxiom = mappingsFactory
 						.getOWLEquivalentClassesAxiom(classFromFirstOntology, candidate);
-				mappings.add(equivalentClassAxiom);
+//				mappings.add(equivalentClassAxiom); owlapi5
+				mappingsManager.addAxiom(mappings, equivalentClassAxiom);
 
 				OWLLiteral confidenceLiteral = mappingsFactory.getOWLLiteral(maxSimilarity);
 				OWLAnnotation annotation = mappingsFactory.getOWLAnnotation(mappingsFactory.getRDFSComment(),
@@ -189,7 +190,8 @@ public class CandidateFinder {
 				OWLAnnotationAssertionAxiom annotationAssertionAxiom = mappingsFactory
 						.getOWLAnnotationAssertionAxiom(classFromFirstOntology.getIRI(), annotation);
 
-				mappings.add(annotationAssertionAxiom);
+//				mappings.add(annotationAssertionAxiom);
+				mappingsManager.addAxiom(mappings,  annotationAssertionAxiom);
 				usedClassesFromSecondOntology.add(candidate);
 
 //				System.out.println("Found mapping: " + equivalentClassAxiom);
@@ -251,7 +253,8 @@ public class CandidateFinder {
 			if (maxSimilarity > DIST_LIMIT) {
 				OWLEquivalentObjectPropertiesAxiom equivalentPropertiesAxiom = mappingsFactory
 						.getOWLEquivalentObjectPropertiesAxiom(propertyFromFirstOntology, candidate);
-				mappings.add(equivalentPropertiesAxiom);
+//				mappings.add(equivalentPropertiesAxiom);
+				mappingsManager.addAxiom(mappings, equivalentPropertiesAxiom);
 
 				OWLLiteral confidenceLiteral = mappingsFactory.getOWLLiteral(maxSimilarity);
 				OWLAnnotation annotation = mappingsFactory.getOWLAnnotation(mappingsFactory.getRDFSComment(),
@@ -261,7 +264,8 @@ public class CandidateFinder {
 
 //				System.out.println("Found mapping: " + equivalentPropertiesAxiom);
 //				System.out.println("With a similarity of: " + maxSimilarity);
-				mappings.add(annotationAssertionAxiom);
+//				mappings.add(annotationAssertionAxiom);
+				mappingsManager.addAxiom(mappings, annotationAssertionAxiom);
 				usedPropertiesFromSecondOntology.add(candidate);
 
 				numCandidates++;
@@ -321,7 +325,8 @@ public class CandidateFinder {
 			if (maxSimilarity > DIST_LIMIT) {
 				OWLEquivalentDataPropertiesAxiom equivalentPropertiesAxiom = mappingsFactory
 						.getOWLEquivalentDataPropertiesAxiom(propertyFromFirstOntology, candidate);
-				mappings.add(equivalentPropertiesAxiom);
+//				mappings.add(equivalentPropertiesAxiom);
+				mappingsManager.addAxiom(mappings, equivalentPropertiesAxiom);
 
 				OWLLiteral confidenceLiteral = mappingsFactory.getOWLLiteral(maxSimilarity);
 				OWLAnnotation annotation = mappingsFactory.getOWLAnnotation(mappingsFactory.getRDFSComment(),
@@ -331,7 +336,8 @@ public class CandidateFinder {
 
 //				System.out.println("Found mapping: " + equivalentPropertiesAxiom);
 //				System.out.println("With a similarity of: " + maxSimilarity);
-				mappings.add(annotationAssertionAxiom);
+//				mappings.add(annotationAssertionAxiom);
+				mappingsManager.addAxiom(mappings, annotationAssertionAxiom);
 				usedPropertyFromSecondOntology.add(candidate);
 
 				numCandidates++;

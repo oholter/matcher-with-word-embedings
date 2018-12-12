@@ -17,13 +17,13 @@ import org.deeplearning4j.text.tokenization.tokenizerfactory.TokenizerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Trainer {
-	private Logger log = LoggerFactory.getLogger(Trainer.class);
+public class WordEmbeddingsTrainer {
+	private Logger log = LoggerFactory.getLogger(WordEmbeddingsTrainer.class);
 	String inputFilePath;
 	String outputFilePath;
 	Word2Vec model;
 
-	public Trainer(String inputFile, String outputFile) throws Exception {
+	public WordEmbeddingsTrainer(String inputFile, String outputFile) throws Exception {
 		inputFilePath = new File(inputFile).getAbsolutePath();
 		outputFilePath = new File(outputFile).getAbsolutePath();
 	}

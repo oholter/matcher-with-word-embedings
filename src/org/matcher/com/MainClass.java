@@ -15,14 +15,16 @@ public class MainClass {
 		OWLOntology sofsem = reader.getOntology();
 		
 		OWLOntology mergedOnto = OntologyReader.mergeOntologies("merged", new OWLOntology[]{ekaw, sofsem});
-		OntologyReader.writeOntology(mergedOnto, "file:/home/ole/master/test_onto/merged.rdf", "rdf");
+		OntologyReader.writeOntology(mergedOnto, "file:/home/ole/master/test_onto/merged.owl", "owl");
 		
-		/*
-		CandidateFinder finder = new CandidateFinder(ekaw, sofsem);
-		finder.createMappings();
-		OWLOntology o = finder.getMappings();
-		OntologyReader.writeOntology(o, "file:/home/ole/master/test_onto/conference_mappings.owl");
-		*/
+		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/merged.owl");
+		projector.projectOntology();
+		projector.saveModel("/home/ole/master/test_onto/merged.ttl");
+		
+//		CandidateFinder finder = new CandidateFinder(ekaw, sofsem);
+//		finder.createMappings();
+//		OWLOntology o = finder.getMappings();
+//		OntologyReader.writeOntology(o, "file:/home/ole/master/test_onto/conference_mappings.owl");
 	}
 
 }
