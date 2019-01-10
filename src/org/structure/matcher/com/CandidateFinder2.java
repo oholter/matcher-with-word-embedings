@@ -1,10 +1,8 @@
-package org.matcher.com;
+package org.structure.matcher.com;
 
 import java.io.File;
 import java.util.ArrayList;
 
-import org.apache.commons.math3.stat.regression.MultipleLinearRegression;
-import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLAnnotation;
 import org.semanticweb.owlapi.model.OWLAnnotationAssertionAxiom;
@@ -19,6 +17,8 @@ import org.semanticweb.owlapi.model.OWLNamedObject;
 import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
+import org.trainer.com.GradientDescent;
+import org.trainer.com.Vector;
 import org.trainer.com.WordEmbeddingsTrainer;
 
 // TRY:
@@ -37,7 +37,6 @@ import org.trainer.com.WordEmbeddingsTrainer;
 // 2 use linear projection to create an estimate between the two "vector spaces"
 // 3 use the function to "translate" between the vectors
 
-
 import edit_distance.EditDistance;
 
 public class CandidateFinder2 {
@@ -46,7 +45,12 @@ public class CandidateFinder2 {
 	OWLOntology mappings;
 	OWLDataFactory mappingsFactory;
 	OWLOntologyManager mappingsManager;
-	final double DIST_LIMIT = 0.5;
+	final double DIST_LIMIT = 0.4;
+	final double ANCHOR_SIMILARITY = 0.8;
+	final double MAX_ERROR = 1E-3;
+	final int NUM_ITERATIONS = 150000;
+	final double TRAINING_RATE = 0.2;
+
 	WordEmbeddingsTrainer trainer;
 	final String modelPath;
 	final String currentDir;
@@ -56,11 +60,11 @@ public class CandidateFinder2 {
 	ArrayList<String> anchorsFromFirstOntology;
 	ArrayList<String> anchorsFromSecondOntology;
 	ArrayList<Double> differenceVectors;
-	
+
 	double[][] anchorVectorsFromFirstOntology;
 	double[][] anchorVectorsFromSecondOntology;
-	double[][] vectorDifferences;
-	double[] averageDifference;
+	double[][] translationMatrix;
+	GradientDescent gradientDescent;
 
 	public CandidateFinder2(OWLOntology o1, OWLOntology o2, String modelPath) throws Exception {
 		onto1 = o1;
@@ -81,42 +85,52 @@ public class CandidateFinder2 {
 			mappings = mappingsManager.createOntology();
 
 			generateClassCandidates(true);
-//			generateObjectProperties(true);
-//			generateDataProperties(true);
+			generateObjectProperties(true);
+			generateDataProperties(true);
 			createTranslationMatrix();
-			averageDifference = trainer.getAverageVectorFromDoubles(vectorDifferences);
 
-			System.out.println("similarity between http://ekaw#Person and http://cmt#Person is: " 
-			+ trainer.getCosine("http://ekaw#Person", "http://cmt#Person", averageDifference));
-			
+//			System.out.println("similarity between http://ekaw#Person and http://cmt#Person is: " + trainer
+//					.cosineSimilarity(Vector.transform(translationMatrix, trainer.getWordVector("http://ekaw#Person")),
+//							trainer.getWordVector("http://cmt#Person")));
+
 			generateClassCandidates(false);
-//			generateObjectProperties(false);
-//			generateDataProperties(false);
+			generateObjectProperties(false);
+			generateDataProperties(false);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	/**
-	 * creating vector matrices using the anchor words and calculating the difference between the vectors
+	 * creating vector matrices using the anchor words and calculating the
+	 * difference between the vectors
 	 */
 	public void createTranslationMatrix() {
 		anchorVectorsFromFirstOntology = new double[anchorsFromFirstOntology.size()][];
 		anchorVectorsFromSecondOntology = new double[anchorsFromSecondOntology.size()][];
-		vectorDifferences = new double[anchorsFromFirstOntology.size()][];
-		
+
 		for (int i = 0; i < anchorsFromFirstOntology.size(); i++) {
 			anchorVectorsFromFirstOntology[i] = trainer.getModel().getWordVector(anchorsFromFirstOntology.get(i));
 		}
-		
+
 		for (int i = 0; i < anchorsFromSecondOntology.size(); i++) {
 			anchorVectorsFromSecondOntology[i] = trainer.getModel().getWordVector(anchorsFromSecondOntology.get(i));
 		}
-		
-		for (int i = 0; i < anchorVectorsFromFirstOntology.length; i++) {
-			vectorDifferences[i] = trainer.subtractTwoVectors(anchorVectorsFromSecondOntology[i], anchorVectorsFromFirstOntology[i]);
-		}
-		
+
+		gradientDescent = new GradientDescent(anchorVectorsFromFirstOntology, anchorVectorsFromSecondOntology,
+				TRAINING_RATE, NUM_ITERATIONS, MAX_ERROR);
+		System.out.println("Before training");
+//		gradientDescent.printMatrix();
+		gradientDescent.solve();
+		translationMatrix = gradientDescent.getMatrix();
+		System.out.println("After training");
+//		gradientDescent.printMatrix();
+		System.out.println("ERROR: " + gradientDescent.calculateError());
+
+//		for (int i = 0; i < anchorVectorsFromFirstOntology.length; i++) {
+//			vectorDifferences[i] = trainer.subtractTwoVectors(anchorVectorsFromSecondOntology[i], anchorVectorsFromFirstOntology[i]);
+//		}
+//		
 //		for (int i = 0; i < vectorDifferences.length; i++) {
 //			System.out.println("Anchor vectors from first ontology:");
 //			Arrays.stream(anchorVectorsFromFirstOntology[i]).forEach(System.out::println);
@@ -126,9 +140,7 @@ public class CandidateFinder2 {
 //			Arrays.stream(vectorDifferences[i]).forEach(System.out::println);
 //		}
 	}
-	
 
-	
 //	public void createRegressionModel() {
 //		OLSMultipleLinearRegression regression = new OLSMultipleLinearRegression();
 //        for (int i = 0; i < anchorVectorsFromFirstOntology.length; i++) {
@@ -136,8 +148,6 @@ public class CandidateFinder2 {
 //        	regression.addData(anchorVectorsFromFirstOntology[i], anchorVectorsFromSecondOntology[i]);
 //        }
 //	}
-
-
 
 	public OWLOntology getOnto1() {
 		return onto1;
@@ -232,7 +242,7 @@ public class CandidateFinder2 {
 			String iriFromFirstOntology = classFromFirstOntology.getIRI().toString();
 			String labelFromFirstOntology = findAnnotation(classFromFirstOntology, onto1, "label");
 			String commentFromFirstOntology = findAnnotation(classFromFirstOntology, onto1, "comment");
-			
+
 			for (OWLClass classFromSecondOntology : onto2.getClassesInSignature()) {
 				if (usedClassesFromSecondOntology.contains(classFromSecondOntology)) {
 					continue; // this class is already added
@@ -243,8 +253,10 @@ public class CandidateFinder2 {
 
 				double iriCosine = 0;
 				if (!anchors) {
-//					iriCosine = trainer.getCosine(iriFromFirstOntology, iriFromSecondOntology);
-					iriCosine = trainer.getCosine(iriFromFirstOntology, iriFromSecondOntology, averageDifference);
+//					System.out.println("TESTING " + iriFromFirstOntology + " and " + iriFromSecondOntology);
+					iriCosine = Vector.cosineSimilarity(
+							Vector.transform(translationMatrix, trainer.getWordVector(iriFromFirstOntology)),
+							trainer.getWordVector(iriFromSecondOntology));
 //					System.out.println("TESTING " + iriFromFirstOntology + " and " + iriFromSecondOntology
 //							+ " gives a similarity of: " + iriCosine);
 					if (Double.isNaN(iriCosine)) {
@@ -261,7 +273,6 @@ public class CandidateFinder2 {
 					if (iriCosine < 0) {
 						iriCosine = 0;
 					}
-//					System.out.println("IRI dist: " + dist + ", iriCosine: " + iriCosine );
 				}
 
 				double labelCosine = 0;
@@ -329,10 +340,12 @@ public class CandidateFinder2 {
 					numCandidates++;
 				}
 			} // finished !anchors
-			else if (maxSimilarity > 0.9) { // looking for anchors
+			else if (maxSimilarity > ANCHOR_SIMILARITY) { // looking for anchors
 				anchorsFromFirstOntology.add(iriFromFirstOntology);
 				anchorsFromSecondOntology.add(candidate.getIRI().toString());
 				System.out.println("Added anchor: " + iriFromFirstOntology + " AND " + candidate.getIRI().toString());
+				usedClassesFromSecondOntology.add(candidate);
+				numCandidates++;
 			} // finished else
 		} // finished classFromFirstOntology
 
@@ -341,10 +354,10 @@ public class CandidateFinder2 {
 
 	private void generateObjectProperties(boolean anchors) {
 		int numCandidates = 0;
-		ArrayList<OWLObjectProperty> usedPropertiesFromSecondOntology = new ArrayList<>();
+		ArrayList<String> usedPropertiesFromSecondOntology = new ArrayList<>();
 
 		for (OWLObjectProperty propertyFromFirstOntology : onto1.getObjectPropertiesInSignature()) {
-			String iriFromFirstOntology = normalizeIRI(propertyFromFirstOntology.getIRI().getFragment());
+			String iriFromFirstOntology = propertyFromFirstOntology.getIRI().toString();
 			String labelFromFirstOntology = normalizeString(findAnnotation(propertyFromFirstOntology, onto1, "label"));
 			String commentFromFirstOntology = normalizeString(
 					findAnnotation(propertyFromFirstOntology, onto1, "comment"));
@@ -352,62 +365,87 @@ public class CandidateFinder2 {
 			OWLObjectProperty candidate = null;
 
 			for (OWLObjectProperty propertyFromSecondOntology : onto2.getObjectPropertiesInSignature()) {
-				if (usedPropertiesFromSecondOntology.contains(propertyFromSecondOntology)) {
+				if (usedPropertiesFromSecondOntology.contains(propertyFromSecondOntology.getIRI().toString())) {
 					continue; // already used
 				}
-				String iriFromSecondOntology = normalizeIRI(propertyFromSecondOntology.getIRI().getFragment());
+				String iriFromSecondOntology = propertyFromSecondOntology.getIRI().toString();
 				String labelFromSecondOntology = normalizeString(
 						findAnnotation(propertyFromSecondOntology, onto2, "label"));
 				String commentFromSecondOntology = normalizeString(
 						findAnnotation(propertyFromSecondOntology, onto2, "comment"));
 
-				double iriCosine = trainer.getAvgVectorCosine(iriFromFirstOntology.split(" "),
-						iriFromSecondOntology.split(" "));
-				if (Double.isNaN(iriCosine)) {
-					iriCosine = 0;
-				}
+				double iriCosine = 0;
+				if (!anchors) {
+//					System.out.println("testing: " + iriFromFirstOntology + " and " + iriFromSecondOntology);
+					iriCosine = Vector.cosineSimilarity(
+							Vector.transform(translationMatrix, trainer.getWordVector(iriFromFirstOntology)),
+							trainer.getWordVector(iriFromSecondOntology));
+//					System.out.println("TESTING " + iriFromFirstOntology + " and " + iriFromSecondOntology
+//							+ " gives a similarity of: " + iriCosine);
+					if (Double.isNaN(iriCosine)) {
+						iriCosine = 0;
+					}
+				} else {
+					String normalizedIriFromFirstOntology = normalizeIRI(
+							propertyFromFirstOntology.getIRI().getFragment());
+					String normalizedIriFromSecondOntology = normalizeIRI(
+							propertyFromSecondOntology.getIRI().getFragment());
+					int dist = EditDistance.editDistance(normalizedIriFromFirstOntology,
+							normalizedIriFromSecondOntology, normalizedIriFromFirstOntology.length(),
+							normalizedIriFromSecondOntology.length());
+					iriCosine = 1 - (dist / 10.0);
+					if (iriCosine < 0) {
+						iriCosine = 0;
+					}
 
-				double labelCosine = 0;
-				if (labelFromFirstOntology != null && labelFromSecondOntology != null) {
-					labelCosine = trainer.getAvgVectorCosine(labelFromFirstOntology.split(" "),
-							labelFromSecondOntology.split(" "));
-				}
-				double commentCosine = 0;
-				if (commentFromFirstOntology != null && commentFromSecondOntology != null) {
-					commentCosine = trainer.getAvgVectorCosine(commentFromFirstOntology.split(" "),
-							commentFromSecondOntology.split(" "));
-				}
+					double labelCosine = 0;
+					if (labelFromFirstOntology != null && labelFromSecondOntology != null) {
+						labelCosine = trainer.getAvgVectorCosine(labelFromFirstOntology.split(" "),
+								labelFromSecondOntology.split(" "));
+					}
+					double commentCosine = 0;
+					if (commentFromFirstOntology != null && commentFromSecondOntology != null) {
+						commentCosine = trainer.getAvgVectorCosine(commentFromFirstOntology.split(" "),
+								commentFromSecondOntology.split(" "));
+					}
 
-				double currentSimilarity = max(iriCosine, labelCosine, commentCosine);
+					double currentSimilarity = max(iriCosine, labelCosine, commentCosine);
 //				System.out.println(iriFromFirstOntology + " and " + iriFromSecondOntology + " got " + currentSimilarity);
 
-				if (currentSimilarity > maxSimilarity) {
-					maxSimilarity = currentSimilarity;
-					candidate = propertyFromSecondOntology;
+					if (currentSimilarity > maxSimilarity) {
+						maxSimilarity = currentSimilarity;
+						candidate = propertyFromSecondOntology;
+					}
 				}
 			} // finished propertyFromSecondOntology
 //			System.out.println("Object property max similarity: " + maxSimilarity);
 
-			if (maxSimilarity > DIST_LIMIT) {
-				OWLEquivalentObjectPropertiesAxiom equivalentPropertiesAxiom = mappingsFactory
-						.getOWLEquivalentObjectPropertiesAxiom(propertyFromFirstOntology, candidate);
-//				mappings.add(equivalentPropertiesAxiom);
-				mappingsManager.addAxiom(mappings, equivalentPropertiesAxiom);
+			if (!anchors) {
+				if (maxSimilarity > DIST_LIMIT) {
+					OWLEquivalentObjectPropertiesAxiom equivalentClassAxiom = mappingsFactory
+							.getOWLEquivalentObjectPropertiesAxiom(propertyFromFirstOntology, candidate);
+					mappingsManager.addAxiom(mappings, equivalentClassAxiom);
 
-				OWLLiteral confidenceLiteral = mappingsFactory.getOWLLiteral(maxSimilarity);
-				OWLAnnotation annotation = mappingsFactory.getOWLAnnotation(mappingsFactory.getRDFSComment(),
-						confidenceLiteral);
-				OWLAnnotationAssertionAxiom annotationAssertionAxiom = mappingsFactory
-						.getOWLAnnotationAssertionAxiom(propertyFromFirstOntology.getIRI(), annotation);
+					OWLLiteral confidenceLiteral = mappingsFactory.getOWLLiteral(maxSimilarity);
+					OWLAnnotation annotation = mappingsFactory.getOWLAnnotation(mappingsFactory.getRDFSComment(),
+							confidenceLiteral);
+					OWLAnnotationAssertionAxiom annotationAssertionAxiom = mappingsFactory
+							.getOWLAnnotationAssertionAxiom(propertyFromFirstOntology.getIRI(), annotation);
 
-//				System.out.println("Found mapping: " + equivalentPropertiesAxiom);
-//				System.out.println("With a similarity of: " + maxSimilarity);
-//				mappings.add(annotationAssertionAxiom);
-				mappingsManager.addAxiom(mappings, annotationAssertionAxiom);
-				usedPropertiesFromSecondOntology.add(candidate);
+					mappingsManager.addAxiom(mappings, annotationAssertionAxiom);
+					usedPropertiesFromSecondOntology.add(candidate.getIRI().toString());
 
+					System.out.println("Found mapping: " + equivalentClassAxiom);
+					numCandidates++;
+				}
+			} // finished !anchors
+			else if (maxSimilarity > ANCHOR_SIMILARITY) { // looking for anchors
+				usedPropertiesFromSecondOntology.add(candidate.getIRI().toString());
+				anchorsFromFirstOntology.add(iriFromFirstOntology);
+				anchorsFromSecondOntology.add(candidate.getIRI().toString());
+				System.out.println("Added anchor: " + iriFromFirstOntology + " AND " + candidate.getIRI().toString());
 				numCandidates++;
-			}
+			} // finished else
 		} // finished propertyFromFirstOntology
 		System.out.println("Found " + numCandidates + " object property candidates:");
 	} // finished generateObjectProperties()
@@ -417,7 +455,7 @@ public class CandidateFinder2 {
 		ArrayList<OWLDataProperty> usedPropertyFromSecondOntology = new ArrayList<>();
 
 		for (OWLDataProperty propertyFromFirstOntology : onto1.getDataPropertiesInSignature()) {
-			String iriFromFirstOntology = normalizeIRI(propertyFromFirstOntology.getIRI().getFragment());
+			String iriFromFirstOntology = propertyFromFirstOntology.getIRI().toString();
 			String labelFromFirstOntology = normalizeString(findAnnotation(propertyFromFirstOntology, onto1, "label"));
 			String commentFromFirstOntology = normalizeString(
 					findAnnotation(propertyFromFirstOntology, onto1, "comment"));
@@ -428,60 +466,84 @@ public class CandidateFinder2 {
 				if (usedPropertyFromSecondOntology.contains(propertyFromSecondOntology)) {
 					continue;
 				}
-				String iriFromSecondOntology = normalizeIRI(propertyFromSecondOntology.getIRI().getFragment());
+				String iriFromSecondOntology = propertyFromSecondOntology.getIRI().toString();
 				String labelFromSecondOntology = normalizeString(
 						findAnnotation(propertyFromSecondOntology, onto2, "label"));
 				String commentFromSecondOntology = normalizeString(
 						findAnnotation(propertyFromSecondOntology, onto2, "comment"));
 
-				double iriCosine = trainer.getAvgVectorCosine(iriFromFirstOntology.split(" "),
-						iriFromSecondOntology.split(" "));
-				if (Double.isNaN(iriCosine)) {
-					iriCosine = 0;
-				}
+				double iriCosine = 0;
+				if (!anchors) {
+//					System.out.println("testing: " + iriFromFirstOntology + " and " + iriFromSecondOntology);
+					iriCosine = Vector.cosineSimilarity(
+							Vector.transform(translationMatrix, trainer.getWordVector(iriFromFirstOntology)),
+							trainer.getWordVector(iriFromSecondOntology));
+//					System.out.println("TESTING " + iriFromFirstOntology + " and " + iriFromSecondOntology
+//							+ " gives a similarity of: " + iriCosine);
+					if (Double.isNaN(iriCosine)) {
+						iriCosine = 0;
+					}
+				} else {
+					String normalizedIriFromFirstOntology = normalizeIRI(
+							propertyFromFirstOntology.getIRI().getFragment());
+					String normalizedIriFromSecondOntology = normalizeIRI(
+							propertyFromSecondOntology.getIRI().getFragment());
+					int dist = EditDistance.editDistance(normalizedIriFromFirstOntology,
+							normalizedIriFromSecondOntology, normalizedIriFromFirstOntology.length(),
+							normalizedIriFromSecondOntology.length());
+					iriCosine = 1 - (dist / 10.0);
+					if (iriCosine < 0) {
+						iriCosine = 0;
+					}
 
-				double labelCosine = 0;
-				if (labelFromFirstOntology != null && labelFromSecondOntology != null) {
-					labelCosine = trainer.getAvgVectorCosine(labelFromFirstOntology.split(" "),
-							labelFromSecondOntology.split(" "));
-				}
-				double commentCosine = 0;
-				if (commentFromFirstOntology != null && commentFromSecondOntology != null) {
-					commentCosine = trainer.getAvgVectorCosine(commentFromFirstOntology.split(" "),
-							commentFromSecondOntology.split(" "));
-				}
+					double labelCosine = 0;
+					if (labelFromFirstOntology != null && labelFromSecondOntology != null) {
+						labelCosine = trainer.getAvgVectorCosine(labelFromFirstOntology.split(" "),
+								labelFromSecondOntology.split(" "));
+					}
+					double commentCosine = 0;
+					if (commentFromFirstOntology != null && commentFromSecondOntology != null) {
+						commentCosine = trainer.getAvgVectorCosine(commentFromFirstOntology.split(" "),
+								commentFromSecondOntology.split(" "));
+					}
 
-				double currentSimilarity = max(iriCosine, labelCosine, commentCosine);
+					double currentSimilarity = max(iriCosine, labelCosine, commentCosine);
 //				System.out.println(iriFromFirstOntology + " and " + iriFromSecondOntology + " got " + currentSimilarity);
 
-				if (currentSimilarity > maxSimilarity) {
-					maxSimilarity = currentSimilarity;
-					candidate = propertyFromSecondOntology;
+					if (currentSimilarity > maxSimilarity) {
+						maxSimilarity = currentSimilarity;
+						candidate = propertyFromSecondOntology;
+					}
 				}
 			} // finished propertyFromSecondOntology
 //			System.out.println("Data property max similarity: " + maxSimilarity);
-			if (maxSimilarity > DIST_LIMIT) {
-				OWLEquivalentDataPropertiesAxiom equivalentPropertiesAxiom = mappingsFactory
-						.getOWLEquivalentDataPropertiesAxiom(propertyFromFirstOntology, candidate);
-//				mappings.add(equivalentPropertiesAxiom);
-				mappingsManager.addAxiom(mappings, equivalentPropertiesAxiom);
+			if (!anchors) {
+				if (maxSimilarity > DIST_LIMIT) {
+					OWLEquivalentDataPropertiesAxiom equivalentClassAxiom = mappingsFactory
+							.getOWLEquivalentDataPropertiesAxiom(propertyFromFirstOntology, candidate);
+					mappingsManager.addAxiom(mappings, equivalentClassAxiom);
 
-				OWLLiteral confidenceLiteral = mappingsFactory.getOWLLiteral(maxSimilarity);
-				OWLAnnotation annotation = mappingsFactory.getOWLAnnotation(mappingsFactory.getRDFSComment(),
-						confidenceLiteral);
-				OWLAnnotationAssertionAxiom annotationAssertionAxiom = mappingsFactory
-						.getOWLAnnotationAssertionAxiom(propertyFromFirstOntology.getIRI(), annotation);
+					OWLLiteral confidenceLiteral = mappingsFactory.getOWLLiteral(maxSimilarity);
+					OWLAnnotation annotation = mappingsFactory.getOWLAnnotation(mappingsFactory.getRDFSComment(),
+							confidenceLiteral);
+					OWLAnnotationAssertionAxiom annotationAssertionAxiom = mappingsFactory
+							.getOWLAnnotationAssertionAxiom(propertyFromFirstOntology.getIRI(), annotation);
 
-//				System.out.println("Found mapping: " + equivalentPropertiesAxiom);
-//				System.out.println("With a similarity of: " + maxSimilarity);
-//				mappings.add(annotationAssertionAxiom);
-				mappingsManager.addAxiom(mappings, annotationAssertionAxiom);
+					mappingsManager.addAxiom(mappings, annotationAssertionAxiom);
+					usedPropertyFromSecondOntology.add(candidate);
+
+					System.out.println("Found mapping: " + equivalentClassAxiom);
+					numCandidates++;
+				}
+			} // finished !anchors
+			else if (maxSimilarity > ANCHOR_SIMILARITY) { // looking for anchors
 				usedPropertyFromSecondOntology.add(candidate);
-
+				anchorsFromFirstOntology.add(iriFromFirstOntology);
+				anchorsFromSecondOntology.add(candidate.getIRI().toString());
+				System.out.println("Added anchor: " + iriFromFirstOntology + " AND " + candidate.getIRI().toString());
 				numCandidates++;
-			}
+			} // finished else
 		} // finished propertyFromFirstOntology
-
 		System.out.println("Found " + numCandidates + " data property candidates:");
 	}
 }

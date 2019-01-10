@@ -10,10 +10,10 @@ public class Vector {
 		}
 		return Math.sqrt(len);
 	}
-	
+
 	/**
 	 * 
-	 * d^2(p,q) = (p1 - q1)^2 + (p2 - q2)^2 + ... (pn - qn)^2 
+	 * d^2(p,q) = (p1 - q1)^2 + (p2 - q2)^2 + ... (pn - qn)^2
 	 * 
 	 * @param vec1
 	 * @param vec2
@@ -26,14 +26,15 @@ public class Vector {
 				sum += Math.pow(vec1[i] - vec2[i], 2);
 			}
 			return sum;
-		} else return -1;
+		} else
+			return -1;
 	}
-	
+
 	public static double cosineSimilarity(double[] vectorA, double[] vectorB) {
 		double dotProduct = 0.0;
 		double normA = 0.0;
 		double normB = 0.0;
-		if (vectorA.length != 0 && vectorB.length != 0) {
+		if (vectorA != null && vectorA.length != 0 && vectorB != null && vectorB.length != 0) {
 			for (int i = 0; i < vectorA.length; i++) {
 				dotProduct += vectorA[i] * vectorB[i];
 				normA += Math.pow(vectorA[i], 2);
@@ -44,7 +45,7 @@ public class Vector {
 			return 0;
 		}
 	}
-	
+
 	public double[] getAverageVectorFromDoubles(double[][] vectors) {
 		ArrayList<ArrayList<Double>> vectorList = new ArrayList<>();
 		for (int i = 0; i < vectors.length; i++) {
@@ -53,11 +54,11 @@ public class Vector {
 			for (int j = 0; j < vectors[i].length; j++) {
 				tmp.add(vectors[i][j]);
 			}
-			
+
 		}
 		return getAverageVectorFromDoubles(vectorList);
 	}
-	
+
 	public static double[] getAverageVectorFromDoubles(ArrayList<ArrayList<Double>> vectors) {
 		ArrayList<Double> sumVector = new ArrayList<>();
 		int numberOfTokens = 0;
@@ -82,7 +83,7 @@ public class Vector {
 		}
 		return avgVector;
 	}
-	
+
 	public static double[] addTwoVectors(double[] vec1, double[] vec2) {
 		double[] res = new double[Math.max(vec1.length, vec2.length)];
 		int i = 0;
@@ -102,7 +103,7 @@ public class Vector {
 
 		return res;
 	}
-	
+
 	public static double[] subtractTwoVectors(double[] vec1, double[] vec2) {
 		double[] res = new double[Math.max(vec1.length, vec2.length)];
 		int i = 0;
@@ -122,15 +123,18 @@ public class Vector {
 
 		return res;
 	}
-	
+
 	public static double[] transform(double[][] transformationMatrix, double[] vector) {
-		double[] transformedVector = new double[vector.length];
-		
-		for (int i = 0; i < transformationMatrix.length; i++) {
-			for (int j = 0; j < transformationMatrix[0].length; j++) {
-				transformedVector[i] += transformationMatrix[i][j] * vector[j];
+		if (vector != null) {
+			double[] transformedVector = new double[vector.length];
+
+			for (int i = 0; i < transformationMatrix.length; i++) {
+				for (int j = 0; j < transformationMatrix[0].length; j++) {
+					transformedVector[i] += transformationMatrix[i][j] * vector[j];
+				}
 			}
-		}
-		return transformedVector;
+			return transformedVector;
+		} else
+			return null;
 	}
 }

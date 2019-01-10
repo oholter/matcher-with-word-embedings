@@ -1,4 +1,4 @@
-package org.matcher.com;
+package org.trainer.com;
 
 import java.util.TreeSet;
 

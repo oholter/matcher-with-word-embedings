@@ -8,6 +8,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.trainer.com.GradientDescent;
+import org.trainer.com.Vector;
 import org.trainer.com.WordEmbeddingsTrainer;
 
 public class trainerTest {
@@ -30,6 +32,7 @@ public class trainerTest {
 	double[] vec2;
 	WordEmbeddingsTrainer trainer;
 	Logger log = LoggerFactory.getLogger(WordEmbeddingsTrainer.class);
+	final double MAX_ERROR = 1E-3;
 
 	@BeforeEach
 	public void setup() throws Exception {
@@ -86,11 +89,11 @@ public class trainerTest {
 			vectors.get(0).add(vec1[i]);
 			vectors.get(1).add(vec2[i]);
 		}
-		
+
 		double[] averageVector = trainer.getAverageVectorFromDoubles(vectors);
 
 		double[] realAverages = { 4.65, 4.4, 3.95, 6.05, 4.65 };
-		
+
 		for (int i = 0; i < vec1.length; i++) {
 			System.out.println("vectors.0: " + vectors.get(0).get(i));
 			System.out.println("vectors.1: " + vectors.get(1).get(i));
@@ -101,26 +104,26 @@ public class trainerTest {
 
 	@Test
 	public void shouldGetAverageVectorFromStringArray() {
-		String[] words = {"http://ekaw#Person", "http://cmt#Person", "http://ekaw#Track"};
+		String[] words = { "http://ekaw#Person", "http://cmt#Person", "http://ekaw#Track" };
 		double[] averageVectors = trainer.getAverageVector(words);
-		
+
 		ArrayList<ArrayList<Double>> vectors = new ArrayList<>();
 		double[] ekawPersonVector = trainer.getModel().getWordVector("http://ekaw#Person");
 		double[] cmtPersonVector = trainer.getModel().getWordVector("http://cmt#Person");
 		double[] ekawTrackVector = trainer.getModel().getWordVector("http://ekaw#Track");
-		
+
 		vectors.add(trainer.doubleArray2ArrayList(ekawPersonVector));
 		vectors.add(trainer.doubleArray2ArrayList(cmtPersonVector));
 		vectors.add(trainer.doubleArray2ArrayList(ekawTrackVector));
-		
-		double[] firstSum = trainer.addTwoVectors(ekawPersonVector, cmtPersonVector);
-		double[] secondSum = trainer.addTwoVectors(firstSum, ekawTrackVector);
+
+		double[] firstSum = Vector.addTwoVectors(ekawPersonVector, cmtPersonVector);
+		double[] secondSum = Vector.addTwoVectors(firstSum, ekawTrackVector);
 		double[] realAverages = new double[secondSum.length];
 		for (int i = 0; i < realAverages.length; i++) {
 			realAverages[i] = secondSum[i] / 3;
 		}
-		
-		for (int i = 0; i < realAverages.length; i++ ) {
+
+		for (int i = 0; i < realAverages.length; i++) {
 //			System.out.println("ekawPersonVector[" + i + "]: " + ekawPersonVector[i]);
 //			System.out.println("cmtPersonVector[" + i + "]: " + cmtPersonVector[i]);
 //			System.out.println("ekawTrackVector[" + i + "]: " + ekawTrackVector[i]);
@@ -129,7 +132,7 @@ public class trainerTest {
 			assertEquals(realAverages[i], averageVectors[i], 0.0001);
 		}
 	}
-	
+
 	@Test
 	public void shouldGetAverageVectorFromCollectionOfStrings() {
 		ArrayList<String> words = new ArrayList<>();
@@ -137,62 +140,96 @@ public class trainerTest {
 		words.add("http://cmt#Person");
 		words.add("http://ekaw#Track");
 		double[] averageVectors = trainer.getAverageVector(words);
-		
+
 		ArrayList<ArrayList<Double>> vectors = new ArrayList<>();
 		double[] ekawPersonVector = trainer.getModel().getWordVector("http://ekaw#Person");
 		double[] cmtPersonVector = trainer.getModel().getWordVector("http://cmt#Person");
 		double[] ekawTrackVector = trainer.getModel().getWordVector("http://ekaw#Track");
-		
+
 		vectors.add(trainer.doubleArray2ArrayList(ekawPersonVector));
 		vectors.add(trainer.doubleArray2ArrayList(cmtPersonVector));
 		vectors.add(trainer.doubleArray2ArrayList(ekawTrackVector));
-		
+
 		double[] firstSum = trainer.addTwoVectors(ekawPersonVector, cmtPersonVector);
 		double[] secondSum = trainer.addTwoVectors(firstSum, ekawTrackVector);
 		double[] realAverages = new double[secondSum.length];
 		for (int i = 0; i < realAverages.length; i++) {
 			realAverages[i] = secondSum[i] / 3;
 		}
-		
-		for (int i = 0; i < realAverages.length; i++ ) {
+
+		for (int i = 0; i < realAverages.length; i++) {
 			assertEquals(realAverages[i], averageVectors[i], 0.0001);
 		}
 	}
-	
+
 	@Test
 	public void cosineSimilarityShouldBe1ForVectorsWithSameLengthAndDirection() {
 		double[] ekawPersonVector = trainer.getModel().getWordVector("http://ekaw#Person");
-		double cosine = trainer.cosineSimilarity(ekawPersonVector, ekawPersonVector);
+		double cosine = Vector.cosineSimilarity(ekawPersonVector, ekawPersonVector);
 		assertEquals(1, cosine);
 	}
-	
+
 	@Test
 	public void cosineSimilarityShouldBeNegativeOneForOppositeVectors() {
-		double[] firstVector = {0, 5};
-		double[] secondVector = {0, -5};
-		double cosine = trainer.cosineSimilarity(firstVector, secondVector);
+		double[] firstVector = { 0, 5 };
+		double[] secondVector = { 0, -5 };
+		double cosine = Vector.cosineSimilarity(firstVector, secondVector);
 		assertEquals(-1, cosine);
 	}
-	
+
 	@Test
 	public void cosineSimilarityShouldBeZeroForOrthogonalVectors() {
-		double[] firstVector = {0, 5};
-		double[] secondVector = {5, 0};
-		double cosine = trainer.cosineSimilarity(firstVector, secondVector);
+		double[] firstVector = { 0, 5 };
+		double[] secondVector = { 5, 0 };
+		double cosine = Vector.cosineSimilarity(firstVector, secondVector);
 		assertEquals(0, cosine);
 	}
-	
+
 	@Test
 	public void shouldReturnCorrectLength() {
-		double[] firstVector = {0, 5};
-		double[] secondVector = {-5, 0};
-		double[] thirdVector = {4, -6};
-		
-		double len1 = trainer.vectorLength(firstVector);
+		double[] firstVector = { 0, 5 };
+		double[] secondVector = { -5, 0 };
+		double[] thirdVector = { 4, -6 };
+
+		double len1 = Vector.vectorLength(firstVector);
 		assertEquals(5.0, len1, 0.0001);
-		double len2 = trainer.vectorLength(secondVector);
+		double len2 = Vector.vectorLength(secondVector);
 		assertEquals(5.0, len2, 0.0001);
-		double len3 = trainer.vectorLength(thirdVector);
+		double len3 = Vector.vectorLength(thirdVector);
 		assertEquals(7.2111, len3, 0.001);
 	}
+
+	@Test
+	public void shouldReturnSimilarVectors() {
+		String[] ekaws = { "http://ekaw#Document", "http://ekaw#Review", "http://ekaw#Conference", "http://ekaw#Paper",
+				"http://ekaw#Person" };
+
+		String[] cmts = { "http://cmt#Document", "http://cmt#Review", "http://cmt#Conference", "http://cmt#Paper",
+				"http://cmt#Person" };
+
+		double[][] ekawVectors = new double[5][];
+		double[][] cmtVectors = new double[5][];
+
+		for (int i = 0; i < 5; i++) {
+			ekawVectors[i] = trainer.getWordVector(ekaws[i]);
+			cmtVectors[i] = trainer.getWordVector(cmts[i]);
+		}
+
+		GradientDescent gradientDescent = new GradientDescent(ekawVectors, cmtVectors, 0.2, 70000, MAX_ERROR);
+		gradientDescent.solve();
+		System.out.println("ERROR: " + gradientDescent.calculateError());
+
+		System.out.println("Cosine for http://ekaw#Paper_Author and http://cmt#Author is : " + Vector.cosineSimilarity(
+				Vector.transform(gradientDescent.getMatrix(), trainer.getWordVector("http://ekaw#Paper_Author")),
+				trainer.getWordVector("http://cmt#Author")));
+		
+		System.out.println("Cosine for http://ekaw#reviewWrittenBy and http://cmt#writtenBy is : " + Vector.cosineSimilarity(
+				Vector.transform(gradientDescent.getMatrix(), trainer.getWordVector("http://ekaw#reviewWrittenBy")),
+				trainer.getWordVector("http://cmt#writtenBy")));
+		
+
+		assertEquals(0, Vector.squaredEucledianDistance(Vector.transform(gradientDescent.getMatrix(), ekawVectors[0]),
+				cmtVectors[0]), 0.1);
+	}
+
 }

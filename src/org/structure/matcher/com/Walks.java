@@ -1,4 +1,4 @@
-package org.matcher.com;
+package org.structure.matcher.com;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -180,7 +180,7 @@ public class Walks {
 
 	public static void main(String[] args) {
 		Walks p = new Walks();
-		p.cleanDataSet("/home/ole/master/test_onto/merged.ttl");
+//		p.cleanDataSet("/home/ole/master/test_onto/merged.ttl");
 		p.loadFromRdfFile("/home/ole/master/test_onto/merged.ttl");
 //		p.generateWalks();
 	}

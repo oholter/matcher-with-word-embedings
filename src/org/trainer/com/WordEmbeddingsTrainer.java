@@ -85,8 +85,8 @@ public class WordEmbeddingsTrainer {
 		WeightLookupTable<VocabWord> s = model.getLookupTable();
 		VocabCache<VocabWord> c = s.getVocabCache();
 		log.info("num word: " + c.numWords());
-		Collection<VocabWord> col = c.tokens();
-		col.forEach(System.out::println);
+//		Collection<VocabWord> col = c.tokens();
+//		col.forEach(System.out::println);
 	}
 
 	public String getInputFilePath() {
@@ -235,7 +235,7 @@ public class WordEmbeddingsTrainer {
 
 		for (int i = 0; i < strings.length; i++) {
 			double[] vector = model.getWordVector(strings[i]);
-			System.out.println("strings[" + i + "]: " + strings[i]);
+//			System.out.println("strings[" + i + "]: " + strings[i]);
 			if (vector != null) {
 				for (int j = 0; j < vector.length; j++) {
 					if (j == sumVector.size()) {
@@ -249,12 +249,16 @@ public class WordEmbeddingsTrainer {
 			}
 		}
 
-		System.out.println("NumberOfTokens: " + numberOfTokens);
+//		System.out.println("NumberOfTokens: " + numberOfTokens);
 		double[] avgVector = new double[sumVector.size()];
 		for (int i = 0; i < sumVector.size(); i++) {
 			avgVector[i] = sumVector.get(i) / numberOfTokens;
 		}
 		return avgVector;
+	}
+	
+	public double[] getWordVector(String word) {
+		return model.getWordVector(word);
 	}
 
 	public double cosineSimilarity(double[] vectorA, double[] vectorB) {
