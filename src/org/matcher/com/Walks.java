@@ -1,4 +1,4 @@
-package org.structure.matcher.com;
+package org.matcher.com;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,13 +15,12 @@ import com.hp.hpl.jena.query.ReadWrite;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.tdb.TDBFactory;
-import com.hp.hpl.jena.update.Update;
 import com.hp.hpl.jena.update.UpdateAction;
 import com.hp.hpl.jena.update.UpdateFactory;
 import com.hp.hpl.jena.update.UpdateRequest;
 
 import de.dwslab.petar.walks.PathCleaner;
-import de.dwslab.petar.walks.WalkGenerator;
+import de.dwslab.petar.walks.WalkGeneratorRand;
 
 public class Walks {
 	private final String CURRENT_DIR;
@@ -30,7 +29,8 @@ public class Walks {
 	private final String TEMP_IN;
 	private final String TEMP_OUT;
 	private final String TEMP_FILE_NAME = "temp.txt";
-	private WalkGenerator walkGenerator;
+//	private WalkGenerator walkGenerator;
+	private WalkGeneratorRand walkGenerator;
 	private int numWalks;
 	private int walkDepth;
 	private int numThreads;
@@ -43,12 +43,13 @@ public class Walks {
 		File classpathRoot = new File(ClassLoader.getSystemClassLoader().getResource("").getPath());
 		CURRENT_DIR = classpathRoot.toString();
 		REPO_LOCATION = CURRENT_DIR + "/repo";
-		this.walkGenerator = new WalkGenerator();
-		this.numWalks = 100;
+//		this.walkGenerator = new WalkGenerator();
+		this.walkGenerator = new WalkGeneratorRand();
+		this.numWalks = 50;
 		this.walkDepth = 4;
-		this.numThreads = 4;
+		this.numThreads = 8;
 		this.offset = 0;
-		this.limit = 10000;
+		this.limit = 5000;
 		TEMP_DIR = CURRENT_DIR + "/temp/";
 		TEMP_IN = TEMP_DIR + "in/";
 		TEMP_OUT = TEMP_DIR + "out/";
@@ -98,6 +99,7 @@ public class Walks {
 				+ "strstarts(str(?p), \"http://no.sirius.ontology/\") || "
 				+ "strstarts(str(?q), \"http://no.sirius.ontology/\") )"
 				+ "}";
+		
 		System.out.println(qString);
 		UpdateRequest query = UpdateFactory.create(qString);
 		UpdateAction.execute(query, m);
@@ -133,7 +135,7 @@ public class Walks {
 			File oldFile = new File(filePath);
 			oldFile.delete();
 
-			System.out.println("File compressed");
+			System.out.println("File compressed: " + filePath + ".gz");
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -160,16 +162,16 @@ public class Walks {
 			outStream.close();
 			
 			oldFile.delete();
-			System.out.println("file decompressed");
+			System.out.println("file decompressed: " + fileDir + TEMP_FILE_NAME);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
 	public void generateWalks() {
-		walkGenerator.generateWalks(REPO_LOCATION, TEMP_IN + TEMP_FILE_NAME, numWalks, walkDepth, numThreads, offset,
+		walkGenerator.generateWalks(REPO_LOCATION, TEMP_IN + TEMP_FILE_NAME +".gz", numWalks, walkDepth, numThreads, offset,
 				limit);
-		gzipFile(TEMP_IN);
+//		gzipFile(TEMP_IN);
 		PathCleaner.cleanPaths(TEMP_IN, TEMP_OUT);
 		gunzipFile(TEMP_OUT);
 	}

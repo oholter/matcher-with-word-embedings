@@ -1,7 +1,9 @@
-package org.pretrained.matcher.com;
+package org.matcher.com;
 
+import java.io.File;
 import java.util.ArrayList;
 
+import org.apache.log4j.BasicConfigurator;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLAnnotation;
 import org.semanticweb.owlapi.model.OWLAnnotationAssertionAxiom;
@@ -16,22 +18,16 @@ import org.semanticweb.owlapi.model.OWLNamedObject;
 import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.trainer.com.OntologyReader;
 import org.trainer.com.WordEmbeddingsTrainer;
 
+public class CandidateFinderWithPretrainedWordVectors extends CandidateFinder {
 
-public class CandidateFinder {
-	OWLOntology onto1;
-	OWLOntology onto2;
-	OWLOntology mappings;
-	OWLDataFactory mappingsFactory;
-	OWLOntologyManager mappingsManager;
-	final double DIST_LIMIT = 0.8;
-	WordEmbeddingsTrainer trainer;
-	final String modelPath = "/home/ole/master/word2vec/models/fil9.model";
-
-	public CandidateFinder(OWLOntology o1, OWLOntology o2) throws Exception {
-		onto1 = o1;
-		onto2 = o2;
+	public CandidateFinderWithPretrainedWordVectors(OWLOntology o1, OWLOntology o2, double distLimit, String modelPath)
+			throws Exception {
+		super(o1, o2, modelPath, distLimit);
 		trainer = new WordEmbeddingsTrainer("/home/ole/out.csv", modelPath);
 		trainer.loadModel();
 	}
@@ -50,90 +46,7 @@ public class CandidateFinder {
 		}
 	}
 
-	public OWLOntology getOnto1() {
-		return onto1;
-	}
-
-	public void setOnto1(OWLOntology onto1) {
-		this.onto1 = onto1;
-	}
-
-	public OWLOntology getOnto2() {
-		return onto2;
-	}
-
-	public void setOnto2(OWLOntology onto2) {
-		this.onto2 = onto2;
-	}
-
-	public OWLOntology getMappings() {
-		return mappings;
-	}
-
-	public void setMappings(OWLOntology mappings) {
-		this.mappings = mappings;
-	}
-
-	public String normalizeIRI(String s) {
-		if (s != null) {
-			s = s.replaceAll(String.format("%s|%s|%s", "(?<=[A-Z])(?=[A-Z][a-z])", "(?<=[^A-Z])(?=[A-Z])",
-					"(?<=[A-Za-z])(?=[^A-Za-z])"), " "); // mixedCase -> multiple words
-			s = s.toLowerCase(); // case normalization
-			s = s.replaceAll("[_-]", " "); // link normalization
-			s = s.replaceAll("[1-9.,]", ""); // remove numbers and punctuation
-			s = s.replaceAll("\\s", " "); // blank normalization
-			s = s.replaceAll("\\s+", " "); // only one blank
-			s = s.trim();
-		}
-		return s;
-	}
-
-	public String normalizeString(String s) {
-		if (s != null) {
-			s = s.toLowerCase(); // case normalization
-			s = s.replaceAll("[_-]", " "); // link normalization
-			s = s.replaceAll("[.,]", ""); // remove punctuation
-			s = s.replaceAll("\\s", " "); // blank normalization
-			s = s.replaceAll("\\s+", " "); // only one blank
-			s = s.trim();
-		}
-		return s;
-	}
-
-	public String findAnnotation(OWLNamedObject c, OWLOntology o, String type) {
-		String label = null;
-		String comment = null;
-		for (OWLAnnotationAssertionAxiom annotationAssertionAxiom : o.getAnnotationAssertionAxioms(c.getIRI())) {
-			if (annotationAssertionAxiom.getProperty().isLabel()) {
-				if (annotationAssertionAxiom.getValue() instanceof OWLLiteral) {
-					OWLLiteral literal = (OWLLiteral) annotationAssertionAxiom.getValue();
-					label = literal.getLiteral();
-				}
-			}
-			if (annotationAssertionAxiom.getProperty().isComment()) {
-				if (annotationAssertionAxiom.getValue() instanceof OWLLiteral) {
-					OWLLiteral literal = (OWLLiteral) annotationAssertionAxiom.getValue();
-					comment = literal.getLiteral();
-				}
-			}
-
-			if (type.equals("label")) {
-				return label;
-			} else if (type.equals("comment")) {
-				return comment;
-			} else {
-				return null;
-			}
-		} // finished finding annotations for classFromFirstOntology
-
-		return label;
-	}
-
-	private double max(double a, double b, double c) {
-		return Math.max(a, Math.max(b, c));
-	}
-
-	private void generateClassCandidates() {
+	public void generateClassCandidates() {
 		int numCandidates = 0;
 		ArrayList<OWLClass> usedClassesFromSecondOntology = new ArrayList<>();
 
@@ -178,7 +91,7 @@ public class CandidateFinder {
 				}
 			} // end classFromSecondOntology
 
-			if (maxSimilarity > DIST_LIMIT) {
+			if (maxSimilarity > distLimit) {
 				OWLEquivalentClassesAxiom equivalentClassAxiom = mappingsFactory
 						.getOWLEquivalentClassesAxiom(classFromFirstOntology, candidate);
 //				mappings.add(equivalentClassAxiom); owlapi5
@@ -191,7 +104,7 @@ public class CandidateFinder {
 						.getOWLAnnotationAssertionAxiom(classFromFirstOntology.getIRI(), annotation);
 
 //				mappings.add(annotationAssertionAxiom);
-				mappingsManager.addAxiom(mappings,  annotationAssertionAxiom);
+				mappingsManager.addAxiom(mappings, annotationAssertionAxiom);
 				usedClassesFromSecondOntology.add(candidate);
 
 //				System.out.println("Found mapping: " + equivalentClassAxiom);
@@ -202,7 +115,7 @@ public class CandidateFinder {
 		System.out.println("Found " + numCandidates + " class candidates:");
 	} // finished generateClassCandidates()
 
-	private void generateObjectProperties() {
+	public void generateObjectProperties() {
 		int numCandidates = 0;
 		ArrayList<OWLObjectProperty> usedPropertiesFromSecondOntology = new ArrayList<>();
 
@@ -224,7 +137,8 @@ public class CandidateFinder {
 				String commentFromSecondOntology = normalizeString(
 						findAnnotation(propertyFromSecondOntology, onto2, "comment"));
 
-				double iriCosine = trainer.getAvgVectorCosine(iriFromFirstOntology.split(" "), iriFromSecondOntology.split(" "));
+				double iriCosine = trainer.getAvgVectorCosine(iriFromFirstOntology.split(" "),
+						iriFromSecondOntology.split(" "));
 				if (Double.isNaN(iriCosine)) {
 					iriCosine = 0;
 				}
@@ -250,7 +164,7 @@ public class CandidateFinder {
 			} // finished propertyFromSecondOntology
 //			System.out.println("Object property max similarity: " + maxSimilarity);
 
-			if (maxSimilarity > DIST_LIMIT) {
+			if (maxSimilarity > distLimit) {
 				OWLEquivalentObjectPropertiesAxiom equivalentPropertiesAxiom = mappingsFactory
 						.getOWLEquivalentObjectPropertiesAxiom(propertyFromFirstOntology, candidate);
 //				mappings.add(equivalentPropertiesAxiom);
@@ -274,7 +188,7 @@ public class CandidateFinder {
 		System.out.println("Found " + numCandidates + " object property candidates:");
 	} // finished generateObjectProperties()
 
-	private void generateDataProperties() {
+	public void generateDataProperties() {
 		int numCandidates = 0;
 		ArrayList<OWLDataProperty> usedPropertyFromSecondOntology = new ArrayList<>();
 
@@ -296,7 +210,8 @@ public class CandidateFinder {
 				String commentFromSecondOntology = normalizeString(
 						findAnnotation(propertyFromSecondOntology, onto2, "comment"));
 
-				double iriCosine = trainer.getAvgVectorCosine(iriFromFirstOntology.split(" "), iriFromSecondOntology.split(" "));
+				double iriCosine = trainer.getAvgVectorCosine(iriFromFirstOntology.split(" "),
+						iriFromSecondOntology.split(" "));
 				if (Double.isNaN(iriCosine)) {
 					iriCosine = 0;
 				}
@@ -315,14 +230,13 @@ public class CandidateFinder {
 				double currentSimilarity = max(iriCosine, labelCosine, commentCosine);
 //				System.out.println(iriFromFirstOntology + " and " + iriFromSecondOntology + " got " + currentSimilarity);
 
-
 				if (currentSimilarity > maxSimilarity) {
 					maxSimilarity = currentSimilarity;
 					candidate = propertyFromSecondOntology;
 				}
 			} // finished propertyFromSecondOntology
 //			System.out.println("Data property max similarity: " + maxSimilarity);
-			if (maxSimilarity > DIST_LIMIT) {
+			if (maxSimilarity > distLimit) {
 				OWLEquivalentDataPropertiesAxiom equivalentPropertiesAxiom = mappingsFactory
 						.getOWLEquivalentDataPropertiesAxiom(propertyFromFirstOntology, candidate);
 //				mappings.add(equivalentPropertiesAxiom);
@@ -345,5 +259,30 @@ public class CandidateFinder {
 		} // finished propertyFromFirstOntology
 
 		System.out.println("Found " + numCandidates + " data property candidates:");
+	}
+
+	public static void main(String[] args) throws Exception {
+		Logger log = LoggerFactory.getLogger(WordEmbeddingsTrainer.class);
+		String currentDir = new File(ClassLoader.getSystemClassLoader().getResource("").getPath()).toString();
+		String firstOntology = "/home/ole/master/test_onto/sofsem.owl";
+		String secondOntology = "/home/ole/master/test_onto/ekaw.owl";
+		String outputFile = "file:/home/ole/master/test_onto/conference_mappings.owl";
+		double distLimit = 0.8;
+		BasicConfigurator.configure();
+
+		OntologyReader reader = new OntologyReader();
+		reader.setFname(firstOntology);
+		reader.readOntology();
+		OWLOntology onto1 = reader.getOntology();
+
+		reader.setFname(secondOntology);
+		reader.readOntology();
+		OWLOntology onto2 = reader.getOntology();
+
+		CandidateFinderWithPretrainedWordVectors finder = new CandidateFinderWithPretrainedWordVectors(onto1, onto2,
+				distLimit, "/home/ole/master/word2vec/models/fil9.model");
+		finder.createMappings();
+		OWLOntology o = finder.getMappings();
+		OntologyReader.writeOntology(o, outputFile, "owl");
 	}
 }

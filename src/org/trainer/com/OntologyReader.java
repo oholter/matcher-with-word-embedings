@@ -115,8 +115,7 @@ public class OntologyReader {
 		Set<OWLImportsDeclaration> imports = new HashSet<OWLImportsDeclaration>();
 		OWLOntologyManager man = OWLManager.createOWLOntologyManager();
 		OWLOntology mergedOntology = null;
-		
-		
+
 		try {
 			for (OWLOntology ontology : ontologies) {
 				axioms.addAll(ontology.getAxioms());
