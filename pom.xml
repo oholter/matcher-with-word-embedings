@@ -163,6 +163,13 @@
 			<version>1.2.4</version>
 		</dependency>
 
+		<dependency>
+			<groupId>com.github.ansell.pellet</groupId>
+			<artifactId>pellet-jena</artifactId>
+			<version>2.3.6-ansell</version>
+		</dependency>
+
+
 	</dependencies>
 
 </project>
