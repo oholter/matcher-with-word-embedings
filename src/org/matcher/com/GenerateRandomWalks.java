@@ -47,6 +47,8 @@ public class GenerateRandomWalks {
 	private String fileType = "TTL";
 	private Reasoner reasoner;
 	private BufferedWriter writer;
+	private String adjacentPropertiesQuery = "SELECT DISTINCT ?p WHERE {$CLASS$ ?p ?o .}";
+	private String adjacentClassesQuery = "SELECT DISTINCT ?o WHERE { $CLASS$ $PROPERTY$ ?o . }";
 
 	public GenerateRandomWalks(String in, String outputFilePath, int walkDepth, int limit, int nmWalks) {
 		this.inputFile = in;
@@ -123,18 +125,20 @@ public class GenerateRandomWalks {
 
 	public void walkTheGraph() {
 		ArrayList<String> strs = new ArrayList<>();
+		List<String> allClasses = selectAllClasses();
 //		executeQuery(generateQuery(), strs);
-		selectAllClasses();
+//		processClass(allClasses.get(0), generateQuery(), strs);
+		WeightedDirectedGraph graph = createWeightedDirectedGraph(allClasses.get(1));
+		graph.printGraph();
 		writeToFile(strs);
 	}
-	
+
 	public List<String> selectAllClasses() {
 		List<String> allClasses = new ArrayList<String>();
-		
+
 		String queryStrign = "SELECT ?s WHERE { {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> } "
 				+ " UNION {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Class> } "
-				+ " } "
-				+ "OFFSET " + offset + " LIMIT " + limit;
+				+ " } " + "OFFSET " + offset + " LIMIT " + limit;
 
 		Query query = QueryFactory.create(queryStrign);
 
@@ -153,8 +157,9 @@ public class GenerateRandomWalks {
 	}
 
 	public void executeQuery(String queryString, List<String> walkList) {
-		String qString = "SELECT ?x ?y ?z WHERE {?x ?y ?z}";
-		Query query = QueryFactory.create(qString);
+//		String qString = "SELECT ?x ?y ?z WHERE {?x ?y ?z}";
+		System.out.println(queryString);
+		Query query = QueryFactory.create(queryString);
 		QueryExecution queryExecution = QueryExecutionFactory.create(query, infModel);
 		ResultSet res = queryExecution.execSelect();
 		int numRes = 0;
@@ -171,7 +176,7 @@ public class GenerateRandomWalks {
 							.replace("http://www.w3.org/1999/02/22-rdf-syntax-ns#", "rdf:")
 							.replace("http://www.w3.org/2000/01/rdf-schema#", "rdfs:");
 					currentValue = currentValue.replace("\n", " ").replace("\t", " ");
-					singleWalk += currentValue + " ";
+					singleWalk += currentValue + "->";
 				}
 			}
 			numRes++;
@@ -182,6 +187,46 @@ public class GenerateRandomWalks {
 		}
 	}
 
+	public List<Edge> findAdjacentProperties(String className) {
+		ArrayList<Edge> propertyList = new ArrayList<>();
+		String queryString = adjacentPropertiesQuery.replace("$CLASS$", "<" + className + ">");
+		System.out.println(queryString);
+		Query query = QueryFactory.create(queryString);
+		QueryExecution queryExecution = QueryExecutionFactory.create(query, infModel);
+		ResultSet res = queryExecution.execSelect();
+		int numRes = 0;
+
+		while (res.hasNext()) {
+			QuerySolution sol = res.next();
+			String currentProperty = sol.get("?p").toString();
+			propertyList.add(new Edge(currentProperty));
+		}
+
+		return propertyList;
+	}
+
+	public List<Node> findAdjacentClasses(String className, String propertyName) {
+		ArrayList<Node> classList = new ArrayList<>();
+		String queryString = adjacentClassesQuery.replace("$CLASS$", "<" + className + ">").replace("$PROPERTY$",
+				"<" + propertyName + ">");
+		System.out.println(queryString);
+		Query query = QueryFactory.create(queryString);
+		QueryExecution queryExecution = QueryExecutionFactory.create(query, infModel);
+		ResultSet res = queryExecution.execSelect();
+		int numRes = 0;
+
+		while (res.hasNext()) {
+			QuerySolution sol = res.next();
+			String currentClass = sol.get("?o").toString();
+			classList.add(new Node(currentClass));
+		}
+
+		return classList;
+	}
+
+	/**
+	 * Generates query with desired depth
+	 **/
 	public String generateQuery() {
 		String selectPart = "SELECT ?p ?o1";
 		String mainPart = "{ $CLASS$ ?p ?o1  ";
@@ -191,9 +236,47 @@ public class GenerateRandomWalks {
 			selectPart += " ?p" + i + "?o" + (i + 1);
 		}
 		query = selectPart + " WHERE " + mainPart + "} LIMIT 1000";
-		// + " BIND(RAND() AS ?sortKey) } ORDER BY ?sortKey LIMIT "
-		// + numberWalks;
+
 		return query;
+	}
+
+	private void processClass(String className, String walkQuery, List<String> finalList) {
+
+		// get all the walks
+		List<String> tmpList = new ArrayList<String>();
+		String queryStr = walkQuery.replace("$CLASS$", "<" + className + ">");
+		executeQuery(queryStr, finalList);
+
+		// get all the direct properties
+//		queryStr = directPropertiesQuery.replace("$CLASS$", "<" + className + ">");
+		executeQuery(queryStr, finalList);
+	}
+	
+
+
+	/** Generates an instance of the graph using an initial class **/
+	public WeightedDirectedGraph createWeightedDirectedGraph(String firstClassName) {
+		Node headNode = new Node(firstClassName);
+		WeightedDirectedGraph graph = new WeightedDirectedGraph(headNode);
+		graph.nodes.add(headNode);
+		graph.depth = walkDepth;
+		populateGraph(graph, graph.head, 0);
+		return graph;
+	}
+
+	/** Recursively populates the graph **/
+	public void populateGraph(WeightedDirectedGraph graph, Node currentNode, int level) {
+		currentNode.edges = findAdjacentProperties(currentNode.label);
+		for (Edge e : currentNode.edges) {
+			graph.edges.add(e);
+			e.outNodes = findAdjacentClasses(currentNode.label, e.label);
+			if (level < walkDepth && e.outNodes != null) {
+				for (Node n : e.outNodes) {
+					graph.nodes.add(n);
+					populateGraph(graph, n, level + 1);
+				}
+			}
+		}
 	}
 
 	public static void main(String[] args) {
@@ -201,7 +284,7 @@ public class GenerateRandomWalks {
 		BasicConfigurator.configure();
 
 		GenerateRandomWalks walks = new GenerateRandomWalks("/home/ole/master/test_onto/merged.ttl",
-				"/home/ole/master/test_onto/walks_out.txt", 6, 1000, 100);
+				"/home/ole/master/test_onto/walks_out.txt", 2, 1000, 100);
 		walks.generateWalks();
 	}
 }

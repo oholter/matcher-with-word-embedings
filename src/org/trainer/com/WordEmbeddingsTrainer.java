@@ -1,4 +1,4 @@
-package org.trainer.com;
+		package org.trainer.com;
 
 import java.io.File;
 import java.nio.charset.Charset;
@@ -29,6 +29,7 @@ public class WordEmbeddingsTrainer {
 	String inputFilePath;
 	String outputFilePath;
 	Word2Vec model;
+	int numEpocs = 1;
 
 	public WordEmbeddingsTrainer(String inputFile, String outputFile) throws Exception {
 		inputFilePath = new File(inputFile).getAbsolutePath();
@@ -58,8 +59,11 @@ public class WordEmbeddingsTrainer {
 				.iterate(iter).tokenizerFactory(t).build();
 		log.info("Fitting w2v model");
 		System.out.println("fitting model");
-		model.fit();
-
+		for (int i = 0; i < numEpocs; i++) {
+			log.info("EPoch: " + i);
+			model.fit();
+		}
+		
 		System.out.println("Closest Words:");
 		Collection<String> lst = model.wordsNearest("http://cmt#Conference", 10);
 		System.out.println(lst);
