@@ -3,19 +3,20 @@ package org.matcher.com;
 import java.util.List;
 
 public class Edge {
-	double SUBCLASS_WEIGHT = 0.6;
-	double EQUIVALENT_CLASS_WEIGHT = 1.0;
-	double DISJOINT_CLASS_WEIGHT = 0.0;
-	double A_SUB_R_SOME_B_WEIGHT = 0.6;
-	double A_SUB_R_ONLY_B_WEIGHT = 0.5;
-	double INVERSE_OF_WEIGHT = 0.0;
-	double RANGE_DOMAIN_WEIGHT = 0.3;
-	double TYPE_WEIGHT = 0.2;
-	
+	int SUBCLASS_WEIGHT = 6;
+	int EQUIVALENT_CLASS_WEIGHT = 10;
+	int DISJOINT_CLASS_WEIGHT = 0;
+	int A_SUB_R_SOME_B_WEIGHT = 6;
+	int A_SUB_R_ONLY_B_WEIGHT = 5;
+	int INVERSE_OF_WEIGHT = 0;
+	int RANGE_DOMAIN_WEIGHT = 3;
+	int TYPE_WEIGHT = 2;
+	int NORMAL_PROPERTY_WEIGHT = 4;
+	int RANDOM_JUMP_WEIGHT = 1;
 	
 	String label;
 	List<Node> outNodes;
-	double weight;
+	int weight;
 	
 	public Edge(String label) { // todo: add subRsome/only
 		this.label = label;
@@ -31,8 +32,8 @@ public class Edge {
 			weight = RANGE_DOMAIN_WEIGHT;
 		} else if (label.equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")) {
 			weight = TYPE_WEIGHT;
-		} else {
-			weight = 0;
+		} else { // other  
+			weight = NORMAL_PROPERTY_WEIGHT;
 		}
 	}
 }

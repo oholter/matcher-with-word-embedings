@@ -156,6 +156,14 @@
 			<scope>system</scope>
 			<systemPath>/home/ole/libs/rdf2vec.jar</systemPath>
 		</dependency>
+		
+		      <dependency>
+            <groupId>com.alignapi</groupId>
+            <artifactId>alignapi</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>/home/ole/libs/align/lib/align.jar</systemPath>
+        </dependency>
 
 		<dependency>
 			<groupId>org.jblas</groupId>

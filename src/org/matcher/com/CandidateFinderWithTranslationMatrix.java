@@ -648,9 +648,7 @@ public class CandidateFinderWithTranslationMatrix extends CandidateFinder {
 		projector.projectOntology();
 		projector.saveModel("/home/ole/master/test_onto/merged.ttl");
 
-		Walks walks = new Walks();
-		walks.cleanDataSet("/home/ole/master/test_onto/merged.ttl");
-		walks.loadFromRdfFile("/home/ole/master/test_onto/merged.ttl");
+		Walks walks = new Walks("/home/ole/master/test_onto/merged.ttl");
 		walks.generateWalks();
 		String walksFile = walks.getOutputFile();
 
@@ -669,18 +667,7 @@ public class CandidateFinderWithTranslationMatrix extends CandidateFinder {
 				currentDir + "/temp/out.txt", 0.0, "ekaw");
 
 //		finder.findAnchors(); /* this will use word embeddings to find anchors */
-//		finder.addAnchor("http://ekaw#Person", AxiomType.EQUIVALENT_CLASSES, "http://cmt#Person");
-//		finder.addAnchor("http://ekaw#Document", AxiomType.EQUIVALENT_CLASSES, "http://cmt#Document");
-//		finder.addAnchor("http://ekaw#Conference_Participant", AxiomType.EQUIVALENT_CLASSES, "http://cmt#ConferenceMember");
-//		finder.addAnchor("http://ekaw#reviewWrittenBy", AxiomType.EQUIVALENT_OBJECT_PROPERTIES, "http://cmt#writtenBy");
-//		finder.addAnchor("http://ekaw#reviewerOfPaper", AxiomType.EQUIVALENT_OBJECT_PROPERTIES, "http://cmt#hasBeenAssigned");
-//		finder.addAnchor("http://ekaw#Conference", AxiomType.EQUIVALENT_CLASSES, "http://cmt#Conference");
-//		finder.addAnchor("http://ekaw#hasReviewer", AxiomType.EQUIVALENT_OBJECT_PROPERTIES, "http://cmt#assignedTo");
-//		finder.addAnchor("http://ekaw#Review", AxiomType.EQUIVALENT_CLASSES, "http://cmt#Review");
-//		finder.addAnchor("http://ekaw#Paper", AxiomType.EQUIVALENT_CLASSES, "http://cmt#Paper");
-//		finder.addAnchor("http://ekaw#Regular_Paper", AxiomType.EQUIVALENT_CLASSES, "http://cmt#PaperFullVersion");
 
-//		finder.findAnchors(); /* this will use word embeddings to find anchors */
 //		finder.addAnchor("http://ekaw#Event", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Event");
 //		finder.addAnchor("http://ekaw#Location", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Location");
 //		finder.addAnchor("http://ekaw#Organisation", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Organisation");
