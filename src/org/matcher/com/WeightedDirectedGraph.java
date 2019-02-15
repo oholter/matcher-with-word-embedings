@@ -48,10 +48,7 @@ public class WeightedDirectedGraph {
 	}
 
 	public String replaceNamespaces(String uri) {
-		uri = uri.replace("http://www.w3.org/2002/07/owl#", "owl:");
-		uri = uri.replace("http://www.w3.org/2000/01/rdf-schema#", "rdfs:");
-		uri = uri.replace("http://www.w3.org/1999/02/22-rdf-syntax-ns#", "rdf:");
-		return uri;
+		return StringUtils.replaceNamespaces(uri);
 	}
 
 	/** choosing a random edge of a list of edges using the weights */
@@ -134,6 +131,9 @@ public class WeightedDirectedGraph {
 		}
 
 		Edge chosenEdge = null;
+		if (numEdges == 0) {
+			return null;
+		}
 		Random ran = new Random();
 		int randomNumber = ran.nextInt(numEdges);
 		int i = 0;
@@ -211,13 +211,19 @@ public class WeightedDirectedGraph {
 		tmpWalk += replaceNamespaces(node.getSomeName()) + " ";
 		if (level < walkDepth) {
 			Edge nextEdge = chooseRandomEdgeWithoutSynonyms(node.edges);
+			if (nextEdge == null) {
+				return tmpWalk;
+			}
 			Node nextNode = chooseRandomNode(nextEdge.outNodes);
-			tmpWalk += replaceNamespaces(nextEdge.label) + " ";
+//			if (nextNode == node) {
+//				tmpWalk += generateRandomWalkWithSynonyms(node, level);
+//			}
+//			tmpWalk += replaceNamespaces(nextEdge.getSomeName()) + " ";
 			tmpWalk += generateRandomWalkWithSynonyms(nextNode, level + 1);
 		}
 		return tmpWalk;
 	}
-
+	
 	public boolean isEmpty() {
 		return head == null;
 	}
@@ -268,6 +274,8 @@ public class WeightedDirectedGraph {
 	public List<String> findSynonyms() {
 		Node node = head;
 		ArrayList<String> synonyms = new ArrayList<>();
+		synonyms.add(head.label);
+		synonyms.add(StringUtils.normalizeFullIRI(node.label));
 
 		for (Edge e : node.edges) {
 			boolean isSynonymEdge = Arrays.stream(SYNONYM_EDGES).anyMatch(e.label::equals);

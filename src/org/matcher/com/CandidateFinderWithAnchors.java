@@ -3,10 +3,10 @@ package org.matcher.com;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.log4j.BasicConfigurator;
-import org.semanticweb.owl.align.AlignmentProcess;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.AxiomType;
 import org.semanticweb.owlapi.model.IRI;
@@ -34,6 +34,15 @@ import org.trainer.com.TranslationMatrix;
 import org.trainer.com.Vector;
 import org.trainer.com.WordEmbeddingsTrainer;
 
+import edit_distance.EditDistance;
+import io.AlignmentsReader;
+import io.OAEIAlignmentOutput;
+import io.OAEIAlignmentsReader;
+import io.Utilities;
+import mapping.object.MappingObjectStr;
+import mappings.evaluation.ClassMappingsEvaluator;
+import mappings.evaluation.MappingsEvaluator;
+
 public class CandidateFinderWithAnchors extends CandidateFinder {
 	final double ANCHOR_SIMILARITY = 0.95;
 	final double TRAINING_RATE = 0.2;
@@ -45,6 +54,8 @@ public class CandidateFinderWithAnchors extends CandidateFinder {
 	OWLOntology anchorOntology;
 	TranslationMatrix superClassMatrix;
 
+	OAEIAlignmentOutput output = new OAEIAlignmentOutput("/home/ole/master/mappings", "ekaw", "ekaw2");
+
 	public CandidateFinderWithAnchors(OWLOntology o1, OWLOntology o2, OWLOntology mergedOnto, String modelPath,
 			double distLimit, double subClassSimilarity) throws Exception {
 		super(o1, o2, modelPath, distLimit);
@@ -54,6 +65,7 @@ public class CandidateFinderWithAnchors extends CandidateFinder {
 //		trainer.loadModel();
 		this.modelPath = modelPath;
 		this.subClassSimilarity = subClassSimilarity;
+
 	}
 
 	public void setTrainer(WordEmbeddingsTrainer trainer) {
@@ -69,7 +81,7 @@ public class CandidateFinderWithAnchors extends CandidateFinder {
 
 	}
 
-	public void addAnchor(String firstIRI, AxiomType type, String secondIRI) throws Exception {
+	public void addAnchor(String firstIRI, String secondIRI) throws Exception {
 		if (anchorOntology == null) {
 			OWLOntologyManager man = OWLManager.createOWLOntologyManager();
 			anchorOntology = man.createOntology();
@@ -77,26 +89,31 @@ public class CandidateFinderWithAnchors extends CandidateFinder {
 		OWLOntologyManager man = anchorOntology.getOWLOntologyManager();
 		OWLDataFactory factory = man.getOWLDataFactory();
 
-		if (type == AxiomType.EQUIVALENT_CLASSES) {
+		IRI iri = IRI.create(firstIRI);
+		boolean isClass = mergedOnto.containsClassInSignature(iri);
+		boolean isObjectProperty = mergedOnto.containsObjectPropertyInSignature(iri);
+		boolean isDataProperty = mergedOnto.containsDataPropertyInSignature(iri);
+//		System.out.println("is class: " + isClass);
+//		System.out.println("is object property: " + isObjectProperty);
+//		System.out.println("is data property: " + isDataProperty);
+
+		if (isClass) {
 			OWLClass cl1 = factory.getOWLClass(IRI.create(firstIRI));
 			OWLClass cl2 = factory.getOWLClass(IRI.create(secondIRI));
 			OWLAxiom ax = factory.getOWLEquivalentClassesAxiom(cl1, cl2);
 			man.addAxiom(anchorOntology, ax);
-		} else if (type == AxiomType.EQUIVALENT_OBJECT_PROPERTIES) {
+		} else if (isObjectProperty) {
 			OWLObjectProperty p1 = factory.getOWLObjectProperty(IRI.create(firstIRI));
 			OWLObjectProperty p2 = factory.getOWLObjectProperty(IRI.create(secondIRI));
 			OWLAxiom ax = factory.getOWLEquivalentObjectPropertiesAxiom(p1, p2);
 			man.addAxiom(anchorOntology, ax);
-		} else if (type == AxiomType.EQUIVALENT_DATA_PROPERTIES) {
+		} else if (isDataProperty) {
 			OWLDataProperty p1 = factory.getOWLDataProperty(IRI.create(firstIRI));
 			OWLDataProperty p2 = factory.getOWLDataProperty(IRI.create(secondIRI));
 			OWLAxiom ax = factory.getOWLEquivalentDataPropertiesAxiom(p1, p2);
 			man.addAxiom(anchorOntology, ax);
-		} else if (type == AxiomType.SUBCLASS_OF) {
-			OWLClass cl1 = factory.getOWLClass(IRI.create(firstIRI));
-			OWLClass cl2 = factory.getOWLClass(IRI.create(secondIRI));
-			OWLAxiom ax = factory.getOWLSubClassOfAxiom(cl1, cl2);
-			man.addAxiom(anchorOntology, ax);
+		} else {
+			System.out.println("Not able to find type of axiom");
 		}
 	}
 
@@ -153,8 +170,6 @@ public class CandidateFinderWithAnchors extends CandidateFinder {
 	}
 
 	public void addAnchorsToOntology(OWLOntology onto) {
-		OWLReasonerFactory reasonerFactory = new org.semanticweb.HermiT.ReasonerFactory();
-		OWLReasoner reasoner = reasonerFactory.createReasoner(onto);
 		OWLOntologyManager mergedManager = OWLManager.createOWLOntologyManager();
 		Set<OWLEquivalentClassesAxiom> equivalentClasses = anchorOntology.getAxioms(AxiomType.EQUIVALENT_CLASSES);
 		Set<OWLEquivalentObjectPropertiesAxiom> equivalentObjectProperties = anchorOntology
@@ -185,7 +200,6 @@ public class CandidateFinderWithAnchors extends CandidateFinder {
 			System.out.println(subClAxiom);
 			numAnchors++;
 		}
-//		reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
 		System.out.println("Added " + numAnchors + " anchors");
 	}
 
@@ -203,8 +217,10 @@ public class CandidateFinderWithAnchors extends CandidateFinder {
 //			createSuperClassMatrix();
 //			generateCandidatesByLookup();
 			generateClassCandidates();
-			generateObjectProperties();
+//			generateObjectProperties();
 //			generateDataProperties();
+			output.saveOutputFile();
+			System.out.println("saved to: " + output.returnAlignmentFile());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -226,102 +242,168 @@ public class CandidateFinderWithAnchors extends CandidateFinder {
 		System.out.println("Finished lookup ... ... ...");
 	}
 
-	/** This generates all class candidates **/
-	public void generateAllClassCandidates() {
+	/** This generates all class candidates then diambiguate **/
+	public void generateAllClassAndDisambiguateCandidates() {
 		int numCandidates = 0;
-		ArrayList<OWLClass> usedClassesFromSecondOntology = new ArrayList<>();
 
 		for (OWLClass classFromFirstOntology : onto1.getClassesInSignature()) {
-			double maxSimilarity = 0;
-			OWLClass candidate = null;
+			ArrayList<OWLClass> candidates = new ArrayList<>();
 			String iriFromFirstOntology = classFromFirstOntology.getIRI().toString();
 
 			for (OWLClass classFromSecondOntology : onto2.getClassesInSignature()) {
-//				if (usedClassesFromSecondOntology.contains(classFromSecondOntology)) {
-//					continue; // this class is already added
-//				}
 				String iriFromSecondOntology = classFromSecondOntology.getIRI().toString();
 
 				double iriCosine = 0;
-//					System.out.println("TESTING " + iriFromFirstOntology + " and " + iriFromSecondOntology);
 				iriCosine = Vector.cosineSimilarity(trainer.getWordVector(iriFromFirstOntology),
 						trainer.getWordVector(iriFromSecondOntology));
-//					System.out.println("TESTING " + iriFromFirstOntology + " and " + iriFromSecondOntology
-//							+ " gives a similarity of: " + iriCosine);
 				if (Double.isNaN(iriCosine)) {
 					iriCosine = 0;
 				}
 
-				double currentSimilarity = iriCosine; // max(iriCosine, labelCosine, commentCosine);
+				double currentSimilarity = iriCosine; //
 
-//				System.out.println("Testing: " + iriFromFirstOntology + " AND "
-//						+ classFromSecondOntology.getIRI().toString() + " SIMILARITY: " + currentSimilarity);
+//				double secondSuperClassOfFirst = Vector.cosineSimilarity(
+//						superClassMatrix.estimateTarget(trainer.getWordVector(iriFromSecondOntology)),
+//						trainer.getWordVector(iriFromFirstOntology));
 
-//				if (currentSimilarity > maxSimilarity) {
-//					maxSimilarity = currentSimilarity;
-//					candidate = classFromSecondOntology;
-//				}
+//				double firstSuperClassOfSecond = Vector.cosineSimilarity(
+//						superClassMatrix.estimateTarget(trainer.getWordVector(iriFromFirstOntology)),
+//						trainer.getWordVector(iriFromSecondOntology));
 
-				double secondSuperClassOfFirst = Vector.cosineSimilarity(
-						superClassMatrix.estimateTarget(trainer.getWordVector(iriFromSecondOntology)),
-						trainer.getWordVector(iriFromFirstOntology));
-
-				double firstSuperClassOfSecond = Vector.cosineSimilarity(
-						superClassMatrix.estimateTarget(trainer.getWordVector(iriFromFirstOntology)),
-						trainer.getWordVector(iriFromSecondOntology));
-
-				double subClassDist = Math.abs(firstSuperClassOfSecond - secondSuperClassOfFirst);
+//				double subClassDist = Math.abs(firstSuperClassOfSecond - secondSuperClassOfFirst);
 
 				if (currentSimilarity > distLimit) { // candidate
-					OWLEquivalentClassesAxiom equivalentClassAxiom = mappingsFactory
-							.getOWLEquivalentClassesAxiom(classFromFirstOntology, classFromSecondOntology);
-					mappingsManager.addAxiom(mappings, equivalentClassAxiom);
+					candidates.add(classFromSecondOntology);
+				}
 
-					OWLLiteral confidenceLiteral = mappingsFactory.getOWLLiteral(currentSimilarity);
-					OWLAnnotation annotation = mappingsFactory.getOWLAnnotation(mappingsFactory.getRDFSComment(),
-							confidenceLiteral);
-					OWLAnnotationAssertionAxiom annotationAssertionAxiom = mappingsFactory
-							.getOWLAnnotationAssertionAxiom(classFromFirstOntology.getIRI(), annotation);
+			} // end classFromSecondOntology
 
-					mappingsManager.addAxiom(mappings, annotationAssertionAxiom);
-//					usedClassesFromSecondOntology.add(classFromSecondOntology);
-
-					System.out.println("Found mapping: " + equivalentClassAxiom + " distance: " + currentSimilarity);
-//					System.out.println(
-//							iriFromFirstOntology + " subClassOf " + iriFromSecondOntology + " gives similarity: "
-//									+ Vector.cosineSimilarity(
-//											subClassMatrix.estimateTarget(trainer.getWordVector(iriFromSecondOntology)),
-//											trainer.getWordVector(iriFromFirstOntology)));
-//					System.out.println(
-//							iriFromSecondOntology + " subClassOf " + iriFromFirstOntology + " gives similarity: "
-//									+ Vector.cosineSimilarity(
-//											subClassMatrix.estimateTarget(trainer.getWordVector(iriFromFirstOntology)),
-//											trainer.getWordVector(iriFromSecondOntology)));
-					numCandidates++;
+			if (!candidates.isEmpty()) {
+				OWLClass candidate = disambiguateClassCandidates(classFromFirstOntology, candidates);
+				if (candidate == null) {
 					continue;
 				}
 
-//				if (secondSuperClassOfFirst > subClassSimilarity) {
-//					OWLSubClassOfAxiom ax = mappingsFactory.getOWLSubClassOfAxiom(classFromFirstOntology,
-//							classFromSecondOntology);
-//					mappingsManager.addAxiom(mappings, ax);
-//					System.out.println(iriFromFirstOntology + " subClassOf " + iriFromSecondOntology + ": "
-//							+ secondSuperClassOfFirst);
-//				}
+				double similarity = 0;
+				similarity = Vector.cosineSimilarity(trainer.getWordVector(iriFromFirstOntology),
+						trainer.getWordVector(candidate.getIRI().toString()));
+				if (Double.isNaN(similarity)) {
+					similarity = 0;
+				}
 
-//				if (firstSuperClassOfSecond > subClassSimilarity) {
-//					OWLSubClassOfAxiom ax = mappingsFactory.getOWLSubClassOfAxiom(classFromSecondOntology,
-//							classFromFirstOntology);
-//					mappingsManager.addAxiom(mappings, ax);
-//					System.out.println(iriFromSecondOntology + " subClassOf " + iriFromFirstOntology + ": "
-//							+ firstSuperClassOfSecond);
-//				}
+				try {
+					output.addClassMapping2Output(iriFromFirstOntology, candidate.getIRI().toString(), Utilities.EQ,
+							similarity);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+
+				OWLEquivalentClassesAxiom equivalentClassAxiom = mappingsFactory
+						.getOWLEquivalentClassesAxiom(classFromFirstOntology, candidate);
+				mappingsManager.addAxiom(mappings, equivalentClassAxiom);
+
+				OWLLiteral confidenceLiteral = mappingsFactory.getOWLLiteral(similarity);
+				OWLAnnotation annotation = mappingsFactory.getOWLAnnotation(mappingsFactory.getRDFSComment(),
+						confidenceLiteral);
+				OWLAnnotationAssertionAxiom annotationAssertionAxiom = mappingsFactory
+						.getOWLAnnotationAssertionAxiom(classFromFirstOntology.getIRI(), annotation);
+
+				mappingsManager.addAxiom(mappings, annotationAssertionAxiom);
+
+				System.out.println("Found mapping: " + equivalentClassAxiom + " distance: " + similarity);
+				numCandidates++;
+			}
+
+		} // finished classFromFirstOntology
+
+		System.out.println("Found " + numCandidates + " class candidates:");
+	} // finished generateAllClassCandidates()
+
+	/** This will add all possible class candidates to the alignment */
+	public void generateAllClassCandidates() {
+		int numCandidates = 0;
+
+		for (OWLClass classFromFirstOntology : onto1.getClassesInSignature()) {
+			ArrayList<OWLClass> candidates = new ArrayList<>();
+			String iriFromFirstOntology = classFromFirstOntology.getIRI().toString();
+
+			for (OWLClass classFromSecondOntology : onto2.getClassesInSignature()) {
+				String iriFromSecondOntology = classFromSecondOntology.getIRI().toString();
+
+				double iriCosine = 0;
+				iriCosine = Vector.cosineSimilarity(trainer.getWordVector(iriFromFirstOntology),
+						trainer.getWordVector(iriFromSecondOntology));
+				if (Double.isNaN(iriCosine)) {
+					iriCosine = 0;
+				}
+
+				double currentSimilarity = iriCosine; //
+
+				if (currentSimilarity > distLimit) { // candidate
+					try {
+						output.addClassMapping2Output(iriFromFirstOntology, classFromSecondOntology.getIRI().toString(),
+								Utilities.EQ, currentSimilarity);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					numCandidates++;
+				}
+
 			} // end classFromSecondOntology
 
 		} // finished classFromFirstOntology
 
 		System.out.println("Found " + numCandidates + " class candidates:");
 	} // finished generateAllClassCandidates()
+
+	/**
+	 * Using a combination of string similarity and vector similarity to improve
+	 * confidence
+	 **/
+	public OWLClass disambiguateClassCandidates(OWLClass classToMatch, ArrayList<OWLClass> candidates) {
+		String iriFromClassToMatch = normalizeIRI(classToMatch.getIRI().getFragment());
+		String labelFromClassToMatch = normalizeString(findAnnotation(classToMatch, onto1, "label"));
+		String commentFromClassToMatch = normalizeString(findAnnotation(classToMatch, onto1, "comment"));
+		double bestMatchScore = 0;
+		OWLClass currentBestCandidate = null;
+
+		for (OWLClass candidate : candidates) {
+			double cosineSimilarity = Vector.cosineSimilarity(trainer.getWordVector(classToMatch.getIRI().toString()),
+					trainer.getWordVector(candidate.getIRI().toString()));
+			if (Double.isNaN(cosineSimilarity)) {
+				cosineSimilarity = 0;
+			}
+
+			String iriFromCandidate = normalizeIRI(candidate.getIRI().getFragment());
+			String labelFromCandidate = normalizeString(findAnnotation(candidate, onto2, "label"));
+			String commentFromCandidate = normalizeString(findAnnotation(candidate, onto2, "comment"));
+
+			double matchScore;
+			double bestED;
+			double edMatch;
+
+			int iriED = EditDistance.editDistance(iriFromClassToMatch, iriFromCandidate, iriFromClassToMatch.length(),
+					iriFromCandidate.length());
+
+			if (labelFromCandidate != null && labelFromClassToMatch != null) {
+				int labelED = EditDistance.editDistance(labelFromClassToMatch, labelFromCandidate,
+						labelFromClassToMatch.length(), labelFromCandidate.length());
+				bestED = (double) Math.min(iriED, labelED);
+				edMatch = 1 - (bestED / 10);
+			} else {
+				bestED = (double) iriED;
+				edMatch = 1 - (bestED / 10);
+			}
+
+			matchScore = (edMatch + cosineSimilarity) / 2;
+			if (matchScore > bestMatchScore) {
+				bestMatchScore = matchScore;
+				currentBestCandidate = candidate;
+			}
+//			System.out.println("Disambiguating: " + classToMatch + " current: " + candidate + " score: " + matchScore);
+		}
+		return currentBestCandidate;
+	}
 
 	/** This generates the best class candidate for each class **/
 	public void generateClassCandidates() {
@@ -404,6 +486,12 @@ public class CandidateFinderWithAnchors extends CandidateFinder {
 //					usedClassesFromSecondOntology.add(classFromSecondOntology);
 
 				System.out.println("Found mapping: " + equivalentClassAxiom + " distance: " + maxSimilarity);
+				try {
+					output.addClassMapping2Output(iriFromFirstOntology, candidate.getIRI().toString(), Utilities.EQ,
+							maxSimilarity);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 //					System.out.println(
 //							iriFromFirstOntology + " subClassOf " + iriFromSecondOntology + " gives similarity: "
 //									+ Vector.cosineSimilarity(
@@ -425,37 +513,23 @@ public class CandidateFinderWithAnchors extends CandidateFinder {
 	/** This will generate all object properties **/
 	public void generateAllObjectProperties() {
 		int numCandidates = 0;
-		ArrayList<String> usedPropertiesFromSecondOntology = new ArrayList<>();
 
 		for (OWLObjectProperty propertyFromFirstOntology : onto1.getObjectPropertiesInSignature()) {
 			String iriFromFirstOntology = propertyFromFirstOntology.getIRI().toString();
 			double maxSimilarity = 0;
-			OWLObjectProperty candidate = null;
+			ArrayList<OWLObjectProperty> candidates = new ArrayList<>();
 
 			for (OWLObjectProperty propertyFromSecondOntology : onto2.getObjectPropertiesInSignature()) {
-//				if (usedPropertiesFromSecondOntology.contains(propertyFromSecondOntology.getIRI().toString())) {
-//					continue; // already used
-//				}
 				String iriFromSecondOntology = propertyFromSecondOntology.getIRI().toString();
 
 				double iriCosine = 0;
-//					System.out.println("testing: " + iriFromFirstOntology + " and " + iriFromSecondOntology);
 				iriCosine = Vector.cosineSimilarity(trainer.getWordVector(iriFromFirstOntology),
 						trainer.getWordVector(iriFromSecondOntology));
-//					System.out.println("TESTING " + iriFromFirstOntology + " and " + iriFromSecondOntology
-//							+ " gives a similarity of: " + iriCosine);
 				if (Double.isNaN(iriCosine)) {
 					iriCosine = 0;
 				}
 
 				double currentSimilarity = iriCosine;
-
-//				System.out.println(iriFromFirstOntology + " and " + iriFromSecondOntology + " got " + currentSimilarity);
-//
-//				if (currentSimilarity > maxSimilarity) {
-//					maxSimilarity = currentSimilarity;
-//					candidate = propertyFromSecondOntology;
-//				}
 
 				if (currentSimilarity > distLimit) {
 					OWLEquivalentObjectPropertiesAxiom equivalentClassAxiom = mappingsFactory
@@ -607,184 +681,76 @@ public class CandidateFinderWithAnchors extends CandidateFinder {
 
 		BasicConfigurator.configure();
 		OntologyReader reader = new OntologyReader();
-		reader.setFname("/home/ole/master/test_onto/ekaw.owl");
+		reader.setFname("/home/ole/master/test_onto/cmt.owl");
 		reader.readOntology();
 		OWLOntology onto1 = reader.getOntology();
 
-		reader.setFname("/home/ole/master/test_onto/iasted.owl");
+		reader.setFname("/home/ole/master/test_onto/ekaw.owl");
 		reader.readOntology();
 		OWLOntology onto2 = reader.getOntology();
 
 		// For training of ontology start:
 		OWLOntology mergedOnto = OntologyReader.mergeOntologies("merged", new OWLOntology[] { onto1, onto2 });
 		CandidateFinderWithAnchors finder = new CandidateFinderWithAnchors(onto1, onto2, mergedOnto,
-				currentDir + "/temp/out.txt", 0.85, 0.9);
+				currentDir + "/temp/out.txt", 0.82, 0.9);
 
 		/* Adding anchors, by using word embeddings or by manually adding them */
-		finder.findAnchors(); /* this will use word embeddings to find anchors */
+//		finder.findAnchors(); /* this will use word embeddings to find anchors */
 
-//		finder.addAnchor("http://ekaw#Event", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Event");
-//		finder.addAnchor("http://ekaw#Location", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Location");
-//		finder.addAnchor("http://ekaw#Organisation", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Organisation");
-//		finder.addAnchor("http://ekaw#Person", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Person");
-//		finder.addAnchor("http://ekaw#Research_Topic", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Research_Topic");
-//		finder.addAnchor("http://ekaw#Conference_Participant", AxiomType.EQUIVALENT_CLASSES,
-//				"http://ekaw2#Conference_Participant");
-//		finder.addAnchor("http://ekaw#Conference", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Conference");
-//		finder.addAnchor("http://ekaw#Paper", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Paper");
-//		finder.addAnchor("http://ekaw#Regular_Paper", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Regular_Paper");
-//		finder.addAnchor("http://ekaw#Agency_Staff_Member", AxiomType.EQUIVALENT_CLASSES,
-//				"http://ekaw2#Agency_Staff_Member");
-//		finder.addAnchor("http://ekaw#Accepted_Paper", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Accepted_Paper");
-//		finder.addAnchor("http://ekaw#Rejected_Paper", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Rejected_Paper");
-//		finder.addAnchor("http://ekaw#Evaluated_Paper", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Evaluated_Paper");
-//		finder.addAnchor("http://ekaw#Camera_Ready_Paper", AxiomType.EQUIVALENT_CLASSES,
-//				"http://ekaw2#Camera_Ready_Paper");
-//		finder.addAnchor("http://ekaw#Positive_Review", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Positive_Review");
-//		finder.addAnchor("http://ekaw#Workshop_Paper", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Workshop_Paper");
-//		finder.addAnchor("http://ekaw#Industrial_Paper", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Industrial_Paper");
-//		finder.addAnchor("http://ekaw#Conference_Paper", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Conference_Paper");
-//		finder.addAnchor("http://ekaw#Industrial_Session", AxiomType.EQUIVALENT_CLASSES,
-//				"http://ekaw2#Industrial_Session");
-//		finder.addAnchor("http://ekaw#Conference_Session", AxiomType.EQUIVALENT_CLASSES,
-//				"http://ekaw2#Conference_Session");
-//		finder.addAnchor("http://ekaw#Regular_Session", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Regular_Session");
-//		finder.addAnchor("http://ekaw#Poster_Session", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Poster_Session");
-//		finder.addAnchor("http://ekaw#Demo_Session", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Demo_Session");
-//		finder.addAnchor("http://ekaw#Session", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Session");
-//		finder.addAnchor("http://ekaw#Abstract", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Abstract");
-//		finder.addAnchor("http://ekaw#Document", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Document");
-//		finder.addAnchor("http://ekaw#Paper_Author", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Paper_Author");
-//		finder.addAnchor("http://ekaw#Conference_Trip", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Conference_Trip");
-//		finder.addAnchor("http://ekaw#Social_Event", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Social_Event");
-//		finder.addAnchor("http://ekaw#Tutorial_Abstract", AxiomType.EQUIVALENT_CLASSES,
-//				"http://ekaw2#Tutorial_Abstract");
-//		finder.addAnchor("http://ekaw#Submitted_Paper", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Submitted_Paper");
-//		finder.addAnchor("http://ekaw#Assigned_Paper", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Assigned_Paper");
-//		finder.addAnchor("http://ekaw#Negative_Review", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Negative_Review");
-//		finder.addAnchor("http://ekaw#Review", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Review");
-//		finder.addAnchor("http://ekaw#Neutral_Review", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Neutral_Review");
-//		finder.addAnchor("http://ekaw#Organising_Agency", AxiomType.EQUIVALENT_CLASSES,
-//				"http://ekaw2#Organising_Agency");
-//		finder.addAnchor("http://ekaw#Academic_Institution", AxiomType.EQUIVALENT_CLASSES,
-//				"http://ekaw2#Academic_Institution");
-//		finder.addAnchor("http://ekaw#Proceedings_Publisher", AxiomType.EQUIVALENT_CLASSES,
-//				"http://ekaw2#Proceedings_Publisher");
-//		finder.addAnchor("http://ekaw#Poster_Paper", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Poster_Paper");
-//		finder.addAnchor("http://ekaw#Demo_Paper", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Demo_Paper");
-//		finder.addAnchor("http://ekaw#Research_Institute", AxiomType.EQUIVALENT_CLASSES,
-//				"http://ekaw2#Research_Institute");
-//		finder.addAnchor("http://ekaw#Scientific_Event", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Scientific_Event");
-//		finder.addAnchor("http://ekaw#Invited_Talk_Abstract", AxiomType.EQUIVALENT_CLASSES,
-//				"http://ekaw2#Invited_Talk_Abstract");
-//		finder.addAnchor("http://ekaw#Workshop_Session", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Workshop_Session");
-//		finder.addAnchor("http://ekaw#Track", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Track");
-//		finder.addAnchor("http://ekaw#Invited_Talk", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Invited_Talk");
-//		finder.addAnchor("http://ekaw#Workshop", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Workshop");
-//		finder.addAnchor("http://ekaw#Tutorial", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Tutorial");
-//		finder.addAnchor("http://ekaw#Contributed_Talk", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Contributed_Talk");
-//		finder.addAnchor("http://ekaw#Demo_Chair", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Demo_Chair");
-//		finder.addAnchor("http://ekaw#Tutorial_Chair", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Tutorial_Chair");
-//		finder.addAnchor("http://ekaw#PC_Chair", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#PC_Chair");
-//		finder.addAnchor("http://ekaw#PC_Member", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#PC_Member");
-//		finder.addAnchor("http://ekaw#OC_Member", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#OC_Member");
-//		finder.addAnchor("http://ekaw#Proceedings", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Proceedings");
-//		finder.addAnchor("http://ekaw#Programme_Brochure", AxiomType.EQUIVALENT_CLASSES,
-//				"http://ekaw2#Programme_Brochure");
-//		finder.addAnchor("http://ekaw#Flyer", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Flyer");
-//		finder.addAnchor("http://ekaw#Web_Site", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Web_Site");
-//		finder.addAnchor("http://ekaw#Multi-author_Volume", AxiomType.EQUIVALENT_CLASSES,
-//				"http://ekaw2#Multi-author_Volume");
-//		finder.addAnchor("http://ekaw#Individual_Presentation", AxiomType.EQUIVALENT_CLASSES,
-//				"http://ekaw2#Individual_Presentation");
-//		finder.addAnchor("http://ekaw#OC_Chair", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#OC_Chair");
-//		finder.addAnchor("http://ekaw#Conference_Banquet", AxiomType.EQUIVALENT_CLASSES,
-//				"http://ekaw2#Conference_Banquet");
-//		finder.addAnchor("http://ekaw#Workshop_Chair", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Workshop_Chair");
-//		finder.addAnchor("http://ekaw#Conference_Proceedings", AxiomType.EQUIVALENT_CLASSES,
-//				"http://ekaw2#Conference_Proceedings");
-//		finder.addAnchor("http://ekaw#Session_Chair", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Session_Chair");
-//		finder.addAnchor("http://ekaw#University", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#University");
-//		finder.addAnchor("http://ekaw#Possible_Reviewer", AxiomType.EQUIVALENT_CLASSES,
-//				"http://ekaw2#Possible_Reviewer");
-//		finder.addAnchor("http://ekaw#Invited_Speaker", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Invited_Speaker");
-//		finder.addAnchor("http://ekaw#Presenter", AxiomType.EQUIVALENT_CLASSES, "http://ekaw2#Presenter");
-//		finder.addAnchor("http://ekaw#Early-Registered_Participant", AxiomType.EQUIVALENT_CLASSES,
-//				"http://ekaw2#Early-Registered_Participant");
-//		finder.addAnchor("http://ekaw#Late-Registered_Participant", AxiomType.EQUIVALENT_CLASSES,
-//				"http://ekaw2#Late-Registered_Participant");
-//
-//		finder.addAnchor("http://ekaw#hasReview", AxiomType.EQUIVALENT_OBJECT_PROPERTIES, "http://ekaw2#hasReview");
-//		finder.addAnchor("http://ekaw#writtenBy", AxiomType.EQUIVALENT_OBJECT_PROPERTIES, "http://ekaw2#writtenBy");
-//		finder.addAnchor("http://ekaw#updatedVersionOf", AxiomType.EQUIVALENT_OBJECT_PROPERTIES,
-//				"http://ekaw2#updatedVersionOf");
-//		finder.addAnchor("http://ekaw#volumeContainsPaper", AxiomType.EQUIVALENT_OBJECT_PROPERTIES,
-//				"http://ekaw2#volumeContainsPaper");
-//		finder.addAnchor("http://ekaw#partOfEvent", AxiomType.EQUIVALENT_OBJECT_PROPERTIES, "http://ekaw2#partOfEvent");
-//		finder.addAnchor("http://ekaw#hasEvent", AxiomType.EQUIVALENT_OBJECT_PROPERTIES, "http://ekaw2#hasEvent");
-//		finder.addAnchor("http://ekaw#presentationOfPaper", AxiomType.EQUIVALENT_OBJECT_PROPERTIES,
-//				"http://ekaw2#presentationOfPaper");
-//		finder.addAnchor("http://ekaw#eventOnList", AxiomType.EQUIVALENT_OBJECT_PROPERTIES, "http://ekaw2#eventOnList");
-//		finder.addAnchor("http://ekaw#listsEvent", AxiomType.EQUIVALENT_OBJECT_PROPERTIES, "http://ekaw2#listsEvent");
-//		finder.addAnchor("http://ekaw#inverse_of_partOf_7", AxiomType.EQUIVALENT_OBJECT_PROPERTIES,
-//				"http://ekaw2#inverse_of_partOf_7");
-//		finder.addAnchor("http://ekaw#references", AxiomType.EQUIVALENT_OBJECT_PROPERTIES, "http://ekaw2#references");
-//		finder.addAnchor("http://ekaw#referencedIn", AxiomType.EQUIVALENT_OBJECT_PROPERTIES,
-//				"http://ekaw2#referencedIn");
-//		finder.addAnchor("http://ekaw#reviewOfPaper", AxiomType.EQUIVALENT_OBJECT_PROPERTIES,
-//				"http://ekaw2#reviewOfPaper");
-//		finder.addAnchor("http://ekaw#organisedBy", AxiomType.EQUIVALENT_OBJECT_PROPERTIES, "http://ekaw2#organisedBy");
-//		finder.addAnchor("http://ekaw#organises", AxiomType.EQUIVALENT_OBJECT_PROPERTIES, "http://ekaw2#organises");
-//		finder.addAnchor("http://ekaw#paperPresentedAs", AxiomType.EQUIVALENT_OBJECT_PROPERTIES,
-//				"http://ekaw2#paperPresentedAs");
-//		finder.addAnchor("http://ekaw#reviewerOfPaper", AxiomType.EQUIVALENT_OBJECT_PROPERTIES,
-//				"http://ekaw2#reviewerOfPaper");
-//		finder.addAnchor("http://ekaw#locationOf", AxiomType.EQUIVALENT_OBJECT_PROPERTIES, "http://ekaw2#locationOf");
-//		finder.addAnchor("http://ekaw#heldIn", AxiomType.EQUIVALENT_OBJECT_PROPERTIES, "http://ekaw2#heldIn");
-//		finder.addAnchor("http://ekaw#publisherOf", AxiomType.EQUIVALENT_OBJECT_PROPERTIES, "http://ekaw2#publisherOf");
-//		finder.addAnchor("http://ekaw#scientificallyOrganises", AxiomType.EQUIVALENT_OBJECT_PROPERTIES,
-//				"http://ekaw2#scientificallyOrganises");
-//		finder.addAnchor("http://ekaw#scientificallyOrganisedBy", AxiomType.EQUIVALENT_OBJECT_PROPERTIES,
-//				"http://ekaw2#scientificallyOrganisedBy");
-//		finder.addAnchor("http://ekaw#authorOf", AxiomType.EQUIVALENT_OBJECT_PROPERTIES, "http://ekaw2#authorOf");
-//		finder.addAnchor("http://ekaw#hasUpdatedVersion", AxiomType.EQUIVALENT_OBJECT_PROPERTIES,
-//				"http://ekaw2#hasUpdatedVersion");
-//		finder.addAnchor("http://ekaw#technicallyOrganisedBy", AxiomType.EQUIVALENT_OBJECT_PROPERTIES,
-//				"http://ekaw2#technicallyOrganisedBy");
-//		finder.addAnchor("http://ekaw#technicallyOrganises", AxiomType.EQUIVALENT_OBJECT_PROPERTIES,
-//				"http://ekaw2#technicallyOrganises");
-//		finder.addAnchor("http://ekaw#paperInVolume", AxiomType.EQUIVALENT_OBJECT_PROPERTIES,
-//				"http://ekaw2#paperInVolume");
-//		finder.addAnchor("http://ekaw#coversTopic", AxiomType.EQUIVALENT_OBJECT_PROPERTIES, "http://ekaw2#coversTopic");
-//		finder.addAnchor("http://ekaw#topicCoveredBy", AxiomType.EQUIVALENT_OBJECT_PROPERTIES,
-//				"http://ekaw2#topicCoveredBy");
-//		finder.addAnchor("http://ekaw#reviewWrittenBy", AxiomType.EQUIVALENT_OBJECT_PROPERTIES,
-//				"http://ekaw2#reviewWrittenBy");
-//
+		/* Adding anchors by reading an alignments file */
+		AlignmentsReader alignmentsReader = new OAEIAlignmentsReader(
+				"/home/ole/master/test_onto/reference_alignments/cmt-ekaw.rdf", onto1, onto2);
+//		AlignmentsReader alignmentsReader = new OAEIAlignmentsReader(
+//				"/home/ole/master/logmap_standalone/output/logmap2_mappings.rdf", onto1, onto2);
+
+		double fractionOfMappings = 1;
+		List<MappingObjectStr> mappings = alignmentsReader.getMappings();
+		for (int i = 0; i < (mappings.size() * fractionOfMappings); i++) {
+			MappingObjectStr mapping = mappings.get(i);
+			finder.addAnchor(mapping.getIRIStrEnt1(), mapping.getIRIStrEnt2());
+		}
+
 		finder.addAnchorsToOntology(mergedOnto);
 		OntologyReader.writeOntology(mergedOnto, "file:/home/ole/master/test_onto/merged.owl", "owl");
 
 		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/merged.owl");
 		projector.projectOntology();
 		projector.saveModel("/home/ole/master/test_onto/merged.ttl");
-		
+
 		Walks walks = new Walks("/home/ole/master/test_onto/merged.ttl");
+//		Walks_rdf2vec walks = new Walks_rdf2vec();
+//		walks.loadFromRdfFile("/home/ole/master/test_onto/merged.ttl");
 		walks.generateWalks();
 		String walksFile = walks.getOutputFile();
-		
+
 		WordEmbeddingsTrainer trainer = new WordEmbeddingsTrainer(walksFile, currentDir + "/temp/out.txt");
 		trainer.train();
 //		trainer.loadModel();
 		finder.setTrainer(trainer);
 
-		finder.createMappings();
-		OWLOntology o = finder.getMappings();
-		OntologyReader.writeOntology(o, "file:/home/ole/master/test_onto/conference_mappings.owl", "owl");
-		// Finished for traning of ontology
-//		WordEmbeddingsTrainer trainer = new WordEmbeddingsTrainer("/home/ole/master/test_onto/merged.ttl",
-//				currentDir + "/temp/out.txt");
+		finder.createMappings(); // this runs the program
 
-//		finder.createMappings();
+		// evaluating the mappings
+		System.out.println("--------------------------------------------");
+		System.out.println("The alignments file used to provide anchors: ");
+		MappingsEvaluator evaluator = new ClassMappingsEvaluator(
+				"/home/ole/master/test_onto/reference_alignments/cmt-ekaw.rdf",
+				"/home/ole/master/logmap_standalone/output/logmap2_mappings.rdf", onto1, onto2);
 
+		System.out.println("Precision: " + evaluator.calculatePrecision());
+		System.out.println("Recall: " + evaluator.calculateRecall());
+		System.out.println("F-measure: " + evaluator.calculateFMeasure());
+		
+		System.out.println("--------------------------------------------");
+		
+		System.out.println("This system:");
+		evaluator = new ClassMappingsEvaluator(
+				"/home/ole/master/test_onto/reference_alignments/cmt-ekaw.rdf",
+				finder.output.returnAlignmentFile().getFile(), onto1, onto2);
+
+		System.out.println("Precision: " + evaluator.calculatePrecision());
+		System.out.println("Recall: " + evaluator.calculateRecall());
+		System.out.println("F-measure: " + evaluator.calculateFMeasure());
+		System.out.println("--------------------------------------------");
 	}
 }

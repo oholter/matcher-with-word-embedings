@@ -54,30 +54,13 @@ public abstract class CandidateFinder {
 	}
 
 	public String normalizeIRI(String s) {
-		if (s != null) {
-			s = s.replaceAll(String.format("%s|%s|%s", "(?<=[A-Z])(?=[A-Z][a-z])", "(?<=[^A-Z])(?=[A-Z])",
-					"(?<=[A-Za-z])(?=[^A-Za-z])"), " "); // mixedCase -> multiple words
-			s = s.toLowerCase(); // case normalization
-			s = s.replaceAll("[_-]", " "); // link normalization
-			s = s.replaceAll("[1-9.,]", ""); // remove numbers and punctuation
-			s = s.replaceAll("\\s", " "); // blank normalization
-			s = s.replaceAll("\\s+", " "); // only one blank
-			s = s.trim();
-		}
-		return s;
+		return StringUtils.normalizeIRI(s);
 	}
-
+	
 	public String normalizeString(String s) {
-		if (s != null) {
-			s = s.toLowerCase(); // case normalization
-			s = s.replaceAll("[_-]", " "); // link normalization
-			s = s.replaceAll("[.,]", ""); // remove punctuation
-			s = s.replaceAll("\\s", " "); // blank normalization
-			s = s.replaceAll("\\s+", " "); // only one blank
-			s = s.trim();
-		}
-		return s;
+		return StringUtils.normalizeString(s);
 	}
+	
 
 	public String findAnnotation(OWLNamedObject c, OWLOntology o, String type) {
 		String label = null;

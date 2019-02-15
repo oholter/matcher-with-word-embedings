@@ -264,10 +264,10 @@ public class CandidateFinderWithPretrainedWordVectors extends CandidateFinder {
 	public static void main(String[] args) throws Exception {
 		Logger log = LoggerFactory.getLogger(WordEmbeddingsTrainer.class);
 		String currentDir = new File(ClassLoader.getSystemClassLoader().getResource("").getPath()).toString();
-		String firstOntology = "/home/ole/master/test_onto/sofsem.owl";
-		String secondOntology = "/home/ole/master/test_onto/ekaw.owl";
+		String firstOntology = "/home/ole/master/test_onto/edas.owl";
+		String secondOntology = "/home/ole/master/test_onto/micro.owl";
 		String outputFile = "file:/home/ole/master/test_onto/conference_mappings.owl";
-		double distLimit = 0.8;
+		double distLimit = 0.7;
 		BasicConfigurator.configure();
 
 		OntologyReader reader = new OntologyReader();

@@ -1,29 +1,30 @@
 package org.matcher.com;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class Edge {
-	int SUBCLASS_WEIGHT = 6;
-	int EQUIVALENT_CLASS_WEIGHT = 10;
+	int SUBCLASS_WEIGHT = 5; // 5
+	int SUPERCLASS_WEIGHT = 5;
 	int DISJOINT_CLASS_WEIGHT = 0;
-	int A_SUB_R_SOME_B_WEIGHT = 6;
-	int A_SUB_R_ONLY_B_WEIGHT = 5;
+	int A_SUB_R_SOME_B_WEIGHT = 0;
+	int A_SUB_R_ONLY_B_WEIGHT = 0;
 	int INVERSE_OF_WEIGHT = 0;
-	int RANGE_DOMAIN_WEIGHT = 3;
-	int TYPE_WEIGHT = 2;
-	int NORMAL_PROPERTY_WEIGHT = 4;
-	int RANDOM_JUMP_WEIGHT = 1;
+	int RANGE_DOMAIN_WEIGHT = 0;
+	int TYPE_WEIGHT = 5; // 5?
+	int NORMAL_PROPERTY_WEIGHT = 5;
+	int RANDOM_JUMP_WEIGHT = 2; // 10
 	
 	String label;
 	List<Node> outNodes;
 	int weight;
+	List<String> synonyms;
 	
 	public Edge(String label) { // todo: add subRsome/only
 		this.label = label;
 		if (label.equals("http://www.w3.org/2000/01/rdf-schema#subClassOf")) {
 			weight = SUBCLASS_WEIGHT;
-		} else if (label.equals("http://www.w3.org/2002/07/owl#equivalentClass")) {
-			weight = EQUIVALENT_CLASS_WEIGHT;
 		} else if (label.equals("http://www.w3.org/2002/07/owl#disjointClass")) {
 			weight = DISJOINT_CLASS_WEIGHT;
 		} else if (label.equals("http://www.w3.org/2000/01/rdf-schema#inverseOf")) {
@@ -32,8 +33,28 @@ public class Edge {
 			weight = RANGE_DOMAIN_WEIGHT;
 		} else if (label.equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")) {
 			weight = TYPE_WEIGHT;
+		} else if (label.equals("http://www.w3.org/2000/01/rdf-schema#superClassOf")) {
+			weight = SUPERCLASS_WEIGHT;
 		} else { // other  
 			weight = NORMAL_PROPERTY_WEIGHT;
 		}
 	}
+	
+	public List<String> findSynonyms() {
+		ArrayList<String> synonyms = new ArrayList<>();
+		synonyms.add(label);
+		synonyms.add(StringUtils.normalizeFullIRI(label)); // also adding the plane text representation of the URI
+		return synonyms;
+	}
+	
+	/** assuming we have synonyms, return any of the names **/
+	public String getSomeName() {
+		if (synonyms == null) { // lazy
+			synonyms = findSynonyms();
+		}
+		int numSynonyms = synonyms.size();
+		Random randomNumberGenerator = new Random();
+		int randomIndex = randomNumberGenerator.nextInt(numSynonyms);
+		return synonyms.get(randomIndex);
+	}	
 }

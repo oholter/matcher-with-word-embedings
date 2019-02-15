@@ -30,6 +30,11 @@ public class WordEmbeddingsTrainer {
 	String outputFilePath;
 	Word2Vec model;
 	int numEpocs = 1;
+	int windowSize = 15;
+	int numIterations = 1;
+	int layerSize = 100;
+	int minWordFrequency = 5;
+	int seed = 42; // 42
 
 	public WordEmbeddingsTrainer(String inputFile, String outputFile) throws Exception {
 		inputFilePath = new File(inputFile).getAbsolutePath();
@@ -55,7 +60,7 @@ public class WordEmbeddingsTrainer {
 		TokenizerFactory t = new DefaultTokenizerFactory();
 //		t.setTokenPreProcessor(new CommonPreprocessor());
 		log.info("Building model....");
-		model = new Word2Vec.Builder().minWordFrequency(5).iterations(1).layerSize(100).seed(42).windowSize(5)
+		model = new Word2Vec.Builder().minWordFrequency(minWordFrequency).iterations(numIterations).layerSize(layerSize).seed(seed).windowSize(windowSize)
 				.iterate(iter).tokenizerFactory(t).build();
 		log.info("Fitting w2v model");
 		System.out.println("fitting model");

@@ -32,8 +32,8 @@ public class Walks {
 		REPO_LOCATION = CURRENT_DIR + "/repo";
 //	this.walkGenerator = new WalkGenerator();
 		this.walkGenerator = new WalkGeneratorRand();
-		this.numWalks = 50;
-		this.walkDepth = 4;
+		this.numWalks = 100;
+		this.walkDepth = 3;
 		this.numThreads = 8;
 		this.offset = 0;
 		this.classLimit = 100000;

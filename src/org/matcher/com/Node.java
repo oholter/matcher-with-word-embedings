@@ -18,6 +18,14 @@ public class Node {
 	public List<String> findSynonyms() {
 		ArrayList<String> synonyms = new ArrayList<>();
 		synonyms.add(label);
+		synonyms.add(StringUtils.normalizeFullIRI(label)); // also adding the plane text representation of the URI
+		synonyms.add(StringUtils.normalizeLiteral(StringUtils.normalizeFullIRI(label))); // plane text using _ in stead of blank
+//		String[] words = StringUtils.normalizeLiteral(StringUtils.normalizeFullIRI(label)).split("");
+//		if (words.length > 1) {
+//			for (String s : words) {
+//				synonyms.add(s);
+//			}
+//		} gives worse performance
 		if (edges != null) {
 			for (Edge e : edges) {
 				if (e.label.equals("http://www.w3.org/2000/01/rdf-schema#label")
@@ -32,13 +40,25 @@ public class Node {
 	}
 
 	/** assuming we have synonyms, return any of the names **/
+//	public String getSomeName() {
+//		if (synonyms == null) { // lazy
+//			synonyms = findSynonyms();
+//		}
+//		int numSynonyms = synonyms.size();
+//		Random randomNumberGenerator = new Random();
+//		int randomIndex = randomNumberGenerator.nextInt(numSynonyms);
+//		return synonyms.get(randomIndex);
+//	}
+	
+	/** adding all synonyms every time **/
 	public String getSomeName() {
 		if (synonyms == null) { // lazy
 			synonyms = findSynonyms();
 		}
-		int numSynonyms = synonyms.size();
-		Random randomNumberGenerator = new Random();
-		int randomIndex = randomNumberGenerator.nextInt(numSynonyms);
-		return synonyms.get(randomIndex);
+		String returnString = "";
+		for (String synonym : synonyms) {
+			returnString += synonym + " ";
+		}
+		return returnString;
 	}
 }
