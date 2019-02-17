@@ -1,6 +1,8 @@
-package org.trainer.com;
+package mappings.trainer;
 
 import java.util.Random;
+
+import mappings.utils.VectorUtils;
 
 public class GradientDescent {
 
@@ -48,8 +50,8 @@ public class GradientDescent {
 			double[] x = xs[i];
 			double[] z = zs[i];
 
-			double[] wx = Vector.transform(w, x);
-			double dist = Vector.squaredEucledianDistance(wx, z);
+			double[] wx = VectorUtils.transform(w, x);
+			double dist = VectorUtils.squaredEucledianDistance(wx, z);
 			totError += dist;
 		}
 
@@ -163,14 +165,14 @@ public class GradientDescent {
 		System.out.println("Error: " + gd.calculateError());
 
 		System.out.println("Calculating vectorB1: ");
-		double[] vectorB1Calc = Vector.transform(gd.getMatrix(), vectorA1);
+		double[] vectorB1Calc = VectorUtils.transform(gd.getMatrix(), vectorA1);
 		System.out.println(vectorB1Calc[0]);
 		System.out.println(vectorB1Calc[1]);
 		System.out.println(vectorB1Calc[2]);
 		System.out.println(vectorB1Calc[3]);
 
 		System.out.println("Calculating vectorB1: ");
-		double[] vectorB2Calc = Vector.transform(gd.getMatrix(), vectorA2);
+		double[] vectorB2Calc = VectorUtils.transform(gd.getMatrix(), vectorA2);
 		System.out.println(vectorB2Calc[0]);
 		System.out.println(vectorB2Calc[1]);
 		System.out.println(vectorB2Calc[2]);

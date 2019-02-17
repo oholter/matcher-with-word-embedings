@@ -1,11 +1,12 @@
-package org.matcher.com;
+package mappings.candidate_finder;
 
 import org.semanticweb.owlapi.model.AxiomType;
 import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
-import org.trainer.com.OntologyReader;
+
+import mappings.trainer.OntologyReader;
 
 public class SimpleOwlReasoner {
 	public static void main(String[] args) throws Exception {

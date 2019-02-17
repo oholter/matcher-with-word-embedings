@@ -1,8 +1,8 @@
-package org.trainer.com;
+package mappings.utils;
 
 import java.util.ArrayList;
 
-public class Vector {
+public class VectorUtils {
 	public static double vectorLength(double[] vec) {
 		double len = 0;
 		for (int i = 0; i < vec.length; i++) {

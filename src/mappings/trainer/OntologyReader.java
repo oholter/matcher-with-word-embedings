@@ -1,4 +1,4 @@
-package org.trainer.com;
+package mappings.trainer;
 
 import java.io.File;
 import java.util.HashSet;

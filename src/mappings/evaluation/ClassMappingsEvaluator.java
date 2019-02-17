@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.semanticweb.owlapi.model.OWLOntology;
-import org.trainer.com.OntologyReader;
 
 import io.OAEIAlignmentsReader;
-import io.Utilities;
 import mapping.object.MappingObjectStr;
+import mappings.trainer.OntologyReader;
+import mappings.utils.AlignmentUtilities;
 
 /**
  * this mappings evaluator does only consider class alignment when calculating
@@ -37,7 +37,7 @@ public class ClassMappingsEvaluator extends MappingsEvaluator {
 	public ArrayList<MappingObjectStr> removeAllProperties(List<MappingObjectStr> mappings) {
 		ArrayList<MappingObjectStr> newAlignment = new ArrayList<>();
 		for (MappingObjectStr mapping : mappings) {
-			if (mapping.getTypeOfMapping() == Utilities.CLASSES) {
+			if (mapping.getTypeOfMapping() == AlignmentUtilities.CLASSES) {
 				newAlignment.add(mapping);
 			}
 			else {
@@ -69,11 +69,9 @@ public class ClassMappingsEvaluator extends MappingsEvaluator {
 		OWLOntology onto2 = reader.getOntology();
 
 		MappingsEvaluator evaluator = new ClassMappingsEvaluator(
-				"/home/ole/master/test_onto/reference_alignments/cmt-ekaw.rdf", "/tmp/mappings8686184173808360372.rdf",
+				"/home/ole/master/test_onto/reference_alignments/cmt-ekaw.rdf", "/tmp/mappings8471799167972483990.rdf",
 				onto1, onto2);
-		System.out.println("Precision: " + evaluator.calculatePrecision());
-		System.out.println("Recall: " + evaluator.calculateRecall());
-		System.out.println("F-measure " + evaluator.calculateFMeasure());
+		evaluator.printEvaluation();
 	}
 
 }

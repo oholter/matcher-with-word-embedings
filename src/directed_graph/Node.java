@@ -1,8 +1,10 @@
-package org.matcher.com;
+package directed_graph;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+import mappings.utils.StringUtils;
 
 public class Node {
 	public String label;

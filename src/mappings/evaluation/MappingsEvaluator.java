@@ -88,6 +88,12 @@ public class MappingsEvaluator {
 		double nominator = precision * recall;
 		return nominator / denominator;
 	}
+	
+	public void printEvaluation() {
+		System.out.println("Precision: " + calculatePrecision());
+		System.out.println("Recall: " + calculateRecall());
+		System.out.println("F-measure: " + calculateFMeasure());
+	}
 
 	public static void main(String[] args) throws Exception {
 		MappingsEvaluator evaluator = new MappingsEvaluator(

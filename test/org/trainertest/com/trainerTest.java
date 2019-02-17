@@ -8,9 +8,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.trainer.com.GradientDescent;
-import org.trainer.com.Vector;
-import org.trainer.com.WordEmbeddingsTrainer;
+
+import mappings.trainer.GradientDescent;
+import mappings.trainer.WordEmbeddingsTrainer;
+import mappings.utils.VectorUtils;
 
 public class trainerTest {
 	// public double[] sumVectors(Collection<String> words)
@@ -116,8 +117,8 @@ public class trainerTest {
 		vectors.add(trainer.doubleArray2ArrayList(cmtPersonVector));
 		vectors.add(trainer.doubleArray2ArrayList(ekawTrackVector));
 
-		double[] firstSum = Vector.addTwoVectors(ekawPersonVector, cmtPersonVector);
-		double[] secondSum = Vector.addTwoVectors(firstSum, ekawTrackVector);
+		double[] firstSum = VectorUtils.addTwoVectors(ekawPersonVector, cmtPersonVector);
+		double[] secondSum = VectorUtils.addTwoVectors(firstSum, ekawTrackVector);
 		double[] realAverages = new double[secondSum.length];
 		for (int i = 0; i < realAverages.length; i++) {
 			realAverages[i] = secondSum[i] / 3;
@@ -165,7 +166,7 @@ public class trainerTest {
 	@Test
 	public void cosineSimilarityShouldBe1ForVectorsWithSameLengthAndDirection() {
 		double[] ekawPersonVector = trainer.getModel().getWordVector("http://ekaw#Person");
-		double cosine = Vector.cosineSimilarity(ekawPersonVector, ekawPersonVector);
+		double cosine = VectorUtils.cosineSimilarity(ekawPersonVector, ekawPersonVector);
 		assertEquals(1, cosine);
 	}
 
@@ -173,7 +174,7 @@ public class trainerTest {
 	public void cosineSimilarityShouldBeNegativeOneForOppositeVectors() {
 		double[] firstVector = { 0, 5 };
 		double[] secondVector = { 0, -5 };
-		double cosine = Vector.cosineSimilarity(firstVector, secondVector);
+		double cosine = VectorUtils.cosineSimilarity(firstVector, secondVector);
 		assertEquals(-1, cosine);
 	}
 
@@ -181,7 +182,7 @@ public class trainerTest {
 	public void cosineSimilarityShouldBeZeroForOrthogonalVectors() {
 		double[] firstVector = { 0, 5 };
 		double[] secondVector = { 5, 0 };
-		double cosine = Vector.cosineSimilarity(firstVector, secondVector);
+		double cosine = VectorUtils.cosineSimilarity(firstVector, secondVector);
 		assertEquals(0, cosine);
 	}
 
@@ -191,11 +192,11 @@ public class trainerTest {
 		double[] secondVector = { -5, 0 };
 		double[] thirdVector = { 4, -6 };
 
-		double len1 = Vector.vectorLength(firstVector);
+		double len1 = VectorUtils.vectorLength(firstVector);
 		assertEquals(5.0, len1, 0.0001);
-		double len2 = Vector.vectorLength(secondVector);
+		double len2 = VectorUtils.vectorLength(secondVector);
 		assertEquals(5.0, len2, 0.0001);
-		double len3 = Vector.vectorLength(thirdVector);
+		double len3 = VectorUtils.vectorLength(thirdVector);
 		assertEquals(7.2111, len3, 0.001);
 	}
 
@@ -219,16 +220,16 @@ public class trainerTest {
 		gradientDescent.solve();
 		System.out.println("ERROR: " + gradientDescent.calculateError());
 
-		System.out.println("Cosine for http://ekaw#Paper_Author and http://cmt#Author is : " + Vector.cosineSimilarity(
-				Vector.transform(gradientDescent.getMatrix(), trainer.getWordVector("http://ekaw#Paper_Author")),
+		System.out.println("Cosine for http://ekaw#Paper_Author and http://cmt#Author is : " + VectorUtils.cosineSimilarity(
+				VectorUtils.transform(gradientDescent.getMatrix(), trainer.getWordVector("http://ekaw#Paper_Author")),
 				trainer.getWordVector("http://cmt#Author")));
 		
-		System.out.println("Cosine for http://ekaw#reviewWrittenBy and http://cmt#writtenBy is : " + Vector.cosineSimilarity(
-				Vector.transform(gradientDescent.getMatrix(), trainer.getWordVector("http://ekaw#reviewWrittenBy")),
+		System.out.println("Cosine for http://ekaw#reviewWrittenBy and http://cmt#writtenBy is : " + VectorUtils.cosineSimilarity(
+				VectorUtils.transform(gradientDescent.getMatrix(), trainer.getWordVector("http://ekaw#reviewWrittenBy")),
 				trainer.getWordVector("http://cmt#writtenBy")));
 		
 
-		assertEquals(0, Vector.squaredEucledianDistance(Vector.transform(gradientDescent.getMatrix(), ekawVectors[0]),
+		assertEquals(0, VectorUtils.squaredEucledianDistance(VectorUtils.transform(gradientDescent.getMatrix(), ekawVectors[0]),
 				cmtVectors[0]), 0.1);
 	}
 

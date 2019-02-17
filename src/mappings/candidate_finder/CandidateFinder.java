@@ -1,4 +1,4 @@
-package org.matcher.com;
+package mappings.candidate_finder;
 
 import org.semanticweb.owlapi.model.OWLAnnotationAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLDataFactory;
@@ -6,7 +6,9 @@ import org.semanticweb.owlapi.model.OWLLiteral;
 import org.semanticweb.owlapi.model.OWLNamedObject;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
-import org.trainer.com.WordEmbeddingsTrainer;
+
+import mappings.trainer.WordEmbeddingsTrainer;
+import mappings.utils.StringUtils;
 
 public abstract class CandidateFinder {
 	protected OWLOntology onto1;

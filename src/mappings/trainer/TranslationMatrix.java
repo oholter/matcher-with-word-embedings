@@ -1,4 +1,4 @@
-package org.trainer.com;
+package mappings.trainer;
 
 import java.io.IOException;
 import java.util.ArrayList;

@@ -1,15 +1,17 @@
-package org.matcher.com;
+package directed_graph;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
+import mappings.utils.StringUtils;
+
 public class WeightedDirectedGraph {
-	List<Node> nodes;
-	List<Edge> edges;
-	Node head;
-	int walkDepth;
+	public List<Node> nodes;
+	public List<Edge> edges;
+	public Node head;
+	public int walkDepth;
 	int RANDOM_JUMP_WEIGHT = 1;
 	String[] SYNONYM_EDGES = { "http://www.w3.org/2000/01/rdf-schema#label",
 			"http://www.w3.org/2000/01/rdf-schema#comment" };
@@ -186,6 +188,14 @@ public class WeightedDirectedGraph {
 	}
 
 	public String generateRandomWalk() {
+		if (head != null) {
+			return generateRandomWalk(head, 1);
+		} else {
+			return null;
+		}
+	}
+	
+	public String generateRandomWalkWithSynonyms() {
 		if (head != null) {
 			return generateRandomWalkWithSynonyms(head, 1);
 		} else {

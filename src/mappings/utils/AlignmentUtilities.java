@@ -16,9 +16,9 @@
  *    You should have received a copy of the GNU Lesser General Public License
  *    along with LogMap.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
-package io;
+package mappings.utils;
 
-public class Utilities {
+public class AlignmentUtilities {
 	
 	
 	//LOGMAP VERSION

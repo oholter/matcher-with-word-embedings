@@ -22,6 +22,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.net.URL;
 
+import mappings.utils.AlignmentUtilities;
+
 
 /**
  * Class used as ouptut for the OAEI challenge
@@ -104,7 +106,7 @@ public class OAEIAlignmentOutput extends OutputMappingsFormat {
 	}
 	
 	public void addInstanceMapping2Output(String iri_str1, String iri_str2, double conf)  throws Exception {
-		addMapping2Output(iri_str1, iri_str2, Utilities.EQ, conf);
+		addMapping2Output(iri_str1, iri_str2, AlignmentUtilities.EQ, conf);
 	}
 	
 	
@@ -119,12 +121,12 @@ public class OAEIAlignmentOutput extends OutputMappingsFormat {
 			
 		fw.write("\t\t<measure rdf:datatype=\"xsd:float\">" + getRoundConfidence(conf) + "</measure>\n");
 		
-		if (dir_mapping==Utilities.EQ){
+		if (dir_mapping==AlignmentUtilities.EQ){
 			
 			fw.write("\t\t<relation>=</relation>\n");
 			
 		}
-		else if (dir_mapping==Utilities.L2R){ //Subclass
+		else if (dir_mapping==AlignmentUtilities.L2R){ //Subclass
 			
 			fw.write("\t\t<relation>&lt;</relation>\n");
 		}

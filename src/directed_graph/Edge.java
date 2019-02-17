@@ -1,8 +1,10 @@
-package org.matcher.com;
+package directed_graph;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+import mappings.utils.StringUtils;
 
 public class Edge {
 	int SUBCLASS_WEIGHT = 5; // 5
@@ -16,9 +18,9 @@ public class Edge {
 	int NORMAL_PROPERTY_WEIGHT = 5;
 	int RANDOM_JUMP_WEIGHT = 2; // 10
 	
-	String label;
-	List<Node> outNodes;
-	int weight;
+	public String label;
+	public List<Node> outNodes;
+	public int weight;
 	List<String> synonyms;
 	
 	public Edge(String label) { // todo: add subRsome/only

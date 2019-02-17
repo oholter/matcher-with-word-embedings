@@ -1,4 +1,4 @@
-package org.matcher.com;
+package mappings.walks_generator;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -8,7 +8,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -16,7 +15,6 @@ import java.util.List;
 import org.apache.log4j.BasicConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.trainer.com.WordEmbeddingsTrainer;
 
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.query.Dataset;
@@ -34,15 +32,16 @@ import com.hp.hpl.jena.update.UpdateAction;
 import com.hp.hpl.jena.update.UpdateFactory;
 import com.hp.hpl.jena.update.UpdateRequest;
 
-public class RandomWalksGenerator {
-	private String inputFile;
-	private String outputFilePath;
+import directed_graph.Edge;
+import directed_graph.Node;
+import directed_graph.WeightedDirectedGraph;
+import mappings.trainer.WordEmbeddingsTrainer;
+import mappings.utils.StringUtils;
+
+public class Owl2vecWalksGenerator extends WalksGenerator {
+
 	private File outputFile;
-	private int walkDepth;
-	private int limit;
-	private int offset = 0;
-	private int numberOfWalks;
-	private int numberOfThreads;
+
 	private Dataset dataset;
 	private OntModel ontModel;
 	private Model model;
@@ -53,21 +52,17 @@ public class RandomWalksGenerator {
 	private String adjacentClassesQuery;
 	private String adjacentSubClassOfQuery;
 	int numberOfProcessedClasses = 0;
-	int classLimit;
+	int childLimit;
 	List<String> allClasses;
 	String[] UNDESIRED_CLASSES = { "http://www.w3.org/2002/07/owl#Thing", "http://www.w3.org/2002/07/owl#Class" };
 	String[] UNDESIRED_PROPERTIES = { "http://www.w3.org/2002/07/owl#inverseOf" };
 //			"http://www.w3.org/1999/02/22-rdf-syntax-ns#type" };
 
-	public RandomWalksGenerator(String in, String outputFilePath, int numThreads, int walkDepth, int classLimit,
-			int limit, int nmWalks) {
-		this.inputFile = in;
-		this.outputFilePath = outputFilePath;
-		this.walkDepth = walkDepth;
-		this.limit = limit;
-		this.classLimit = classLimit;
-		this.numberOfThreads = numThreads;
-		this.numberOfWalks = nmWalks;
+
+	public Owl2vecWalksGenerator(String in, String outputFilePath, int numThreads, int walkDepth, int limit, int nmWalks,
+			int offset, int childLimit) {
+		super(in, outputFilePath, numThreads, walkDepth, limit, nmWalks, offset);
+		this.childLimit = childLimit;
 		this.adjacentPropertiesQuery = "SELECT DISTINCT ?p WHERE {$CLASS$ ?p ?o .} LIMIT " + limit;
 		this.adjacentClassesQuery = "SELECT DISTINCT ?o WHERE { $CLASS$ $PROPERTY$ ?o . } LIMIT " + limit;
 		this.adjacentSubClassOfQuery = "SELECT DISTINCT ?s WHERE { ?s <http://www.w3.org/2000/01/rdf-schema#subClassOf> $CLASS$ . } LIMIT "
@@ -150,8 +145,7 @@ public class RandomWalksGenerator {
 			for (int classNum = start; classNum < end; classNum++) {
 				lines = new ArrayList<>();
 				String className = allClasses.get(classNum);
-				WeightedDirectedGraph graph = createWeightedDirectedGraphWithSuperClassNodes(className);
-//				WeightedDirectedGraph graph = createWeightedDirectedGraph(className);
+				WeightedDirectedGraph graph = createWeightedDirectedGraph(className);
 				for (int i = 0; i < numberOfWalks; i++) {
 					String randomWalk = graph.generateRandomWalk();
 					lines.add(randomWalk);
@@ -164,7 +158,7 @@ public class RandomWalksGenerator {
 	public void walkTheGraph() {
 		allClasses = selectAllClasses();
 		System.out.println("Random walks of depth: " + walkDepth);
-		WeightedDirectedGraph g = createWeightedDirectedGraphWithSuperClassNodes(allClasses.get(4));
+		WeightedDirectedGraph g = createWeightedDirectedGraph(allClasses.get(4));
 		g.printNodes();
 		g.printSynonyms();
 
@@ -187,7 +181,7 @@ public class RandomWalksGenerator {
 	public List<String> selectAllClasses() {
 		List<String> allClasses = new ArrayList<String>();
 		String queryString = "SELECT DISTINCT ?s WHERE {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> . }"
-				+ "OFFSET " + offset + " LIMIT " + classLimit;
+				+ " OFFSET " + offset + " LIMIT " + limit;
 //		String queryString = "SELECT DISTINCT ?s WHERE {?s ?p ?o  " + " } " 
 //		System.out.println(queryString);
 		Query query = QueryFactory.create(queryString);
@@ -242,16 +236,7 @@ public class RandomWalksGenerator {
 		}
 	}
 
-	public boolean isUri(String string) {
-		URI uri;
-		try {
-			uri = URI.create(string);
-			return true;
-		} catch (Exception e) {
-			return false;
-//			return string.contains("http://");
-		}
-	}
+
 
 	public static void cleanDataSet(String rdfFile) {
 		Model m = ModelFactory.createDefaultModel();
@@ -274,7 +259,7 @@ public class RandomWalksGenerator {
 
 	public List<Edge> findAdjacentProperties(String className) {
 		ArrayList<Edge> propertyList = new ArrayList<>();
-		if (!isUri(className)) { // could be a literal
+		if (!StringUtils.isUri(className)) { // could be a literal
 			return null;
 		}
 		String queryString = adjacentPropertiesQuery.replace("$CLASS$", "<" + className + ">");
@@ -320,7 +305,7 @@ public class RandomWalksGenerator {
 			QuerySolution sol = res.next();
 			RDFNode currentNode = sol.get("?o");
 			String currentClass = sol.get("?o").toString();
-			if (!isUri(currentClass)) {
+			if (!StringUtils.isUri(currentClass)) {
 				currentClass = normalizeLiteral(currentClass);
 //				System.out.println("Not uri: " + currentClass);
 			}
@@ -388,7 +373,7 @@ public class RandomWalksGenerator {
 	}
 
 	/** Generates an instance of the graph using an initial class **/
-	public WeightedDirectedGraph createWeightedDirectedGraphWithSuperClassNodes(String firstClassName) {
+	public WeightedDirectedGraph createWeightedDirectedGraph(String firstClassName) {
 		WeightedDirectedGraph graph = new WeightedDirectedGraph();
 		Node headNode = new Node(firstClassName, graph);
 		graph.head = headNode;
@@ -396,7 +381,6 @@ public class RandomWalksGenerator {
 		graph.walkDepth = walkDepth;
 
 		populateGraph(graph, headNode, 0);
-//		populateGraphIncludingSuperClasses(graph, headNode, 0);
 
 		// find and add subClasses of head node
 		if (graph.head.edges != null) {
@@ -415,46 +399,9 @@ public class RandomWalksGenerator {
 		return graph;
 	}
 
-	/** Generates an instance of the graph using an initial class **/
-	public WeightedDirectedGraph createWeightedDirectedGraph(String firstClassName) {
-		WeightedDirectedGraph graph = new WeightedDirectedGraph();
-		Node headNode = new Node(firstClassName, graph);
-		graph.head = headNode;
-		graph.nodes.add(headNode);
-		graph.walkDepth = walkDepth;
-		populateGraph(graph, headNode, 0);
-		return graph;
-	}
-
-	/** Recursively populates the graph **/
-	public void populateGraph(WeightedDirectedGraph graph, Node currentNode, int level) {
-		currentNode.edges = findAdjacentProperties(currentNode.label);
-		if (currentNode.edges != null) {
-			for (Edge e : currentNode.edges) {
-				graph.edges.add(e);
-				e.outNodes = findAdjacentClasses(currentNode.label, e.label, graph);
-				if (level < walkDepth && e.outNodes != null) {
-					for (Node n : e.outNodes) {
-						boolean undesiredClass = Arrays.stream(UNDESIRED_CLASSES).anyMatch(n.label::equals);
-						if (!undesiredClass) {
-							Node nodeAlreadyInGraph = graph.find(n.label);
-							if (nodeAlreadyInGraph == null) { // this is a new node
-								graph.nodes.add(n);
-								populateGraph(graph, n, level + 1);
-							} else {
-								// nothing
-							}
-						} else {
-//							System.out.println("found undesired class: " + n.label);
-						}
-					}
-				}
-			}
-		}
-	}
 
 	/** Recursively populates the graph including superClass relations **/
-	public void populateGraphIncludingSuperClasses(WeightedDirectedGraph graph, Node currentNode, int level) {
+	public void populateGraph(WeightedDirectedGraph graph, Node currentNode, int level) {
 		currentNode.edges = findAdjacentProperties(currentNode.label);
 
 		List<Node> subClassNodes = findSubClassesOf(currentNode.label, graph);
@@ -479,7 +426,7 @@ public class RandomWalksGenerator {
 							Node nodeAlreadyInGraph = graph.find(n.label);
 							if (nodeAlreadyInGraph == null) { // this is a new node
 								graph.nodes.add(n);
-								populateGraphIncludingSuperClasses(graph, n, level + 1);
+								populateGraph(graph, n, level + 1);
 							} else {
 								// nothing
 							}
@@ -496,9 +443,10 @@ public class RandomWalksGenerator {
 		Logger log = LoggerFactory.getLogger(WordEmbeddingsTrainer.class);
 		BasicConfigurator.configure();
 
-		// input, output, numThreads, walkDepth, classLimit, childLimit, numberOfWalks
-		RandomWalksGenerator walks = new RandomWalksGenerator("/home/ole/master/test_onto/merged.ttl",
-				"/home/ole/master/test_onto/walks_out.txt", 8, 3, 100, 800, 100);
+//		RandomWalksGenerator(String inputFile, String outputFile, int numberOfThreads, int walkDepth,
+//		int limit, int numberOfWalks, int offset, int childLimit)
+		Owl2vecWalksGenerator walks = new Owl2vecWalksGenerator("/home/ole/master/test_onto/merged.ttl",
+				"/home/ole/master/test_onto/walks_out.txt", 8, 3, 100, 100, 0, 100);
 		walks.generateWalks();
 	}
 }

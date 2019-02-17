@@ -15,6 +15,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import mapping.object.MappingObjectStr;
+import mappings.utils.AlignmentUtilities;
 
 public class OAEIAlignmentsReader extends AlignmentsReader {
 	Document document;
@@ -71,11 +72,11 @@ public class OAEIAlignmentsReader extends AlignmentsReader {
 					boolean isObjectProperty = firstOntology.containsObjectPropertyInSignature(iri) || secondOntology.containsObjectPropertyInSignature(iri);
 					boolean isDataProperty = firstOntology.containsDataPropertyInSignature(iri) || secondOntology.containsDataPropertyInSignature(iri);
 					if (isClass) {
-						currentMappingObject.setTypeOfMapping(Utilities.CLASSES);
+						currentMappingObject.setTypeOfMapping(AlignmentUtilities.CLASSES);
 					} else if (isObjectProperty) {
-						currentMappingObject.setTypeOfMapping(Utilities.OBJECTPROPERTIES);
+						currentMappingObject.setTypeOfMapping(AlignmentUtilities.OBJECTPROPERTIES);
 					} else if (isDataProperty) {
-						currentMappingObject.setTypeOfMapping(Utilities.DATAPROPERTIES);
+						currentMappingObject.setTypeOfMapping(AlignmentUtilities.DATAPROPERTIES);
 					}
 				}
 				

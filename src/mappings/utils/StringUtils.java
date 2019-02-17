@@ -1,4 +1,6 @@
-package org.matcher.com;
+package mappings.utils;
+
+import java.net.URI;
 
 public class StringUtils {
 	public static String normalizeFullIRI(String s) {
@@ -48,5 +50,16 @@ public class StringUtils {
 		literal = literal.toLowerCase(); // case normalization
 		literal = literal.trim();
 		return literal;
+	}
+	
+	public static boolean isUri(String string) {
+		URI uri;
+		try {
+			uri = URI.create(string);
+			return true;
+		} catch (Exception e) {
+			return false;
+//			return string.contains("http://");
+		}
 	}
 }

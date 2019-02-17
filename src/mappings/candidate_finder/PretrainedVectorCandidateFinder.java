@@ -1,6 +1,5 @@
-package org.matcher.com;
+package mappings.candidate_finder;
 
-import java.io.File;
 import java.util.ArrayList;
 
 import org.apache.log4j.BasicConfigurator;
@@ -8,24 +7,23 @@ import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLAnnotation;
 import org.semanticweb.owlapi.model.OWLAnnotationAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLClass;
-import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLDataProperty;
 import org.semanticweb.owlapi.model.OWLEquivalentClassesAxiom;
 import org.semanticweb.owlapi.model.OWLEquivalentDataPropertiesAxiom;
 import org.semanticweb.owlapi.model.OWLEquivalentObjectPropertiesAxiom;
 import org.semanticweb.owlapi.model.OWLLiteral;
-import org.semanticweb.owlapi.model.OWLNamedObject;
 import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLOntology;
-import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.trainer.com.OntologyReader;
-import org.trainer.com.WordEmbeddingsTrainer;
 
-public class CandidateFinderWithPretrainedWordVectors extends CandidateFinder {
+import mappings.trainer.OntologyReader;
+import mappings.trainer.WordEmbeddingsTrainer;
+import mappings.utils.TestRunUtils;
 
-	public CandidateFinderWithPretrainedWordVectors(OWLOntology o1, OWLOntology o2, double distLimit, String modelPath)
+public class PretrainedVectorCandidateFinder extends CandidateFinder {
+
+	public PretrainedVectorCandidateFinder(OWLOntology o1, OWLOntology o2, double distLimit, String modelPath)
 			throws Exception {
 		super(o1, o2, modelPath, distLimit);
 		trainer = new WordEmbeddingsTrainer("/home/ole/out.csv", modelPath);
@@ -263,26 +261,28 @@ public class CandidateFinderWithPretrainedWordVectors extends CandidateFinder {
 
 	public static void main(String[] args) throws Exception {
 		Logger log = LoggerFactory.getLogger(WordEmbeddingsTrainer.class);
-		String currentDir = new File(ClassLoader.getSystemClassLoader().getResource("").getPath()).toString();
-		String firstOntology = "/home/ole/master/test_onto/edas.owl";
-		String secondOntology = "/home/ole/master/test_onto/micro.owl";
-		String outputFile = "file:/home/ole/master/test_onto/conference_mappings.owl";
-		double distLimit = 0.7;
+		String firstOntologyFile = TestRunUtils.firstOntologyFile;
+		String secondOntologyFile = TestRunUtils.secondOntologyFile;
+		String referenceAlignmentsFile = TestRunUtils.referenceAlignmentsFile;
+		String logMapAlignmentsFile = TestRunUtils.logMapAlignmentsFile;
+		double equalityThreshold = TestRunUtils.equalityThreshold;
+		double fractionOfMappings = TestRunUtils.fractionOfMappings;
+		String walksType = TestRunUtils.walksType;
 		BasicConfigurator.configure();
 
 		OntologyReader reader = new OntologyReader();
-		reader.setFname(firstOntology);
+		reader.setFname(firstOntologyFile);
 		reader.readOntology();
 		OWLOntology onto1 = reader.getOntology();
 
-		reader.setFname(secondOntology);
+		reader.setFname(secondOntologyFile);
 		reader.readOntology();
 		OWLOntology onto2 = reader.getOntology();
 
-		CandidateFinderWithPretrainedWordVectors finder = new CandidateFinderWithPretrainedWordVectors(onto1, onto2,
-				distLimit, "/home/ole/master/word2vec/models/fil9.model");
+		PretrainedVectorCandidateFinder finder = new PretrainedVectorCandidateFinder(onto1, onto2,
+				equalityThreshold, "/home/ole/master/word2vec/models/fil9.model");
 		finder.createMappings();
 		OWLOntology o = finder.getMappings();
-		OntologyReader.writeOntology(o, outputFile, "owl");
+		OntologyReader.writeOntology(o, "/home/ole/master/test_onto/out.owl", "owl");
 	}
 }
