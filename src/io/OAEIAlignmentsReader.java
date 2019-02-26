@@ -42,7 +42,8 @@ public class OAEIAlignmentsReader extends AlignmentsReader {
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		try {
 			DocumentBuilder builder = factory.newDocumentBuilder();
-			document = builder.parse(new File(this.fileName));
+			System.out.println("Trying to open: " + getFileName());
+			document = builder.parse(new File(getFileName()));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

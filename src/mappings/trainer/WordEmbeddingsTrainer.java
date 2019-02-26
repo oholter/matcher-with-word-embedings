@@ -1,4 +1,4 @@
-		package mappings.trainer;
+package mappings.trainer;
 
 import java.io.File;
 import java.nio.charset.Charset;
@@ -7,8 +7,6 @@ import java.nio.file.Paths;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import org.deeplearning4j.models.embeddings.WeightLookupTable;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
@@ -19,10 +17,8 @@ import org.deeplearning4j.text.sentenceiterator.BasicLineIterator;
 import org.deeplearning4j.text.sentenceiterator.SentenceIterator;
 import org.deeplearning4j.text.tokenization.tokenizerfactory.DefaultTokenizerFactory;
 import org.deeplearning4j.text.tokenization.tokenizerfactory.TokenizerFactory;
-import org.neo4j.cypher.internal.compiler.v2_3.docgen.plannerDocGen.predicateConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 public class WordEmbeddingsTrainer {
 	private Logger log = LoggerFactory.getLogger(WordEmbeddingsTrainer.class);
@@ -60,15 +56,15 @@ public class WordEmbeddingsTrainer {
 		TokenizerFactory t = new DefaultTokenizerFactory();
 //		t.setTokenPreProcessor(new CommonPreprocessor());
 		log.info("Building model....");
-		model = new Word2Vec.Builder().minWordFrequency(minWordFrequency).iterations(numIterations).layerSize(layerSize).seed(seed).windowSize(windowSize)
-				.iterate(iter).tokenizerFactory(t).build();
+		model = new Word2Vec.Builder().minWordFrequency(minWordFrequency).iterations(numIterations).layerSize(layerSize)
+				.seed(seed).windowSize(windowSize).iterate(iter).tokenizerFactory(t).build();
 		log.info("Fitting w2v model");
 		System.out.println("fitting model");
 		for (int i = 0; i < numEpocs; i++) {
 			log.info("EPoch: " + i);
 			model.fit();
 		}
-		
+
 		System.out.println("Closest Words:");
 		Collection<String> lst = model.wordsNearest("http://cmt#Conference", 10);
 		System.out.println(lst);
@@ -208,11 +204,11 @@ public class WordEmbeddingsTrainer {
 			for (int j = 0; j < vectors[i].length; j++) {
 				tmp.add(vectors[i][j]);
 			}
-			
+
 		}
 		return getAverageVectorFromDoubles(vectorList);
 	}
-	
+
 	public double[] getAverageVectorFromDoubles(ArrayList<ArrayList<Double>> vectors) {
 		ArrayList<Double> sumVector = new ArrayList<>();
 		int numberOfTokens = 0;
@@ -265,7 +261,7 @@ public class WordEmbeddingsTrainer {
 		}
 		return avgVector;
 	}
-	
+
 	public double[] getWordVector(String word) {
 		return model.getWordVector(word);
 	}
@@ -324,7 +320,7 @@ public class WordEmbeddingsTrainer {
 		double cosine = cosineSimilarity(vectorA, vectorB);
 		return cosine;
 	}
-	
+
 	public double[] arrayList2DoubleArray(ArrayList<Double> lst) {
 		double[] dbl = new double[lst.size()];
 		for (int i = 0; i < lst.size(); i++) {
@@ -332,7 +328,7 @@ public class WordEmbeddingsTrainer {
 		}
 		return dbl;
 	}
-	
+
 	public ArrayList<Double> doubleArray2ArrayList(double[] arr) {
 		ArrayList<Double> lst = new ArrayList<>();
 		for (int i = 0; i < arr.length; i++) {
@@ -340,7 +336,7 @@ public class WordEmbeddingsTrainer {
 		}
 		return lst;
 	}
-	
+
 	public double vectorLength(double[] vec) {
 		double len = 0;
 		for (int i = 0; i < vec.length; i++) {
@@ -348,7 +344,7 @@ public class WordEmbeddingsTrainer {
 		}
 		return Math.sqrt(len);
 	}
-	
+
 	public double squaredEucledianDistance(double[] vec1, double[] vec2) {
 		if (vec1.length == vec2.length) {
 			double sum = 0;
@@ -357,7 +353,8 @@ public class WordEmbeddingsTrainer {
 				sum += (tmp * tmp);
 			}
 			return sum;
-		} else return -1;
+		} else
+			return -1;
 	}
 
 }

@@ -27,7 +27,7 @@ public class TranslationMatrix {
 				m.putRow(i, new DoubleMatrix(model.getWordVector(words[i])));
 			} catch (NullPointerException npe) {
 				System.out.println("NOT IN DICT: " + words[i]);
-				System.exit(0);
+//				System.exit(0);
 			}
 		}
 		return m;

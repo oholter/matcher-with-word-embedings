@@ -3,10 +3,8 @@ package mappings.candidate_finder;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 
-import org.apache.log4j.BasicConfigurator;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.AxiomType;
 import org.semanticweb.owlapi.model.IRI;
@@ -24,23 +22,9 @@ import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
-import org.semanticweb.owlapi.reasoner.OWLReasoner;
-import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import edit_distance.EditDistance;
-import io.AlignmentsReader;
-import io.OAEIAlignmentOutput;
-import io.OAEIAlignmentsReader;
-import mapping.object.MappingObjectStr;
-import mappings.evaluation.ClassMappingsEvaluator;
-import mappings.evaluation.MappingsEvaluator;
-import mappings.trainer.OntologyProjector;
-import mappings.trainer.OntologyReader;
 import mappings.trainer.TranslationMatrix;
 import mappings.trainer.WordEmbeddingsTrainer;
-import mappings.utils.AlignmentUtilities;
 import mappings.utils.VectorUtils;
 
 public abstract class AnchorsCandidateFinder extends CandidateFinder {
@@ -53,7 +37,6 @@ public abstract class AnchorsCandidateFinder extends CandidateFinder {
 	OWLOntology anchorOntology;
 	TranslationMatrix superClassMatrix;
 
-	OAEIAlignmentOutput output = new OAEIAlignmentOutput("/home/ole/master/mappings", "ekaw", "ekaw2");
 
 	public AnchorsCandidateFinder(OWLOntology o1, OWLOntology o2, OWLOntology mergedOnto, String modelPath,
 			double distLimit) throws Exception {
@@ -65,7 +48,7 @@ public abstract class AnchorsCandidateFinder extends CandidateFinder {
 		this.modelPath = modelPath;
 	}
 	
-	abstract public void generateClassCandidates();
+	public abstract void generateClassCandidates();
 
 	public void setTrainer(WordEmbeddingsTrainer trainer) {
 		this.trainer = trainer;
@@ -181,17 +164,17 @@ public abstract class AnchorsCandidateFinder extends CandidateFinder {
 
 		for (OWLEquivalentClassesAxiom eqClassAxiom : equivalentClasses) {
 			mergedManager.addAxiom(onto, eqClassAxiom);
-			System.out.println(eqClassAxiom);
+//			System.out.println(eqClassAxiom);
 			numAnchors++;
 		}
 		for (OWLEquivalentObjectPropertiesAxiom eqObjectPropertyAxiom : equivalentObjectProperties) {
 			mergedManager.addAxiom(onto, eqObjectPropertyAxiom);
-			System.out.println(eqObjectPropertyAxiom);
+//			System.out.println(eqObjectPropertyAxiom);
 			numAnchors++;
 		}
 		for (OWLEquivalentDataPropertiesAxiom eqDataPropertyAxiom : equivalentDataProperties) {
 			mergedManager.addAxiom(onto, eqDataPropertyAxiom);
-			System.out.println(eqDataPropertyAxiom);
+//			System.out.println(eqDataPropertyAxiom);
 			numAnchors++;
 		}
 		for (OWLSubClassOfAxiom subClAxiom : subClassOf) {

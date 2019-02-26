@@ -6,7 +6,7 @@ import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
 
-import mappings.trainer.OntologyReader;
+import io.OntologyReader;
 
 public class SimpleOwlReasoner {
 	public static void main(String[] args) throws Exception {

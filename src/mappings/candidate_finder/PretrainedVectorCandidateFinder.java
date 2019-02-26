@@ -17,8 +17,9 @@ import org.semanticweb.owlapi.model.OWLOntology;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import mappings.trainer.OntologyReader;
+import io.OntologyReader;
 import mappings.trainer.WordEmbeddingsTrainer;
+import mappings.utils.AlignmentUtilities;
 import mappings.utils.TestRunUtils;
 
 public class PretrainedVectorCandidateFinder extends CandidateFinder {
@@ -39,9 +40,23 @@ public class PretrainedVectorCandidateFinder extends CandidateFinder {
 			generateClassCandidates();
 			generateObjectProperties();
 			generateDataProperties();
+			System.out.println(getMappings());
+			output.saveOutputFile();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public void addAnchor(String uri1, String uri2) {
+		// do nothing, does not need anchors
+	}
+	
+	public void addAnchorsToOntology(OWLOntology onto) {
+		// do nothing
+	}
+	
+	public void setTrainer(WordEmbeddingsTrainer trainer) {
+		this.trainer = trainer;
 	}
 
 	public void generateClassCandidates() {
@@ -90,7 +105,12 @@ public class PretrainedVectorCandidateFinder extends CandidateFinder {
 			} // end classFromSecondOntology
 
 			if (maxSimilarity > distLimit) {
-				OWLEquivalentClassesAxiom equivalentClassAxiom = mappingsFactory
+				try {
+					output.addClassMapping2Output(iriFromFirstOntology, candidate.getIRI().toString(), AlignmentUtilities.EQ,
+							maxSimilarity);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}				OWLEquivalentClassesAxiom equivalentClassAxiom = mappingsFactory
 						.getOWLEquivalentClassesAxiom(classFromFirstOntology, candidate);
 //				mappings.add(equivalentClassAxiom); owlapi5
 				mappingsManager.addAxiom(mappings, equivalentClassAxiom);
@@ -283,6 +303,7 @@ public class PretrainedVectorCandidateFinder extends CandidateFinder {
 				equalityThreshold, "/home/ole/master/word2vec/models/fil9.model");
 		finder.createMappings();
 		OWLOntology o = finder.getMappings();
-		OntologyReader.writeOntology(o, "/home/ole/master/test_onto/out.owl", "owl");
+		System.out.println(o);
+		OntologyReader.writeOntology(o, TestRunUtils.owlOutPath, "owl");
 	}
 }

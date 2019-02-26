@@ -12,11 +12,11 @@ import org.slf4j.LoggerFactory;
 
 import io.AlignmentsReader;
 import io.OAEIAlignmentsReader;
+import io.OntologyReader;
 import mapping.object.MappingObjectStr;
 import mappings.evaluation.ClassMappingsEvaluator;
 import mappings.evaluation.MappingsEvaluator;
 import mappings.trainer.OntologyProjector;
-import mappings.trainer.OntologyReader;
 import mappings.trainer.WordEmbeddingsTrainer;
 import mappings.utils.AlignmentUtilities;
 import mappings.utils.TestRunUtils;

@@ -25,6 +25,9 @@ public class MappingsEvaluator {
 		alignmentReader = new OAEIAlignmentsReader(alignmentFileName);
 		referenceAlignment = referenceAlignmentReader.getMappings();
 		alignment = alignmentReader.getMappings();
+		if (alignment == null) {
+			alignment = new ArrayList<>();
+		}
 	}
 	
 	public MappingsEvaluator() {}
@@ -50,7 +53,7 @@ public class MappingsEvaluator {
 	 * @return
 	 */
 	public double calculatePrecision() {
-		if (alignment.size() == 0) {
+		if (alignment == null || alignment.size() == 0) {
 			return 0;
 		}
 		if (intersection == null) { // lazy
@@ -65,7 +68,7 @@ public class MappingsEvaluator {
 	 * @return
 	 */
 	public double calculateRecall() {
-		if (referenceAlignment.size() == 0) {
+		if (referenceAlignment == null || referenceAlignment.size() == 0) {
 			return 0;
 		}
 		if (intersection == null) {

@@ -39,7 +39,7 @@ public class SynonymsOwl2vec extends Owl2vecWalksGenerator {
 					String randomWalk = graph.generateRandomWalkWithSynonyms();
 					lines.add(randomWalk);
 				}
-				writeToFile(lines);
+				writeToFile(lines, outputWriter);
 			}
 		}
 	}
@@ -47,9 +47,9 @@ public class SynonymsOwl2vec extends Owl2vecWalksGenerator {
 	public void generateWalks() {
 		initializeEmptyModel();
 		readInputFileToModel();
-		prepareDocumentWriter();
+		outputWriter = prepareDocumentWriter(outputFilePath);
 		walkTheGraph();
-		closeDocumentWriter();
+		closeDocumentWriter(outputWriter);
 		System.out.println("Finished generating walks");
 	}
 	

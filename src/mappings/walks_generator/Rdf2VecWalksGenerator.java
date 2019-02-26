@@ -85,6 +85,7 @@ public class Rdf2VecWalksGenerator extends WalksGenerator {
 		dataset.end();
 		dataset.close();
 		System.out.println("Closed dataset");
+		System.out.println("number of walks: " + numberOfWalks);
 	}
 
 	public void cleanDataSet() {
@@ -184,7 +185,7 @@ public class Rdf2VecWalksGenerator extends WalksGenerator {
 		
 //		String inputFile, String outputFile, int numberOfThreads, int walkDepth,
 //				int limit, int numberOfWalks, int offset
-		Rdf2VecWalksGenerator p = new Rdf2VecWalksGenerator(in, out, 8, 3, 1000, 100, 0);
+		Rdf2VecWalksGenerator p = new Rdf2VecWalksGenerator(in, out, 8, 3, 1000, 1, 0);
 		p.generateWalks();
 	}
 }

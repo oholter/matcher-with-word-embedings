@@ -40,22 +40,20 @@ import mappings.utils.StringUtils;
 
 public class Owl2vecWalksGenerator extends WalksGenerator {
 
-	private File outputFile;
-
-	private Dataset dataset;
-	private OntModel ontModel;
-	private Model model;
-	private String fileType = "TTL";
-	private Reasoner reasoner;
-	private BufferedWriter writer;
-	private String adjacentPropertiesQuery;
-	private String adjacentClassesQuery;
-	private String adjacentSubClassOfQuery;
-	int numberOfProcessedClasses = 0;
-	int childLimit;
-	List<String> allClasses;
-	String[] UNDESIRED_CLASSES = { "http://www.w3.org/2002/07/owl#Thing", "http://www.w3.org/2002/07/owl#Class" };
-	String[] UNDESIRED_PROPERTIES = { "http://www.w3.org/2002/07/owl#inverseOf" };
+	protected Dataset dataset;
+	protected OntModel ontModel;
+	protected Model model;
+	protected String fileType = "TTL";
+	protected Reasoner reasoner;
+	protected BufferedWriter outputWriter;
+	protected String adjacentPropertiesQuery;
+	protected String adjacentClassesQuery;
+	protected String adjacentSubClassOfQuery;
+	protected int numberOfProcessedClasses = 0;
+	protected int childLimit;
+	protected List<String> allClasses;
+	protected String[] UNDESIRED_CLASSES = { "http://www.w3.org/2002/07/owl#Thing", "http://www.w3.org/2002/07/owl#Class" };
+	protected String[] UNDESIRED_PROPERTIES = { "http://www.w3.org/2002/07/owl#inverseOf" };
 //			"http://www.w3.org/1999/02/22-rdf-syntax-ns#type" };
 
 
@@ -74,9 +72,9 @@ public class Owl2vecWalksGenerator extends WalksGenerator {
 	public void generateWalks() {
 		initializeEmptyModel();
 		readInputFileToModel();
-		prepareDocumentWriter();
+		outputWriter = prepareDocumentWriter(outputFilePath);
 		walkTheGraph();
-		closeDocumentWriter();
+		closeDocumentWriter(outputWriter);
 		System.out.println("Model size: " + model.size());
 		System.out.println("Finished generating walks");
 	}
@@ -89,9 +87,10 @@ public class Owl2vecWalksGenerator extends WalksGenerator {
 		model.read(inputFile, fileType);
 	}
 
-	public void prepareDocumentWriter() {
+	public BufferedWriter prepareDocumentWriter(String outputFilePath) {
+		BufferedWriter writer = null;
 		try {
-			outputFile = new File(outputFilePath);
+			File outputFile = new File(outputFilePath);
 			writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFilePath, false), "utf-8"),
 					32 * 1024);
 		} catch (UnsupportedEncodingException e) {
@@ -101,9 +100,10 @@ public class Owl2vecWalksGenerator extends WalksGenerator {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
 		}
+		return writer;
 	}
 
-	public void closeDocumentWriter() {
+	public void closeDocumentWriter(BufferedWriter writer) {
 		try {
 			writer.flush();
 			writer.close();
@@ -113,7 +113,7 @@ public class Owl2vecWalksGenerator extends WalksGenerator {
 		}
 	}
 
-	public synchronized void writeToFile(List<String> lines) {
+	public synchronized void writeToFile(List<String> lines, BufferedWriter writer) {
 		numberOfProcessedClasses++;
 		if (numberOfProcessedClasses % 100 == 0) {
 			System.out.println("Processed: " + numberOfProcessedClasses + " classes");
@@ -150,7 +150,7 @@ public class Owl2vecWalksGenerator extends WalksGenerator {
 					String randomWalk = graph.generateRandomWalk();
 					lines.add(randomWalk);
 				}
-				writeToFile(lines);
+				writeToFile(lines, outputWriter);
 			}
 		}
 	}

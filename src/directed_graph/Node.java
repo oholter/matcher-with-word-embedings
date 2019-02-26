@@ -20,8 +20,13 @@ public class Node {
 	public List<String> findSynonyms() {
 		ArrayList<String> synonyms = new ArrayList<>();
 		synonyms.add(label);
+		String normalizedUri = StringUtils.normalizeFullIRI(label);
 		synonyms.add(StringUtils.normalizeFullIRI(label)); // also adding the plane text representation of the URI
-		synonyms.add(StringUtils.normalizeLiteral(StringUtils.normalizeFullIRI(label))); // plane text using _ in stead of blank
+		if (StringUtils.isUri(normalizedUri) ){
+			System.out.println("Still a URI: " + normalizedUri);
+		}
+		
+//		synonyms.add(StringUtils.normalizeLiteral(StringUtils.normalizeFullIRI(label))); // plane text using _ in stead of blank
 //		String[] words = StringUtils.normalizeLiteral(StringUtils.normalizeFullIRI(label)).split("");
 //		if (words.length > 1) {
 //			for (String s : words) {
@@ -33,7 +38,8 @@ public class Node {
 				if (e.label.equals("http://www.w3.org/2000/01/rdf-schema#label")
 						|| e.label.equals("http://www.w3.org/2000/01/rdf-schema#comment")) {
 					for (Node n : e.outNodes) {
-						synonyms.add(n.label);
+//						synonyms.add(n.label);
+						synonyms.add(StringUtils.normalizeString(n.label));
 					}
 				}
 			}
@@ -53,14 +59,24 @@ public class Node {
 //	}
 	
 	/** adding all synonyms every time **/
-	public String getSomeName() {
+	public String getSomeName(boolean includeURI) {
 		if (synonyms == null) { // lazy
 			synonyms = findSynonyms();
 		}
 		String returnString = "";
 		for (String synonym : synonyms) {
+			if (!includeURI) {
+				if (StringUtils.isUri(synonym)) {
+					continue;
+				}
+			}
 			returnString += synonym + " ";
 		}
+		
+		if (returnString.trim().length() == 0) {
+			returnString = "NO SYNONYM: " + label;
+		}
+		
 		return returnString;
 	}
 }

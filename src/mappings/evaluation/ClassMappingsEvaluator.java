@@ -1,13 +1,14 @@
 package mappings.evaluation;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.semanticweb.owlapi.model.OWLOntology;
 
 import io.OAEIAlignmentsReader;
+import io.OntologyReader;
 import mapping.object.MappingObjectStr;
-import mappings.trainer.OntologyReader;
 import mappings.utils.AlignmentUtilities;
 
 /**
@@ -27,11 +28,16 @@ public class ClassMappingsEvaluator extends MappingsEvaluator {
 		this.alignmentFileName = alignmentFileName;
 		this.referenceAlignmentReader = new OAEIAlignmentsReader(referenceAlignmentFileName, firstOntology,
 				secondOntology);
-		this.alignmentReader = new OAEIAlignmentsReader(alignmentFileName, firstOntology, secondOntology);
-		referenceAlignment = referenceAlignmentReader.getMappings();
-		alignment = alignmentReader.getMappings();
-		removePropertiesFromReference();
-		removePropertiesFromAlignment();
+		File alignmentFile = new File(alignmentFileName);
+		if (alignmentFile.length() != 0) {
+			this.alignmentReader = new OAEIAlignmentsReader(alignmentFileName, firstOntology, secondOntology);
+			referenceAlignment = referenceAlignmentReader.getMappings();
+			alignment = alignmentReader.getMappings();
+			removePropertiesFromReference();
+			removePropertiesFromAlignment();
+		} else {
+			System.out.println("No mappings found");
+		}
 	}
 
 	public ArrayList<MappingObjectStr> removeAllProperties(List<MappingObjectStr> mappings) {
@@ -39,8 +45,7 @@ public class ClassMappingsEvaluator extends MappingsEvaluator {
 		for (MappingObjectStr mapping : mappings) {
 			if (mapping.getTypeOfMapping() == AlignmentUtilities.CLASSES) {
 				newAlignment.add(mapping);
-			}
-			else {
+			} else {
 //				System.out.println("type of mapping: " + mapping.getTypeOfMapping());
 			}
 		}

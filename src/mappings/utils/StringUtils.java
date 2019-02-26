@@ -53,13 +53,18 @@ public class StringUtils {
 	}
 	
 	public static boolean isUri(String string) {
+		String httpPattern = "^(http|https)://.*";
 		URI uri;
+
+		if (!string.matches(httpPattern)) {
+//			System.out.println("does not match");
+			return false;
+		}
 		try {
 			uri = URI.create(string);
 			return true;
 		} catch (Exception e) {
 			return false;
-//			return string.contains("http://");
 		}
 	}
 }

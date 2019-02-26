@@ -3,7 +3,6 @@ package mappings.candidate_finder;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -27,16 +26,19 @@ import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hp.hpl.jena.iri.impl.Test;
+
 import io.AlignmentsReader;
 import io.OAEIAlignmentsReader;
+import io.OntologyReader;
 import mapping.object.MappingObjectStr;
 import mappings.evaluation.ClassMappingsEvaluator;
 import mappings.evaluation.MappingsEvaluator;
 import mappings.trainer.GradientDescent;
 import mappings.trainer.OntologyProjector;
-import mappings.trainer.OntologyReader;
 import mappings.trainer.TranslationMatrix;
 import mappings.trainer.WordEmbeddingsTrainer;
+import mappings.utils.AlignmentUtilities;
 import mappings.utils.TestRunUtils;
 import mappings.utils.VectorUtils;
 
@@ -67,8 +69,8 @@ public class TranslationMatrixCandidateFinder extends CandidateFinder {
 			String nameSpace1) throws Exception {
 		super(o1, o2, modelPath, distLimit);
 		currentDir = new File(ClassLoader.getSystemClassLoader().getResource("").getPath()).toString();
-		trainer = new WordEmbeddingsTrainer("/home/ole/master/test_onto/merged.ttl", modelPath);
-		trainer.loadModel();
+//		trainer = new WordEmbeddingsTrainer("/home/ole/master/test_onto/merged.ttl", modelPath);
+//		trainer.loadModel();
 		anchorsFromFirstOntology = new ArrayList<>();
 		anchorsFromSecondOntology = new ArrayList<>();
 		this.nameSpace1 = nameSpace1;
@@ -93,12 +95,17 @@ public class TranslationMatrixCandidateFinder extends CandidateFinder {
 			generateClassCandidates();
 //			generateObjectProperties();
 //			generateDataProperties();
+			output.saveOutputFile();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	public void addAnchor(String firstIRI, AxiomType type, String secondIRI) throws Exception {
+	public void setTrainer(WordEmbeddingsTrainer trainer) {
+		this.trainer = trainer;
+	}
+
+	public void addAnchor(String firstIRI, String secondIRI) throws Exception {
 		if (anchorOntology == null) {
 			OWLOntologyManager man = OWLManager.createOWLOntologyManager();
 			anchorOntology = man.createOntology();
@@ -106,26 +113,30 @@ public class TranslationMatrixCandidateFinder extends CandidateFinder {
 		OWLOntologyManager man = anchorOntology.getOWLOntologyManager();
 		OWLDataFactory factory = man.getOWLDataFactory();
 
-		if (type == AxiomType.EQUIVALENT_CLASSES) {
+		IRI iri = IRI.create(firstIRI);
+		boolean isClass = onto1.containsClassInSignature(iri) || onto2.containsClassInSignature(iri);
+		boolean isObjectProperty = onto1.containsObjectPropertyInSignature(iri)
+				|| onto2.containsObjectPropertyInSignature(iri);
+		boolean isDataProperty = onto1.containsDataPropertyInSignature(iri)
+				|| onto2.containsDataPropertyInSignature(iri);
+
+		if (isClass) {
 			OWLClass cl1 = factory.getOWLClass(IRI.create(firstIRI));
 			OWLClass cl2 = factory.getOWLClass(IRI.create(secondIRI));
 			OWLAxiom ax = factory.getOWLEquivalentClassesAxiom(cl1, cl2);
 			man.addAxiom(anchorOntology, ax);
-		} else if (type == AxiomType.EQUIVALENT_OBJECT_PROPERTIES) {
+		} else if (isObjectProperty) {
 			OWLObjectProperty p1 = factory.getOWLObjectProperty(IRI.create(firstIRI));
 			OWLObjectProperty p2 = factory.getOWLObjectProperty(IRI.create(secondIRI));
 			OWLAxiom ax = factory.getOWLEquivalentObjectPropertiesAxiom(p1, p2);
 			man.addAxiom(anchorOntology, ax);
-		} else if (type == AxiomType.EQUIVALENT_DATA_PROPERTIES) {
+		} else if (isDataProperty) {
 			OWLDataProperty p1 = factory.getOWLDataProperty(IRI.create(firstIRI));
 			OWLDataProperty p2 = factory.getOWLDataProperty(IRI.create(secondIRI));
 			OWLAxiom ax = factory.getOWLEquivalentDataPropertiesAxiom(p1, p2);
 			man.addAxiom(anchorOntology, ax);
-		} else if (type == AxiomType.SUBCLASS_OF) {
-			OWLClass cl1 = factory.getOWLClass(IRI.create(firstIRI));
-			OWLClass cl2 = factory.getOWLClass(IRI.create(secondIRI));
-			OWLAxiom ax = factory.getOWLSubClassOfAxiom(cl1, cl2);
-			man.addAxiom(anchorOntology, ax);
+		} else {
+			System.out.println("Not able to find type of axiom: " + firstIRI);
 		}
 	}
 
@@ -169,7 +180,6 @@ public class TranslationMatrixCandidateFinder extends CandidateFinder {
 				System.out.println("Added: " + c2.getIRI().toString());
 				numAnchors++;
 			}
-
 		}
 		for (OWLEquivalentObjectPropertiesAxiom eqObjectPropertyAxiom : equivalentObjectProperties) {
 			Stream<OWLObjectProperty> strm = eqObjectPropertyAxiom.getObjectPropertiesInSignature().stream();
@@ -229,11 +239,15 @@ public class TranslationMatrixCandidateFinder extends CandidateFinder {
 		anchorVectorsFromSecondOntology = new double[anchorsFromSecondOntology.size()][];
 
 		for (int i = 0; i < anchorsFromFirstOntology.size(); i++) {
-			anchorVectorsFromFirstOntology[i] = trainer.getModel().getWordVector(anchorsFromFirstOntology.get(i));
+			if (trainer.getModel().hasWord(anchorsFromFirstOntology.get(i))) {
+				anchorVectorsFromFirstOntology[i] = trainer.getModel().getWordVector(anchorsFromFirstOntology.get(i));
+			}
 		}
 
 		for (int i = 0; i < anchorsFromSecondOntology.size(); i++) {
-			anchorVectorsFromSecondOntology[i] = trainer.getModel().getWordVector(anchorsFromSecondOntology.get(i));
+			if (trainer.getModel().hasWord(anchorsFromSecondOntology.get(i))) {
+				anchorVectorsFromSecondOntology[i] = trainer.getModel().getWordVector(anchorsFromSecondOntology.get(i));
+			}
 		}
 
 		gradientDescent = new GradientDescent(anchorVectorsFromFirstOntology, anchorVectorsFromSecondOntology,
@@ -312,6 +326,12 @@ public class TranslationMatrixCandidateFinder extends CandidateFinder {
 			} // end classFromSecondOntology
 
 			if (maxSimilarity > distLimit) {
+				try {
+					output.addClassMapping2Output(iriFromFirstOntology, candidate.getIRI().toString(),
+							AlignmentUtilities.EQ, maxSimilarity);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 				OWLEquivalentClassesAxiom equivalentClassAxiom = mappingsFactory
 						.getOWLEquivalentClassesAxiom(classFromFirstOntology, candidate);
 				mappingsManager.addAxiom(mappings, equivalentClassAxiom);
@@ -412,7 +432,6 @@ public class TranslationMatrixCandidateFinder extends CandidateFinder {
 		System.out.println("Found " + numCandidates + " class candidates:");
 	} // finished generateClassCandidates()
 
-	
 	/** This will generate all object properties pairs **/
 	public void generateAllObjectProperties() {
 		int numCandidates = 0;
@@ -491,7 +510,7 @@ public class TranslationMatrixCandidateFinder extends CandidateFinder {
 		System.out.println("Found " + numCandidates + " object property candidates:");
 
 	} // finished generateAllObjectProperties()
-	
+
 	/** This will generate the best object property pair **/
 	public void generateObjectProperties() {
 		int numCandidates = 0;
@@ -642,11 +661,15 @@ public class TranslationMatrixCandidateFinder extends CandidateFinder {
 		double equalityThreshold = TestRunUtils.equalityThreshold;
 		double fractionOfMappings = TestRunUtils.fractionOfMappings;
 		String walksType = TestRunUtils.walksType;
-		
+		String modelPath = TestRunUtils.modelPath;
+		String nameSpaceString = TestRunUtils.nameSpaceString1;
+		String mergedOwlPath = TestRunUtils.mergedOwlPath;
+
 		Logger log = LoggerFactory.getLogger(WordEmbeddingsTrainer.class);
 		String currentDir = new File(ClassLoader.getSystemClassLoader().getResource("").getPath()).toString();
 		BasicConfigurator.configure();
 
+		// 1) Reading in the two ontologies
 		OntologyReader reader = new OntologyReader();
 		reader.setFname(firstOntologyFile);
 		reader.readOntology();
@@ -656,15 +679,23 @@ public class TranslationMatrixCandidateFinder extends CandidateFinder {
 		reader.readOntology();
 		OWLOntology onto2 = reader.getOntology();
 
-		// For training of ontology start:
+		// 2) Merging the ontologies and writing it to disk
 		OWLOntology mergedOnto = OntologyReader.mergeOntologies("merged", new OWLOntology[] { onto1, onto2 });
-		AnchorsCandidateFinder finder = new BestAnchorsCandidateFinder(onto1, onto2, mergedOnto,
-				currentDir + "/temp/out.txt", equalityThreshold);
+		OntologyReader.writeOntology(mergedOnto, mergedOwlPath, "owl");
+
+
+		// For training of ontology start:
+//		public TranslationMatrixCandidateFinder(OWLOntology o1, OWLOntology o2, String modelPath, double distLimit,
+//				String nameSpace1) throws Exception {
+
+		// 3) Creating the finder
+		TranslationMatrixCandidateFinder finder = new TranslationMatrixCandidateFinder(onto1, onto2, modelPath,
+				equalityThreshold, nameSpaceString);
 
 		/* Adding anchors, by using word embeddings or by manually adding them */
 //		finder.findAnchors(); /* this will use word embeddings to find anchors */
 
-		/* Adding anchors by reading an alignments file */
+		// 4) Adding anchors by reading an alignments file */
 		AlignmentsReader alignmentsReader = new OAEIAlignmentsReader(referenceAlignmentsFile, onto1, onto2);
 //		AlignmentsReader alignmentsReader = new OAEIAlignmentsReader(
 //				"/home/ole/master/logmap_standalone/output/logmap2_mappings.rdf", onto1, onto2);
@@ -675,14 +706,12 @@ public class TranslationMatrixCandidateFinder extends CandidateFinder {
 			finder.addAnchor(mapping.getIRIStrEnt1(), mapping.getIRIStrEnt2());
 		}
 
-		finder.addAnchorsToOntology(mergedOnto);
-		OntologyReader.writeOntology(mergedOnto, "file:/home/ole/master/test_onto/merged.owl", "owl");
-
-		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/merged.owl");
+		// 5) Projecting the merged ontology
+		OntologyProjector projector = new OntologyProjector(mergedOwlPath);
 		projector.projectOntology();
-		projector.saveModel("/home/ole/master/test_onto/merged.ttl");
+		projector.saveModel(modelPath);
 
-		Walks walks = new Walks("/home/ole/master/test_onto/merged.ttl", walksType);
+		Walks walks = new Walks(modelPath, walksType);
 //		Walks_rdf2vec walks = new Walks_rdf2vec();
 //		walks.loadFromRdfFile("/home/ole/master/test_onto/merged.ttl");
 		walks.generateWalks();

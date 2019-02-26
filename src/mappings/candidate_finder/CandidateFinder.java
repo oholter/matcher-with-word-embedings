@@ -7,8 +7,10 @@ import org.semanticweb.owlapi.model.OWLNamedObject;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 
+import io.OAEIAlignmentOutput;
 import mappings.trainer.WordEmbeddingsTrainer;
 import mappings.utils.StringUtils;
+import mappings.utils.TestRunUtils;
 
 public abstract class CandidateFinder {
 	protected OWLOntology onto1;
@@ -19,20 +21,26 @@ public abstract class CandidateFinder {
 	protected double distLimit;
 	protected WordEmbeddingsTrainer trainer;
 	protected String modelPath;
+	protected OAEIAlignmentOutput output;
 
-	abstract void createMappings() throws Exception;
+	public abstract void createMappings() throws Exception;
 
-	abstract void generateClassCandidates();
+	public abstract void generateClassCandidates();
 
-	abstract void generateObjectProperties();
+	public abstract void generateObjectProperties();
 
-	abstract void generateDataProperties();
+	public abstract void generateDataProperties();
 
-	public CandidateFinder(OWLOntology onto1, OWLOntology onto2, String modelPath, double distLimit) {
+	public OAEIAlignmentOutput getOutputAlignment() {
+		return output;
+	}
+
+	public CandidateFinder(OWLOntology onto1, OWLOntology onto2, String modelPath, double distLimit) throws Exception {
 		this.onto1 = onto1;
 		this.onto2 = onto2;
 		this.modelPath = modelPath;
 		this.distLimit = distLimit;
+		this.output = new OAEIAlignmentOutput("mappings", TestRunUtils.nameSpaceString1, TestRunUtils.nameSpaceString2);
 	}
 
 	public OWLOntology getOnto1() {
@@ -58,11 +66,10 @@ public abstract class CandidateFinder {
 	public String normalizeIRI(String s) {
 		return StringUtils.normalizeIRI(s);
 	}
-	
+
 	public String normalizeString(String s) {
 		return StringUtils.normalizeString(s);
 	}
-	
 
 	public String findAnnotation(OWLNamedObject c, OWLOntology o, String type) {
 		String label = null;
@@ -92,6 +99,8 @@ public abstract class CandidateFinder {
 
 		return label;
 	}
+
+
 
 	protected double max(double a, double b, double c) {
 		return Math.max(a, Math.max(b, c));

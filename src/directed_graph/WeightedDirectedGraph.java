@@ -194,10 +194,18 @@ public class WeightedDirectedGraph {
 			return null;
 		}
 	}
-	
+
 	public String generateRandomWalkWithSynonyms() {
 		if (head != null) {
 			return generateRandomWalkWithSynonyms(head, 1);
+		} else {
+			return null;
+		}
+	}
+
+	public String generateLabelRandomWalk() {
+		if (head != null) {
+			return generateLabelRandomWalk(head, 1);
 		} else {
 			return null;
 		}
@@ -209,31 +217,48 @@ public class WeightedDirectedGraph {
 		if (level < walkDepth) {
 			Edge nextEdge = chooseRandomEdge(node.edges);
 			Node nextNode = chooseRandomNode(nextEdge.outNodes);
-			tmpWalk += replaceNamespaces(nextEdge.label) + " ";
+//			tmpWalk += replaceNamespaces(nextEdge.label) + " ";
 			tmpWalk += generateRandomWalk(nextNode, level + 1);
 		}
 		return tmpWalk;
 	}
 
-	/** substitutes the uris for labels randomly, does not include label/comment in the walks **/
+	/**
+	 * substitutes the uris for labels randomly, does not include label/comment in
+	 * the walks
+	 **/
 	public String generateRandomWalkWithSynonyms(Node node, int level) {
 		String tmpWalk = "";
-		tmpWalk += replaceNamespaces(node.getSomeName()) + " ";
+		tmpWalk += replaceNamespaces(node.getSomeName(true)) + " ";
 		if (level < walkDepth) {
 			Edge nextEdge = chooseRandomEdgeWithoutSynonyms(node.edges);
 			if (nextEdge == null) {
 				return tmpWalk;
 			}
 			Node nextNode = chooseRandomNode(nextEdge.outNodes);
-//			if (nextNode == node) {
-//				tmpWalk += generateRandomWalkWithSynonyms(node, level);
-//			}
-//			tmpWalk += replaceNamespaces(nextEdge.getSomeName()) + " ";
 			tmpWalk += generateRandomWalkWithSynonyms(nextNode, level + 1);
 		}
 		return tmpWalk;
 	}
-	
+
+	/**
+	 * generates random walk using only textual representation of the classes, not
+	 * including the URIs
+	 **/
+	public String generateLabelRandomWalk(Node node, int level) {
+		String tmpWalk = "";
+		tmpWalk += node.getSomeName(false) + " ";
+		if (level < walkDepth) {
+			Edge nextEdge = chooseRandomEdgeWithoutSynonyms(node.edges);
+			if (nextEdge == null) {
+				return tmpWalk;
+			}
+			Node nextNode = chooseRandomNode(nextEdge.outNodes);
+			tmpWalk += generateLabelRandomWalk(nextNode, level + 1);
+		}
+		return tmpWalk;
+	}
+
 	public boolean isEmpty() {
 		return head == null;
 	}
@@ -292,6 +317,7 @@ public class WeightedDirectedGraph {
 			if (isSynonymEdge) {
 				for (Node n : e.outNodes) {
 					synonyms.add(n.label);
+					synonyms.add(StringUtils.normalizeString(n.label));
 				}
 			}
 		}
