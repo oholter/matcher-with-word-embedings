@@ -18,6 +18,7 @@ import mappings.candidate_finder.AnchorsCandidateFinder;
 import mappings.candidate_finder.BestAnchorsCandidateFinder;
 import mappings.candidate_finder.DisambiguateClassAnchorsFinder;
 import mappings.candidate_finder.TranslationMatrixCandidateFinder;
+import mappings.candidate_finder.TwoDocumentsCandidateFinder;
 import mappings.candidate_finder.Walks;
 import mappings.evaluation.ClassMappingsEvaluator;
 import mappings.evaluation.MappingsEvaluator;
@@ -50,11 +51,11 @@ public class testRuns {
 	public static void main(String[] args) throws Exception {
 		BasicConfigurator.configure();
 
-		int numberOfRuns = 1;
+		int numberOfRuns = 5;
 //		String[] anchorCandidateTypes = new String[] { "allrelationsanchorcandidatefinder",
-//				"bestcandidatefinder", "disambiguateclassanchorsfinder" };
+//				"bestcandidatefinder", "disambiguateclassanchorsfinder", twodocuments" };
 
-		String type = "bestcandidatefinder";
+		String type = "twodocuments";
 
 		String[] candidateTypes = new String[] { "translationmatrixcandidatefinder", "pretrainedvectorcandidatesfinder" };
 
@@ -139,6 +140,9 @@ public class testRuns {
 		} else if (finderType.toLowerCase().equals("translationmatrixcandidatefinder")) {
 			runTranslationMatrixTest(runNo);
 			return;
+		} else if (finderType.toLowerCase().equals("twodocuments")) {
+			runTwoDocumentsTest(runNo);
+			return;
 		} else {
 			System.out.println("Unknown candidate finder: " + finderType);
 			System.exit(0);
@@ -174,6 +178,75 @@ public class testRuns {
 //		out.println("Precision: " + evaluator.calculatePrecision() + ", recall: " + evaluator.calculateRecall() + ", F-measure: " + evaluator.calculateFMeasure());
 		System.out.println("--------------------------------------------");
 
+		precisions[runNo] = evaluator.calculatePrecision();
+		recalls[runNo] = evaluator.calculateRecall();
+		fmeasures[runNo] = evaluator.calculateFMeasure();
+	}
+	
+	public static void runTwoDocumentsTest(int runNo) throws Exception {
+		OntologyReader reader = new OntologyReader();
+		reader.setFname(firstOntologyFile);
+		reader.readOntology();
+		OWLOntology onto1 = reader.getOntology();
+
+		reader.setFname(secondOntologyFile);
+		reader.readOntology();
+		OWLOntology onto2 = reader.getOntology();
+
+		// For training of ontology start:
+		OWLOntology mergedOnto = OntologyReader.mergeOntologies("merged", new OWLOntology[] { onto1, onto2 });
+		TwoDocumentsCandidateFinder finder = new TwoDocumentsCandidateFinder(onto1, onto2, mergedOnto,
+				currentDir + "/temp/out.txt", equalityThreshold, TestRunUtils.labelEqualityThreshold);
+
+		/* Adding anchors by reading an alignments file */
+		AlignmentsReader alignmentsReader = new OAEIAlignmentsReader(referenceAlignmentsFile, onto1, onto2);
+
+		List<MappingObjectStr> mappings = alignmentsReader.getMappings();
+		for (int i = 0; i < (mappings.size() * fractionOfMappings); i++) {
+			MappingObjectStr mapping = mappings.get(i);
+			finder.addAnchor(mapping.getIRIStrEnt1(), mapping.getIRIStrEnt2());
+		}
+		if (fractionOfMappings > 0) {
+			finder.addAnchorsToOntology(mergedOnto);
+		}
+		OntologyReader.writeOntology(mergedOnto, mergedOwlPath, "owl");
+
+		OntologyProjector projector = new OntologyProjector(mergedOwlPath);
+		projector.projectOntology();
+		projector.saveModel(modelPath);
+
+		Walks walks = new Walks(modelPath, walksType);
+		walks.generateWalks();
+		String walksFile = walks.getOutputFile();
+		String labelOutputFile = walks.getLabelOutputFile();
+
+		WordEmbeddingsTrainer trainer = new WordEmbeddingsTrainer(walksFile, currentDir + "/temp/out.txt");
+		trainer.train();
+		finder.setTrainer(trainer);
+
+		WordEmbeddingsTrainer labelTrainer = new WordEmbeddingsTrainer(labelOutputFile,
+				currentDir + "/temp/label_out.txt");
+		labelTrainer.train();
+		finder.setLabelTrainer(labelTrainer);
+
+		finder.createMappings(); // this runs the program
+
+		// evaluating the mappings
+		System.out.println("--------------------------------------------");
+		System.out.println("The alignments file used to provide anchors: ");
+		MappingsEvaluator evaluator = new ClassMappingsEvaluator(referenceAlignmentsFile, logMapAlignmentsFile,
+				finder.getOnto1(), finder.getOnto2());
+		evaluator.printEvaluation();
+		System.out.println("--------------------------------------------");
+
+		System.out.println("This system:");
+		evaluator = new ClassMappingsEvaluator(referenceAlignmentsFile, finder.getOutputAlignment().returnAlignmentFile().getFile(),
+				finder.getOnto1(), finder.getOnto2());
+		evaluator.printEvaluation();
+		System.out.println("--------------------------------------------");
+		
+		System.out.println("Dette er dette er dette er two documents!!!!!!!!!");
+		
 		precisions[runNo] = evaluator.calculatePrecision();
 		recalls[runNo] = evaluator.calculateRecall();
 		fmeasures[runNo] = evaluator.calculateFMeasure();

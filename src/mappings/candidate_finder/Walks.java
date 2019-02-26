@@ -9,6 +9,7 @@ import de.dwslab.petar.walks.WalkGeneratorRand;
 import mappings.walks_generator.Owl2vecWalksGenerator;
 import mappings.walks_generator.Rdf2VecWalksGenerator;
 import mappings.walks_generator.SynonymsOwl2vec;
+import mappings.walks_generator.TwoDocumentsWalksGenerator;
 import mappings.walks_generator.WalksGenerator;
 
 public class Walks {
@@ -17,6 +18,7 @@ public class Walks {
 	private final String TEMP_DIR;
 	private final String TEMP_OUT;
 	private final String TEMP_FILE_NAME = "temp.txt";
+	private final String LABEL_TEMP_FILE_NAME = "label.txt";
 //	private WalkGenerator walkGenerator;
 	private WalkGeneratorRand walkGenerator;
 	private int numWalks;
@@ -64,6 +66,10 @@ public class Walks {
 	public String getOutputFile() {
 		return TEMP_OUT + TEMP_FILE_NAME;
 	}
+	
+	public String getLabelOutputFile() {
+		return TEMP_OUT + LABEL_TEMP_FILE_NAME;
+	}
 
 	public void generateWalks() {
 //		SynonymsOwl2vec(String in, String outputFilePath, int numThreads, int walkDepth, int limit, int nmWalks,
@@ -82,7 +88,12 @@ public class Walks {
 			walks = new SynonymsOwl2vec(inputFile, getOutputFile(), numThreads, walkDepth, classLimit, numWalks, offset,
 					childLimit);
 			System.out.println("using synonymsOWL2Vec");
-		} else {
+		} else if (type.toLowerCase().equals("twodocuments")) {
+			walks = new TwoDocumentsWalksGenerator(inputFile, getOutputFile(), getLabelOutputFile(), numThreads,
+					walkDepth, classLimit, numWalks, offset, childLimit);
+		}
+
+		else {
 			walks = new Owl2vecWalksGenerator(inputFile, getOutputFile(), numThreads, walkDepth, classLimit, numWalks,
 					offset, childLimit);
 			System.out.println("using OWL2Vec");

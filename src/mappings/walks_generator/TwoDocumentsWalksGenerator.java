@@ -105,6 +105,10 @@ public class TwoDocumentsWalksGenerator extends Owl2vecWalksGenerator {
 			e.printStackTrace();
 		}
 	}
+	
+	public String getLabelOutputFilePath() {
+		return labelOutputFilePath;
+	}
 
 	public static void main(String[] args) {
 		Logger log = LoggerFactory.getLogger(WordEmbeddingsTrainer.class);

@@ -29,9 +29,10 @@ public class TestRunUtils {
 //	public static String baseUriString2 = "http://human";
 //	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/mouse-human.rdf";
 	
-	public static String walksType = "synonymsowl2vec";
+//	public static String walksType = "synonymsowl2vec";
 //	public static String walksType = "owl2vec";
 //	public static String walksType = "rdf2vec";
+	public static String walksType = "TwoDocuments";
 	
 	
 	public static String logMapAlignmentsFile = "/home/ole/master/logmap_standalone/output/logmap2_mappings.rdf";
@@ -40,6 +41,8 @@ public class TestRunUtils {
 	public static String word2vecModelPath = "/home/ole/master/word2vec/models/fil9.model";
 	public static String owlOutPath = "file:/home/ole/master/test_onto/out.owl";
 
-	public static double equalityThreshold = 0.9;
+	public static double equalityThreshold = 0.90;
 	public static double fractionOfMappings = 1.0;
+
+	public static double labelEqualityThreshold = 0.90; // for the two document 
 }
