@@ -64,13 +64,21 @@ public class TwoDocumentsCandidateFinder extends DisambiguateClassAnchorsFinder 
 			double matchScore;
 			double bestED;
 			double edMatch;
-
-			double iriSimilarity_string = labelTrainer.getAvgVectorCosine(iriFromClassToMatch.split(" "),
+			double iriSimilarity_string = 0;
+			double labelSimilarity_string = 0;
+			double commentSimilarity_string = 0;
+			
+			if (iriFromClassToMatch != null && iriFromCandidate != null) {
+			iriSimilarity_string = labelTrainer.getAvgVectorCosine(iriFromClassToMatch.split(" "),
 					iriFromCandidate.split(" "));
-			double labelSimilarity_string = labelTrainer.getAvgVectorCosine(iriFromClassToMatch.split(" "),
-					iriFromCandidate.split(" "));
-			double commentSimilarity_string = labelTrainer.getAvgVectorCosine(iriFromClassToMatch.split(" "),
-					iriFromCandidate.split(" "));
+			}
+			if (labelFromClassToMatch != null && labelFromCandidate != null) {
+			labelSimilarity_string = labelTrainer.getAvgVectorCosine(labelFromClassToMatch.split(" "),
+					labelFromCandidate.split(" "));
+			}
+			if (commentFromClassToMatch != null && commentFromCandidate != null)
+			commentSimilarity_string = labelTrainer.getAvgVectorCosine(commentFromClassToMatch.split(" "),
+					commentFromCandidate.split(" "));
 
 			double bestMatch = Math.max(iriSimilarity_string,
 					Math.max(labelSimilarity_string, commentSimilarity_string));

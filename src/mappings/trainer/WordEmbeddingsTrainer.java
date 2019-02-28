@@ -26,11 +26,12 @@ public class WordEmbeddingsTrainer {
 	String outputFilePath;
 	Word2Vec model;
 	int numEpocs = 1;
-	int windowSize = 15;
-	int numIterations = 1;
-	int layerSize = 100;
-	int minWordFrequency = 5;
+	int windowSize = 5; // 15
+	int numIterations = 5; // 1
+	int layerSize = 200; // 100
+	int minWordFrequency = 1;
 	int seed = 42; // 42
+	int numNegativeSamples = 25; // 25
 
 	public WordEmbeddingsTrainer(String inputFile, String outputFile) throws Exception {
 		inputFilePath = new File(inputFile).getAbsolutePath();
@@ -57,7 +58,7 @@ public class WordEmbeddingsTrainer {
 //		t.setTokenPreProcessor(new CommonPreprocessor());
 		log.info("Building model....");
 		model = new Word2Vec.Builder().minWordFrequency(minWordFrequency).iterations(numIterations).layerSize(layerSize)
-				.seed(seed).windowSize(windowSize).iterate(iter).tokenizerFactory(t).build();
+				.seed(seed).windowSize(windowSize).iterate(iter).tokenizerFactory(t).negativeSample(numNegativeSamples).build();
 		log.info("Fitting w2v model");
 		System.out.println("fitting model");
 		for (int i = 0; i < numEpocs; i++) {
