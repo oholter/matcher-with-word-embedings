@@ -21,6 +21,7 @@ import mappings.trainer.WordEmbeddingsTrainer;
 import mappings.utils.AlignmentUtilities;
 import mappings.utils.TestRunUtils;
 import mappings.utils.VectorUtils;
+import mappings.walks_generator.Walks;
 
 public class AllRelationsAnchorCandidateFinder extends AnchorsCandidateFinder {
 
@@ -91,7 +92,7 @@ public class AllRelationsAnchorCandidateFinder extends AnchorsCandidateFinder {
 
 		// For training of ontology start:
 		OWLOntology mergedOnto = OntologyReader.mergeOntologies("merged", new OWLOntology[] { onto1, onto2 });
-		AnchorsCandidateFinder finder = new BestAnchorsCandidateFinder(onto1, onto2, mergedOnto,
+		AnchorsCandidateFinder finder = new AllRelationsAnchorCandidateFinder(onto1, onto2, mergedOnto,
 				currentDir + "/temp/out.txt", equalityThreshold);
 
 		/* Adding anchors, by using word embeddings or by manually adding them */

@@ -211,6 +211,55 @@ public class WeightedDirectedGraph {
 		}
 	}
 
+	public List<String> generateAllSubClassWalks() {
+		if (head != null) {
+			ArrayList<String> allSubClassWalks = new ArrayList<>();
+			String tmp = replaceNamespaces(head.label) + " ";
+			for (Edge e : head.edges) {
+				int numSubClasses = 0;
+				if (e.label.equals("http://www.w3.org/2000/01/rdf-schema#subClassOf")) {
+					for (Node nextNode : e.outNodes) {
+//						System.out.println(head.label + "->" + nextNode.label);
+//						tmp += replaceNamespaces(e.label) + " ";
+						numSubClasses++;
+						generateSubClassWalk(nextNode, 2, allSubClassWalks, tmp);
+					}
+//					System.out.println("node: " + head.label + " has " + numSubClasses + " subclasses");
+				}
+			}
+			if (allSubClassWalks.size() == 0) {
+				allSubClassWalks.add(tmp + "owl:Thing"); // using owl:Thing for mark all as top-classes
+			}
+			return allSubClassWalks;
+		} else {
+			return null;
+		}
+	}
+
+	public void generateSubClassWalk(Node node, int level, ArrayList<String> walks, String tmp) {
+		String nodeName = replaceNamespaces(node.label);
+		if (!tmp.contains(nodeName)) { // avoid looping over the same nodes
+			tmp += nodeName + " ";
+			if (level < walkDepth && node.edges != null && node.edges.size() > 0) {
+				int numSubClassEdges = 0;
+				for (Edge e : node.edges) {
+					if (e.label.equals("http://www.w3.org/2000/01/rdf-schema#subClassOf")) {
+						for (Node nextNode : e.outNodes) {
+							numSubClassEdges++;
+//						tmp += replaceNamespaces(e.label) + " ";
+							generateSubClassWalk(nextNode, level + 1, walks, tmp);
+						}
+					}
+				}
+				if (numSubClassEdges == 0) {
+					walks.add(tmp); // has edges, but no subClassEdges --> end
+				}
+			} else { // either walk depth or no more edges --> end
+				walks.add(tmp);
+			}
+		}
+	}
+
 	public String generateRandomWalk(Node node, int level) {
 		String tmpWalk = "";
 		tmpWalk += replaceNamespaces(node.label) + " ";

@@ -7,16 +7,16 @@ import java.util.Random;
 import mappings.utils.StringUtils;
 
 public class Edge {
-	int SUBCLASS_WEIGHT = 5; // 5
-	int SUPERCLASS_WEIGHT = 5;
+	int SUBCLASS_WEIGHT = 10; // 5
+	int SUPERCLASS_WEIGHT = 0;
 	int DISJOINT_CLASS_WEIGHT = 0;
 	int A_SUB_R_SOME_B_WEIGHT = 0;
 	int A_SUB_R_ONLY_B_WEIGHT = 0;
 	int INVERSE_OF_WEIGHT = 0;
 	int RANGE_DOMAIN_WEIGHT = 0;
-	int TYPE_WEIGHT = 5; // 5?
-	int NORMAL_PROPERTY_WEIGHT = 5;
-	int RANDOM_JUMP_WEIGHT = 2; // 10
+	int TYPE_WEIGHT = 0; // 5?
+	int NORMAL_PROPERTY_WEIGHT = 0;
+	int RANDOM_JUMP_WEIGHT = 0; // 1
 	
 	public String label;
 	public List<Node> outNodes;

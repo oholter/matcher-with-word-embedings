@@ -19,12 +19,12 @@ import mappings.candidate_finder.BestAnchorsCandidateFinder;
 import mappings.candidate_finder.DisambiguateClassAnchorsFinder;
 import mappings.candidate_finder.TranslationMatrixCandidateFinder;
 import mappings.candidate_finder.TwoDocumentsCandidateFinder;
-import mappings.candidate_finder.Walks;
 import mappings.evaluation.ClassMappingsEvaluator;
 import mappings.evaluation.MappingsEvaluator;
 import mappings.trainer.OntologyProjector;
 import mappings.trainer.WordEmbeddingsTrainer;
 import mappings.utils.TestRunUtils;
+import mappings.walks_generator.Walks;
 
 public class testRuns {
 

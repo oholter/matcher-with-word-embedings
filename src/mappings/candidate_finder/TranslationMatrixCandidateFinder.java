@@ -41,6 +41,7 @@ import mappings.trainer.WordEmbeddingsTrainer;
 import mappings.utils.AlignmentUtilities;
 import mappings.utils.TestRunUtils;
 import mappings.utils.VectorUtils;
+import mappings.walks_generator.Walks;
 
 public class TranslationMatrixCandidateFinder extends CandidateFinder {
 	final double ANCHOR_SIMILARITY = 0.95;

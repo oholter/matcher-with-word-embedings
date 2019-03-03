@@ -18,6 +18,7 @@ import mappings.trainer.OntologyProjector;
 import mappings.trainer.WordEmbeddingsTrainer;
 import mappings.utils.TestRunUtils;
 import mappings.utils.VectorUtils;
+import mappings.walks_generator.Walks;
 
 public class ThreeMethodsCandidateFinder extends AnchorsCandidateFinder {
 
@@ -130,13 +131,16 @@ public class ThreeMethodsCandidateFinder extends AnchorsCandidateFinder {
 				pretrainedCosine = Math.max(iriSimilarity_pretrained,
 						Math.max(labelSimilarity_pretrained, commentSimilarity_pretrained));
 
-				if (Double.isNaN(labelCosine)) {
-					labelCosine = 0;
+				if (Double.isNaN(pretrainedCosine)) {
+					pretrainedCosine = 0;
 				}
 
-				if (owl2vecCosine > 0.5) {
+				if (owl2vecCosine > distLimit || labelCosine > distLimit || pretrainedCosine > distLimit) {
 					resultWriter.println(iriFromFirstOntology + "," + iriFromSecondOntology + "," + owl2vecCosine + ","
 							+ labelCosine + "," + pretrainedCosine);
+					System.out.println(iriFromFirstOntology + "," + iriFromSecondOntology + "," + owl2vecCosine + ","
+							+ labelCosine + "," + pretrainedCosine);
+					numCandidates++;
 				}
 			} // end classFromSecondOntology
 

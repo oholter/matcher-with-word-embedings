@@ -26,6 +26,7 @@ import mappings.trainer.WordEmbeddingsTrainer;
 import mappings.utils.AlignmentUtilities;
 import mappings.utils.TestRunUtils;
 import mappings.utils.VectorUtils;
+import mappings.walks_generator.Walks;
 
 public class DisambiguateClassAnchorsFinder extends AnchorsCandidateFinder {
 	public DisambiguateClassAnchorsFinder(OWLOntology o1, OWLOntology o2, OWLOntology mergedOnto, String modelPath,

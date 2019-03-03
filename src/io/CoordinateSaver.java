@@ -1,4 +1,4 @@
-package mappings.trainer;
+package io;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -18,9 +18,13 @@ import org.nd4j.linalg.primitives.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import mappings.trainer.WordEmbeddingsTrainer;
+
 public class CoordinateSaver {
 	public static void main(String[] args) throws Exception {
-		int iterations = 4;
+		int iterations = 4; // 4
+		int learningRate = 500; // 500
+		int perplexity = 200; // 5000
 		String currentDir = new File(ClassLoader.getSystemClassLoader().getResource("").getPath()).toString();
 		String modelFile = currentDir + "/temp/out.txt";
 		String outFile = currentDir + "/temp/coords.csv";
@@ -50,8 +54,8 @@ public class CoordinateSaver {
 		// STEP 3: build a dual-tree tsne to use later
 		log.info("Build model....");
 		BarnesHutTsne tsne = new BarnesHutTsne.Builder().setMaxIter(iterations).theta(0.5).normalize(false)
-				.learningRate(500).useAdaGrad(false)
-//               .usePca(false)
+				.learningRate(learningRate).useAdaGrad(false)
+               .perplexity(perplexity)
 				.build();
 
 		// STEP 4: establish the tsne values and save them to a file

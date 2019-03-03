@@ -37,7 +37,6 @@ public abstract class AnchorsCandidateFinder extends CandidateFinder {
 	OWLOntology anchorOntology;
 	TranslationMatrix superClassMatrix;
 
-
 	public AnchorsCandidateFinder(OWLOntology o1, OWLOntology o2, OWLOntology mergedOnto, String modelPath,
 			double distLimit) throws Exception {
 		super(o1, o2, modelPath, distLimit);
@@ -47,7 +46,7 @@ public abstract class AnchorsCandidateFinder extends CandidateFinder {
 //		trainer.loadModel();
 		this.modelPath = modelPath;
 	}
-	
+
 	public abstract void generateClassCandidates();
 
 	public void setTrainer(WordEmbeddingsTrainer trainer) {
@@ -151,7 +150,11 @@ public abstract class AnchorsCandidateFinder extends CandidateFinder {
 				subClassIRIs.toArray(new String[0]));
 	}
 
-	public void addAnchorsToOntology(OWLOntology onto) {
+	public void addAnchorsToOntology(OWLOntology onto) throws Exception {
+		if (anchorOntology == null) {
+			OWLOntologyManager man = OWLManager.createOWLOntologyManager();
+			anchorOntology = man.createOntology();
+		}
 		OWLOntologyManager mergedManager = OWLManager.createOWLOntologyManager();
 		Set<OWLEquivalentClassesAxiom> equivalentClasses = anchorOntology.getAxioms(AxiomType.EQUIVALENT_CLASSES);
 		Set<OWLEquivalentObjectPropertiesAxiom> equivalentObjectProperties = anchorOntology
@@ -223,8 +226,6 @@ public abstract class AnchorsCandidateFinder extends CandidateFinder {
 		}
 		System.out.println("Finished lookup ... ... ...");
 	}
-
-
 
 	/** This will generate all object properties **/
 	public void generateAllObjectProperties() {

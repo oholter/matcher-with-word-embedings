@@ -1,4 +1,4 @@
-package mappings.candidate_finder;
+package mappings.walks_generator;
 
 import java.io.File;
 
@@ -6,11 +6,6 @@ import com.hp.hpl.jena.query.Dataset;
 import com.hp.hpl.jena.rdf.model.Model;
 
 import de.dwslab.petar.walks.WalkGeneratorRand;
-import mappings.walks_generator.Owl2vecWalksGenerator;
-import mappings.walks_generator.Rdf2VecWalksGenerator;
-import mappings.walks_generator.SynonymsOwl2vec;
-import mappings.walks_generator.TwoDocumentsWalksGenerator;
-import mappings.walks_generator.WalksGenerator;
 
 public class Walks {
 	private final String CURRENT_DIR;
@@ -40,8 +35,8 @@ public class Walks {
 		REPO_LOCATION = CURRENT_DIR + "/repo";
 //	this.walkGenerator = new WalkGenerator();
 		this.walkGenerator = new WalkGeneratorRand();
-		this.numWalks = 100;
-		this.walkDepth = 3;
+		this.numWalks = 10;
+		this.walkDepth = 4;
 		this.numThreads = 8;
 		this.offset = 0;
 		this.classLimit = 100000;
@@ -66,7 +61,7 @@ public class Walks {
 	public String getOutputFile() {
 		return TEMP_OUT + TEMP_FILE_NAME;
 	}
-	
+
 	public String getLabelOutputFile() {
 		return TEMP_OUT + LABEL_TEMP_FILE_NAME;
 	}
@@ -91,6 +86,11 @@ public class Walks {
 		} else if (type.toLowerCase().equals("twodocuments")) {
 			walks = new TwoDocumentsWalksGenerator(inputFile, getOutputFile(), getLabelOutputFile(), numThreads,
 					walkDepth, classLimit, numWalks, offset, childLimit);
+			System.out.println("Using two documents");
+		} else if (type.toLowerCase().equals("subclasswalks")) {
+			walks = new SubClassWalksGenerator(inputFile, getOutputFile(), numThreads, walkDepth, classLimit, numWalks,
+					offset);
+			System.out.println("Using subClassWalks");
 		}
 
 		else {

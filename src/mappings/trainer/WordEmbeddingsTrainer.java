@@ -25,12 +25,12 @@ public class WordEmbeddingsTrainer {
 	String inputFilePath;
 	String outputFilePath;
 	Word2Vec model;
-	int numEpocs = 1;
-	int windowSize = 5; // 15
-	int numIterations = 5; // 1
+	int windowSize = 10; // 15
+	int numIterations = 100; // 1
 	int layerSize = 200; // 100
 	int minWordFrequency = 1;
 	int seed = 42; // 42
+	int batchSize = 50; // 50
 	int numNegativeSamples = 25; // 25
 
 	public WordEmbeddingsTrainer(String inputFile, String outputFile) throws Exception {
@@ -58,13 +58,11 @@ public class WordEmbeddingsTrainer {
 //		t.setTokenPreProcessor(new CommonPreprocessor());
 		log.info("Building model....");
 		model = new Word2Vec.Builder().minWordFrequency(minWordFrequency).iterations(numIterations).layerSize(layerSize)
-				.seed(seed).windowSize(windowSize).iterate(iter).tokenizerFactory(t).negativeSample(numNegativeSamples).build();
+				.seed(seed).windowSize(windowSize).iterate(iter).tokenizerFactory(t).negativeSample(numNegativeSamples)
+				.batchSize(batchSize).build();
 		log.info("Fitting w2v model");
 		System.out.println("fitting model");
-		for (int i = 0; i < numEpocs; i++) {
-			log.info("EPoch: " + i);
-			model.fit();
-		}
+		model.fit();
 
 		System.out.println("Closest Words:");
 		Collection<String> lst = model.wordsNearest("http://cmt#Conference", 10);

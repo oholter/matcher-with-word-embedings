@@ -13,11 +13,11 @@ import io.OAEIAlignmentsReader;
 import io.OntologyReader;
 import mapping.object.MappingObjectStr;
 import mappings.candidate_finder.BestAnchorsCandidateFinder;
-import mappings.candidate_finder.Walks;
 import mappings.evaluation.ClassMappingsEvaluator;
 import mappings.evaluation.MappingsEvaluator;
 import mappings.trainer.OntologyProjector;
 import mappings.trainer.WordEmbeddingsTrainer;
+import mappings.walks_generator.Walks;
 
 public class BigDocumentCreator {
 
