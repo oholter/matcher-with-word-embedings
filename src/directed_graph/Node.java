@@ -48,35 +48,41 @@ public class Node {
 	}
 
 	/** assuming we have synonyms, return any of the names **/
-//	public String getSomeName() {
-//		if (synonyms == null) { // lazy
-//			synonyms = findSynonyms();
-//		}
-//		int numSynonyms = synonyms.size();
-//		Random randomNumberGenerator = new Random();
-//		int randomIndex = randomNumberGenerator.nextInt(numSynonyms);
-//		return synonyms.get(randomIndex);
-//	}
-	
-	/** adding all synonyms every time **/
 	public String getSomeName(boolean includeURI) {
 		if (synonyms == null) { // lazy
 			synonyms = findSynonyms();
 		}
-		String returnString = "";
-		for (String synonym : synonyms) {
-			if (!includeURI) {
-				if (StringUtils.isUri(synonym)) {
-					continue;
-				}
+		int numSynonyms = synonyms.size();
+		Random randomNumberGenerator = new Random();
+		int randomIndex = randomNumberGenerator.nextInt(numSynonyms);
+		String synonym = synonyms.get(randomIndex);
+		if (!includeURI) {
+			if (StringUtils.isUri(synonym)) { // not to include the URI
+				return getSomeName(includeURI);
 			}
-			returnString += synonym + " ";
 		}
-		
-		if (returnString.trim().length() == 0) {
-			returnString = "NO SYNONYM: " + label;
-		}
-		
-		return returnString;
+		return synonym;
 	}
+	
+//	/** adding all synonyms every time **/
+//	public String getSomeName(boolean includeURI) {
+//		if (synonyms == null) { // lazy
+//			synonyms = findSynonyms();
+//		}
+//		String returnString = "";
+//		for (String synonym : synonyms) {
+//			if (!includeURI) {
+//				if (StringUtils.isUri(synonym)) {
+//					continue;
+//				}
+//			}
+//			returnString += synonym + " ";
+//		}
+//		
+//		if (returnString.trim().length() == 0) {
+//			returnString = "NO SYNONYM: " + label;
+//		}
+//		
+//		return returnString;
+//	}
 }

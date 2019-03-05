@@ -220,7 +220,9 @@ public class WeightedDirectedGraph {
 				if (e.label.equals("http://www.w3.org/2000/01/rdf-schema#subClassOf")) {
 					for (Node nextNode : e.outNodes) {
 //						System.out.println(head.label + "->" + nextNode.label);
-//						tmp += replaceNamespaces(e.label) + " ";
+						if (!tmp.endsWith(replaceNamespaces("http://www.w3.org/2000/01/rdf-schema#subClassOf") + " ")) {
+							tmp += replaceNamespaces(e.label) + " ";
+						}
 						numSubClasses++;
 						generateSubClassWalk(nextNode, 2, allSubClassWalks, tmp);
 					}
@@ -245,8 +247,11 @@ public class WeightedDirectedGraph {
 				for (Edge e : node.edges) {
 					if (e.label.equals("http://www.w3.org/2000/01/rdf-schema#subClassOf")) {
 						for (Node nextNode : e.outNodes) {
+							if (!tmp.endsWith(
+									replaceNamespaces("http://www.w3.org/2000/01/rdf-schema#subClassOf") + " ")) {
+								tmp += replaceNamespaces("http://www.w3.org/2000/01/rdf-schema#subClassOf") + " ";
+							}
 							numSubClassEdges++;
-//						tmp += replaceNamespaces(e.label) + " ";
 							generateSubClassWalk(nextNode, level + 1, walks, tmp);
 						}
 					}
@@ -257,6 +262,10 @@ public class WeightedDirectedGraph {
 			} else { // either walk depth or no more edges --> end
 				walks.add(tmp);
 			}
+		} else {
+//			System.out.println("tmp contains " + nodeName + " tmp: ");
+			tmp = tmp.substring(0, tmp.length() - "rdfs:subClassOf ".length());
+			walks.add(tmp);
 		}
 	}
 

@@ -25,8 +25,8 @@ public class WordEmbeddingsTrainer {
 	String inputFilePath;
 	String outputFilePath;
 	Word2Vec model;
-	int windowSize = 10; // 15
-	int numIterations = 100; // 1
+	int windowSize = 5; // 15
+	int numIterations = 1000; // 1
 	int layerSize = 200; // 100
 	int minWordFrequency = 1;
 	int seed = 42; // 42
