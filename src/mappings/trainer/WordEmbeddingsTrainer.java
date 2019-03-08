@@ -25,8 +25,8 @@ public class WordEmbeddingsTrainer {
 	String inputFilePath;
 	String outputFilePath;
 	Word2Vec model;
-	int windowSize = 5; // 15
-	int numIterations = 1000; // 1
+	int windowSize = 10; // 15
+	int numIterations = 500; // 1
 	int layerSize = 200; // 100
 	int minWordFrequency = 1;
 	int seed = 42; // 42
@@ -79,8 +79,9 @@ public class WordEmbeddingsTrainer {
 		System.out.println("Model saved: " + outputFilePath);
 	}
 
-	public void loadModel() {
+	public void loadModel() throws Exception {
 		model = WordVectorSerializer.readWord2VecModel(outputFilePath);
+
 		log.info("Model loaded: " + outputFilePath);
 		System.out.println("Model loaded " + outputFilePath);
 		System.out.println("model has layerSize: " + model.getLayerSize());

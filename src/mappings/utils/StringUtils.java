@@ -1,14 +1,82 @@
 package mappings.utils;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class StringUtils {
 	public static String normalizeFullIRI(String s) {
 		String httpPattern = "^(http|https)://.*#";
 		s = s.replaceAll(httpPattern, "");
-		return normalizeIRI(s); //replace(" ", "_");
+		return normalizeIRI(s); // replace(" ", "_");
+	}
+
+	/* from the python nltk.corpus.stopwords */
+	public static String[] stopWords = {
+			"ourselves", "hers", "between", "yourself", "but", "again", "there",
+			"about", "once", "during", "out", "very", "having", "with", 
+			"they", "own", "an", "be", "some", "for", "do", "its", "yours", 
+			"such", "into", "of", "most", "itself", "other", "off", "is", "s", 
+			"am", "or", "who", "as", "from", "him", "each", "the", "themselves", 
+			"until", "below", "are", "we", "these", "your", "his", 
+			"through", "don", "nor", "me", "were", "her", "more", "himself", 
+			"this", "down", "should", "our", "their", "while", "above", "both", 
+			"up", "to", "ours", "had", "she", "all", "no", "when", "at", "any", 
+			"before", "them", "same", "and", "been", "have", "in", "will", "on", 
+			"does", "yourselves", "then", "that", "because", "what", "over", "why", 
+			"so", "can", "did", "not", "now", "under", "he", "you", "herself", "has", 
+			"just", "where", "too", "only", "myself", "which", "those", "i", 
+			"after", "few", "whom", "t", "being", "if", "theirs", "my", "against", 
+			"a", "by", "doing", "it", "how", "further", "was", "here", "than"
+	};
+
+	public static Set<String> uri2Bag(String uri) {
+		Set<String> bag = new HashSet<>();
+		String normUri = normalizeFullIRI(uri);
+		String[] normWords = normUri.split(" ");
+		normWords = removeStopWords(normWords);
+		for (String word : normWords) {
+			bag.add(word);
+		}
+		return bag;
 	}
 	
+	public static Set<String> string2Set(String string) {
+		Set<String> set = new HashSet<>();
+		String normString = normalizeString(string);
+		String[] strings = normString.split(" ");
+		strings = removeStopWords(strings);
+		for (String word : strings) {
+			set.add(word);
+		}
+		return set;
+	}
+	
+	public static List<String> removeStopWords(List<String> bag) {
+		for (String stopWord : stopWords) {
+			bag.remove(stopWord);
+		}
+		return bag;
+	}
+	
+	public static String[] removeStopWords(String[] bag) {
+		ArrayList<String> newList = new ArrayList<>();
+			for (String b : bag) {
+				boolean isStopWord = false;
+				for (String stopWord : stopWords) {
+					if (b.equals(stopWord)) {
+						isStopWord = true;
+					}
+			}
+				if (!isStopWord) {
+					newList.add(b);
+				}
+		}
+		return newList.toArray(new String[newList.size()]);
+	}
+
 	public static String normalizeIRI(String s) {
 		if (s != null) {
 			s = s.replaceAll(String.format("%s|%s|%s", "(?<=[A-Z])(?=[A-Z][a-z])", "(?<=[^A-Z])(?=[A-Z])",
@@ -27,21 +95,21 @@ public class StringUtils {
 		if (s != null) {
 			s = s.toLowerCase(); // case normalization
 			s = s.replaceAll("[_-]", " "); // link normalization
-			s = s.replaceAll("[.,]", ""); // remove punctuation
+			s = s.replaceAll("[.,!?]", ""); // remove punctuation and exclamation/interrogation
 			s = s.replaceAll("\\s", " "); // blank normalization
 			s = s.replaceAll("\\s+", " "); // only one blank
 			s = s.trim();
 		}
 		return s;
 	}
-	
+
 	public static String replaceNamespaces(String uri) {
 		uri = uri.replace("http://www.w3.org/2002/07/owl#", "owl:");
 		uri = uri.replace("http://www.w3.org/2000/01/rdf-schema#", "rdfs:");
 		uri = uri.replace("http://www.w3.org/1999/02/22-rdf-syntax-ns#", "rdf:");
 		return uri;
 	}
-	
+
 	public static String normalizeLiteral(String literal) {
 		literal = literal.replaceAll("[-]", "_"); // link normalization
 		literal = literal.replaceAll("[.,']", ""); // remove punctuation
@@ -51,7 +119,7 @@ public class StringUtils {
 		literal = literal.trim();
 		return literal;
 	}
-	
+
 	public static boolean isUri(String string) {
 		String httpPattern = "^(http|https)://.*";
 		URI uri;

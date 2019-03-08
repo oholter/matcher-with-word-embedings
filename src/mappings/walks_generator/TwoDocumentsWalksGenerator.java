@@ -45,8 +45,10 @@ public class TwoDocumentsWalksGenerator extends Owl2vecWalksGenerator {
 				String className = allClasses.get(classNum);
 				WeightedDirectedGraph graph = createWeightedDirectedGraph(className);
 				for (int i = 0; i < numberOfWalks; i++) {
-					String randomWalk = graph.generateRandomWalk();
-					uriLines.add(randomWalk);
+					List<String> subClassWalks = graph.generateAllSubClassWalks();
+					for (String line : subClassWalks) {
+						uriLines.add(line);
+					}
 				}
 				writeToFile(uriLines, outputWriter); // writing the URI document
 				for (int i = 0; i < numberOfWalks; i++) {
@@ -60,7 +62,8 @@ public class TwoDocumentsWalksGenerator extends Owl2vecWalksGenerator {
 
 	/**
 	 * This method is equal to writeToFile but added as a separate method to improve
-	 * parallelization it will not interfere with the other method because it writes to another document
+	 * parallelization it will not interfere with the other method because it writes
+	 * to another document
 	 **/
 	public synchronized void writeToLabelFile(List<String> lines, BufferedWriter writer) {
 		for (String str : lines)
@@ -105,7 +108,7 @@ public class TwoDocumentsWalksGenerator extends Owl2vecWalksGenerator {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public String getLabelOutputFilePath() {
 		return labelOutputFilePath;
 	}
@@ -117,7 +120,8 @@ public class TwoDocumentsWalksGenerator extends Owl2vecWalksGenerator {
 //		RandomWalksGenerator(String inputFile, String outputFile, int numberOfThreads, int walkDepth,
 //		int limit, int numberOfWalks, int offset, int childLimit)
 		Owl2vecWalksGenerator walks = new TwoDocumentsWalksGenerator("/home/ole/master/test_onto/merged.ttl",
-				"/home/ole/master/test_onto/walks_out.txt", "/home/ole/master/test_onto/label_walks_out.txt",  8, 3, 100, 100, 0, 100);
+				"/home/ole/master/test_onto/walks_out.txt", "/home/ole/master/test_onto/label_walks_out.txt", 8, 3, 100,
+				100, 0, 100);
 		walks.generateWalks();
 	}
 }

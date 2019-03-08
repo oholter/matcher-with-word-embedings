@@ -12,7 +12,7 @@ public class WeightedDirectedGraph {
 	public List<Edge> edges;
 	public Node head;
 	public int walkDepth;
-	int RANDOM_JUMP_WEIGHT = 1;
+	int RANDOM_JUMP_WEIGHT = 0;
 	String[] SYNONYM_EDGES = { "http://www.w3.org/2000/01/rdf-schema#label",
 			"http://www.w3.org/2000/01/rdf-schema#comment" };
 
@@ -64,27 +64,31 @@ public class WeightedDirectedGraph {
 		}
 
 		totWeight += RANDOM_JUMP_WEIGHT;
-		Random ran = new Random();
-		int randomNumber = ran.nextInt(totWeight);
+		if (totWeight > 0) {
+			Random ran = new Random();
+			int randomNumber = ran.nextInt(totWeight);
 
-		int accWeight = 0;
-		if (edgeList != null) {
-			for (Edge e : edgeList) {
-				accWeight += e.weight;
-				if (randomNumber <= accWeight) {
-					chosenEdge = e;
-					break;
+			int accWeight = 0;
+			if (edgeList != null) {
+				for (Edge e : edgeList) {
+					accWeight += e.weight;
+					if (randomNumber <= accWeight) {
+						chosenEdge = e;
+						break;
+					}
 				}
 			}
 		}
-		if (chosenEdge == null) {
+		if (chosenEdge == null) { // if edge is not found:
 //			System.out.println("RANDOM EDGE: ");
-			chosenEdge = chooseRandomEdgeWithoutWeights(edges);
+//			chosenEdge = chooseRandomEdgeWithoutWeights(edges);
+			return null;
 //			System.out.println(chosenEdge.label);
 		}
 		return chosenEdge;
 	}
 
+	/* choosing a random edge, but avoiding comment, label etc */
 	public Edge chooseRandomEdgeWithoutSynonyms(List<Edge> edgeList) {
 		int totWeight = 0;
 		Edge chosenEdge = null;
@@ -98,25 +102,28 @@ public class WeightedDirectedGraph {
 		}
 
 		totWeight += RANDOM_JUMP_WEIGHT;
-		Random ran = new Random();
-		int randomNumber = ran.nextInt(totWeight);
+		if (totWeight > 0) {
+			Random ran = new Random();
+			int randomNumber = ran.nextInt(totWeight);
 
-		int accWeight = 0;
-		if (edgeList != null) {
-			for (Edge e : edgeList) {
-				boolean isSynonymEdge = Arrays.stream(SYNONYM_EDGES).anyMatch(e.label::equals);
-				if (!isSynonymEdge) {
-					accWeight += e.weight;
-					if (randomNumber <= accWeight) {
-						chosenEdge = e;
-						break;
+			int accWeight = 0;
+			if (edgeList != null) {
+				for (Edge e : edgeList) {
+					boolean isSynonymEdge = Arrays.stream(SYNONYM_EDGES).anyMatch(e.label::equals);
+					if (!isSynonymEdge) {
+						accWeight += e.weight;
+						if (randomNumber <= accWeight) {
+							chosenEdge = e;
+							break;
+						}
 					}
 				}
 			}
 		}
-		if (chosenEdge == null) {
+		if (chosenEdge == null) { // if no edge was found
 //			System.out.println("RANDOM EDGE: ");
-			chosenEdge = chooseRandomEdgeWithoutWeightsAndSynonyms(edges);
+//			chosenEdge = chooseRandomEdgeWithoutWeightsAndSynonyms(edges);
+			return null;
 //			System.out.println(chosenEdge.label);
 		}
 		return chosenEdge;
@@ -367,15 +374,24 @@ public class WeightedDirectedGraph {
 	public List<String> findSynonyms() {
 		Node node = head;
 		ArrayList<String> synonyms = new ArrayList<>();
-		synonyms.add(head.label);
-		synonyms.add(StringUtils.normalizeFullIRI(node.label));
+		String uriLabel = head.label;
+		synonyms.add(uriLabel);
+		synonyms.add(StringUtils.normalizeFullIRI(uriLabel));
+		for (String token : StringUtils.removeStopWords(StringUtils.normalizeFullIRI(uriLabel).split(" "))) {
+			synonyms.add(token);
+		}
 
 		for (Edge e : node.edges) {
 			boolean isSynonymEdge = Arrays.stream(SYNONYM_EDGES).anyMatch(e.label::equals);
 			if (isSynonymEdge) {
 				for (Node n : e.outNodes) {
-					synonyms.add(n.label);
-					synonyms.add(StringUtils.normalizeString(n.label));
+					String synonymLabel = n.label;
+					synonyms.add(synonymLabel);
+//					synonyms.add(StringUtils.normalizeFullIRI(synonymLabel));
+					for (String token : StringUtils
+							.removeStopWords(StringUtils.normalizeString(synonymLabel).split(" "))) {
+						synonyms.add(token);
+					}
 				}
 			}
 		}
