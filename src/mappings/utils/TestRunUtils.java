@@ -11,23 +11,23 @@ public class TestRunUtils {
 	
 	
 	// EKAW-CMT
-//	public static String firstOntologyFile = "/home/ole/master/test_onto/cmt.owl";
-//	public static String secondOntologyFile = "/home/ole/master/test_onto/ekaw.owl";
-//	public static String nameSpaceString1 = "cmt";
-//	public static String nameSpaceString2 = "ekaw";
-//	public static String baseUriString1 = "http://cmt";
-//	public static String baseUriString2 = "http://ekaw";
-//	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/cmt-ekaw.rdf";
-//	
+	public static String firstOntologyFile = "/home/ole/master/test_onto/cmt.owl";
+	public static String secondOntologyFile = "/home/ole/master/test_onto/ekaw.owl";
+	public static String nameSpaceString1 = "cmt";
+	public static String nameSpaceString2 = "ekaw";
+	public static String baseUriString1 = "http://cmt";
+	public static String baseUriString2 = "http://ekaw";
+	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/cmt-ekaw.rdf";
+	
 	
 	// PIZZA
-	public static String firstOntologyFile = "";
-	public static String secondOntologyFile = "/home/ole/master/test_onto/pizza.owl";
-	public static String nameSpaceString1 = "";
-	public static String nameSpaceString2 = "pizza.owl";
-	public static String baseUriString1 = "";
-	public static String baseUriString2 = "http://www.co-ode.org/ontologies/pizza/pizza.owl";
-	public static String referenceAlignmentsFile = "";
+//	public static String firstOntologyFile = "";
+//	public static String secondOntologyFile = "/home/ole/master/test_onto/pizza.owl";
+//	public static String nameSpaceString1 = "";
+//	public static String nameSpaceString2 = "pizza.owl";
+//	public static String baseUriString1 = "";
+//	public static String baseUriString2 = "http://www.co-ode.org/ontologies/pizza/pizza.owl";
+//	public static String referenceAlignmentsFile = "";
 	
 	// ANATOMY
 //	public static String firstOntologyFile = "/home/ole/master/test_onto/mouse.owl";

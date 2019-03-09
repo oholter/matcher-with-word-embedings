@@ -377,7 +377,8 @@ public class WeightedDirectedGraph {
 		String uriLabel = head.label;
 		synonyms.add(uriLabel);
 		synonyms.add(StringUtils.normalizeFullIRI(uriLabel));
-		for (String token : StringUtils.removeStopWords(StringUtils.normalizeFullIRI(uriLabel).split(" "))) {
+//		for (String token : StringUtils.removeStopWords(StringUtils.normalizeFullIRI(uriLabel).split(" "))) {
+		for (String token : StringUtils.uri2Bag(uriLabel)) {
 			synonyms.add(token);
 		}
 
@@ -388,8 +389,9 @@ public class WeightedDirectedGraph {
 					String synonymLabel = n.label;
 					synonyms.add(synonymLabel);
 //					synonyms.add(StringUtils.normalizeFullIRI(synonymLabel));
-					for (String token : StringUtils
-							.removeStopWords(StringUtils.normalizeString(synonymLabel).split(" "))) {
+//					for (String token : StringUtils
+//							.removeStopWords(StringUtils.normalizeString(synonymLabel).split(" "))) {
+					for (String token : StringUtils.uri2Bag(synonymLabel)) {
 						synonyms.add(token);
 					}
 				}

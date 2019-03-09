@@ -40,4 +40,14 @@ public class StringUtilsTest {
 			assertEquals(res[i], expected[i]);
 		}
 	}
+	
+	@Test
+	public void shouldDoStemming() {
+		String[] s = {"walking", "eats"};
+		String[] res = StringUtils.stemming(s);
+		String[] expected = {"walk", "eat"};
+		for (int i = 0; i < res.length; i++) {
+			assertEquals(expected[i], res[i]);
+		}
+	}
 }

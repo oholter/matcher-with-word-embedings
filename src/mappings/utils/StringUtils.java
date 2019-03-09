@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import opennlp.tools.stemmer.PorterStemmer;
 
 public class StringUtils {
 	public static String normalizeFullIRI(String s) {
@@ -37,6 +38,7 @@ public class StringUtils {
 		String normUri = normalizeFullIRI(uri);
 		String[] normWords = normUri.split(" ");
 		normWords = removeStopWords(normWords);
+		normWords = stemming(normWords);
 		for (String word : normWords) {
 			bag.add(word);
 		}
@@ -48,10 +50,25 @@ public class StringUtils {
 		String normString = normalizeString(string);
 		String[] strings = normString.split(" ");
 		strings = removeStopWords(strings);
+		strings = stemming(strings);
 		for (String word : strings) {
 			set.add(word);
 		}
 		return set;
+	}
+	
+	public static String[] stemming(String[] strs) {
+		ArrayList<String> newList = new ArrayList<>();
+		for (String s : strs) {
+			newList.add(stemming(s));
+		}
+		return newList.toArray(new String[newList.size()]);
+	}
+	
+	public static String stemming(String string) {
+		PorterStemmer stemmer = new PorterStemmer();
+		String stemmedString = stemmer.stem(string);
+		return stemmedString;
 	}
 	
 	public static List<String> removeStopWords(List<String> bag) {

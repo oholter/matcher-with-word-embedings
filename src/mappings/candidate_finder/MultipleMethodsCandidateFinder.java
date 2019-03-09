@@ -384,7 +384,8 @@ public class MultipleMethodsCandidateFinder extends AnchorsCandidateFinder {
 		String labelWalksFile = walks.getLabelOutputFile();
 
 		WordEmbeddingsTrainer owl2vecTrainer = new WordEmbeddingsTrainer(owl2vecWalksFile,
-				currentDir + "/temp/out.txt");
+//				currentDir + "/temp/out.txt");
+				"/home/ole/workspace/MatcherWithWordEmbeddings/py/plot/model.bin");
 //		owl2vecTrainer.train();
 		owl2vecTrainer.loadModel();
 		finder.setOwl2VecTrainer(owl2vecTrainer);

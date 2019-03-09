@@ -10,6 +10,7 @@ import java.util.Collection;
 
 import org.deeplearning4j.models.embeddings.WeightLookupTable;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
+import org.deeplearning4j.models.embeddings.wordvectors.WordVectors;
 import org.deeplearning4j.models.word2vec.VocabWord;
 import org.deeplearning4j.models.word2vec.Word2Vec;
 import org.deeplearning4j.models.word2vec.wordstore.VocabCache;
@@ -81,15 +82,15 @@ public class WordEmbeddingsTrainer {
 
 	public void loadModel() throws Exception {
 		model = WordVectorSerializer.readWord2VecModel(outputFilePath);
-
+		
 		log.info("Model loaded: " + outputFilePath);
 		System.out.println("Model loaded " + outputFilePath);
-		System.out.println("model has layerSize: " + model.getLayerSize());
+//		System.out.println("model has layerSize: " + model.getLayerSize());
 		System.out.println(model.getWordVector("http://cmt#Acceptance"));
 
-		WeightLookupTable<VocabWord> s = model.getLookupTable();
-		VocabCache<VocabWord> c = s.getVocabCache();
-		log.info("num word: " + c.numWords());
+//		WeightLookupTable<VocabWord> s = model.getLookupTable();
+//		VocabCache<VocabWord> c = s.getVocabCache();
+//		log.info("num word: " + c.numWords());
 //		Collection<VocabWord> col = c.tokens();
 //		col.forEach(System.out::println);
 	}

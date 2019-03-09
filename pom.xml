@@ -176,6 +176,11 @@
 			<artifactId>pellet-jena</artifactId>
 			<version>2.3.6-ansell</version>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.opennlp</groupId>
+			<artifactId>opennlp-tools</artifactId>
+			<version>1.9.1</version>
+		</dependency>
 
 
 	</dependencies>
