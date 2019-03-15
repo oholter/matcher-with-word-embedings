@@ -5,16 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.BasicConfigurator;
-import org.semanticweb.owlapi.model.OWLAnnotation;
-import org.semanticweb.owlapi.model.OWLAnnotationAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLClass;
-import org.semanticweb.owlapi.model.OWLEquivalentClassesAxiom;
-import org.semanticweb.owlapi.model.OWLLiteral;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import edit_distance.EditDistance;
 import io.AlignmentsReader;
 import io.OAEIAlignmentsReader;
 import io.OntologyReader;
@@ -23,7 +18,7 @@ import mappings.evaluation.ClassMappingsEvaluator;
 import mappings.evaluation.MappingsEvaluator;
 import mappings.trainer.OntologyProjector;
 import mappings.trainer.WordEmbeddingsTrainer;
-import mappings.utils.AlignmentUtilities;
+import mappings.utils.StringUtils;
 import mappings.utils.TestRunUtils;
 import mappings.utils.VectorUtils;
 import mappings.walks_generator.Walks;
@@ -52,8 +47,8 @@ public class TwoDocumentsCandidateFinder extends DisambiguateClassAnchorsFinder 
 
 		for (OWLClass candidate : candidates) {
 			double cosineSimilarity = VectorUtils.cosineSimilarity(
-					trainer.getWordVector(classToMatch.getIRI().toString()),
-					trainer.getWordVector(candidate.getIRI().toString()));
+					trainer.getWordVector(StringUtils.normalizeFullIRINoSpace(classToMatch.getIRI().toString())),
+					trainer.getWordVector(StringUtils.normalizeFullIRINoSpace(candidate.getIRI().toString())));
 			if (Double.isNaN(cosineSimilarity)) {
 				cosineSimilarity = 0;
 			}
@@ -68,18 +63,18 @@ public class TwoDocumentsCandidateFinder extends DisambiguateClassAnchorsFinder 
 			double iriSimilarity_string = 0;
 			double labelSimilarity_string = 0;
 			double commentSimilarity_string = 0;
-			
+
 			if (iriFromClassToMatch != null && iriFromCandidate != null) {
-			iriSimilarity_string = labelTrainer.getAvgVectorCosine(iriFromClassToMatch.split(" "),
-					iriFromCandidate.split(" "));
+				iriSimilarity_string = labelTrainer.getAvgVectorCosine(iriFromClassToMatch.split(" "),
+						iriFromCandidate.split(" "));
 			}
 			if (labelFromClassToMatch != null && labelFromCandidate != null) {
-			labelSimilarity_string = labelTrainer.getAvgVectorCosine(labelFromClassToMatch.split(" "),
-					labelFromCandidate.split(" "));
+				labelSimilarity_string = labelTrainer.getAvgVectorCosine(labelFromClassToMatch.split(" "),
+						labelFromCandidate.split(" "));
 			}
 			if (commentFromClassToMatch != null && commentFromCandidate != null)
-			commentSimilarity_string = labelTrainer.getAvgVectorCosine(commentFromClassToMatch.split(" "),
-					commentFromCandidate.split(" "));
+				commentSimilarity_string = labelTrainer.getAvgVectorCosine(commentFromClassToMatch.split(" "),
+						commentFromCandidate.split(" "));
 
 			double bestMatch = Math.max(iriSimilarity_string,
 					Math.max(labelSimilarity_string, commentSimilarity_string));
@@ -110,10 +105,12 @@ public class TwoDocumentsCandidateFinder extends DisambiguateClassAnchorsFinder 
 		double fractionOfMappings = TestRunUtils.fractionOfMappings;
 		String walksType = "TwoDocuments";
 
+		// Logging()
 		Logger log = LoggerFactory.getLogger(WordEmbeddingsTrainer.class);
 		String currentDir = new File(ClassLoader.getSystemClassLoader().getResource("").getPath()).toString();
 		BasicConfigurator.configure();
 
+		// Reading the two ontologies
 		OntologyReader reader = new OntologyReader();
 		reader.setFname(firstOntologyFile);
 		reader.readOntology();
@@ -123,9 +120,15 @@ public class TwoDocumentsCandidateFinder extends DisambiguateClassAnchorsFinder 
 		reader.readOntology();
 		OWLOntology onto2 = reader.getOntology();
 
+		// Reading and storing all conference ontologies
+		OWLOntology allOntos = reader.readAllConferenceOntologies();
+
 		// For training of ontology start:
-		OWLOntology mergedOnto = OntologyReader.mergeOntologies("merged", new OWLOntology[] { onto1, onto2 });
-		TwoDocumentsCandidateFinder finder = new TwoDocumentsCandidateFinder(onto1, onto2, mergedOnto,
+//		OWLOntology mergedOnto = OntologyReader.mergeOntologies("merged", new OWLOntology[] { onto1, onto2 });
+//		TwoDocumentsCandidateFinder finder = new TwoDocumentsCandidateFinder(onto1, onto2, mergedOnto,
+//				currentDir + "/temp/out.txt", equalityThreshold, TestRunUtils.labelEqualityThreshold);
+
+		TwoDocumentsCandidateFinder finder = new TwoDocumentsCandidateFinder(onto1, onto2, allOntos,
 				currentDir + "/temp/out.txt", equalityThreshold, TestRunUtils.labelEqualityThreshold);
 
 		/* Adding anchors, by using word embeddings or by manually adding them */
@@ -140,31 +143,36 @@ public class TwoDocumentsCandidateFinder extends DisambiguateClassAnchorsFinder 
 			finder.addAnchor(mapping.getIRIStrEnt1(), mapping.getIRIStrEnt2());
 		}
 		if (fractionOfMappings > 0) {
-			finder.addAnchorsToOntology(mergedOnto);
+			finder.addAnchorsToOntology(allOntos);
 		}
-		OntologyReader.writeOntology(mergedOnto, TestRunUtils.mergedOwlPath, "owl");
 
-		OntologyProjector projector = new OntologyProjector(TestRunUtils.mergedOwlPath);
+		reader.writeOntology(allOntos, "file:/home/ole/master/test_onto/allconf.owl", "owl");
+//		OntologyReader.writeOntology(mergedOnto, TestRunUtils.mergedOwlPath, "owl");
+
+		// projecting allOntos
+//		OntologyProjector projector = new OntologyProjector(TestRunUtils.mergedOwlPath);
+		OntologyProjector projector = new OntologyProjector(TestRunUtils.allConferencePath);
 		projector.projectOntology();
-		projector.saveModel("/home/ole/master/test_onto/merged.ttl");
+		projector.saveModel("/home/ole/master/test_onto/allConf.ttl");
 
-		Walks walks = new Walks("/home/ole/master/test_onto/merged.ttl", walksType);
+		Walks walks = new Walks("/home/ole/master/test_onto/allConf.ttl", walksType);
 		walks.generateWalks();
+		
+		
 		String walksFile = walks.getOutputFile();
 		String labelOutputFile = walks.getLabelOutputFile();
-
+//
 		WordEmbeddingsTrainer trainer = new WordEmbeddingsTrainer(walksFile, currentDir + "/temp/out.txt");
-		trainer.train();
+		trainer.loadGensimModel("/home/ole/workspace/MatcherWithWordEmbeddings/py/plot/model.bin");
 		finder.setTrainer(trainer);
 
-		WordEmbeddingsTrainer labelTrainer = new WordEmbeddingsTrainer(labelOutputFile,
-				currentDir + "/temp/label_out.txt");
-		labelTrainer.train();
+		WordEmbeddingsTrainer labelTrainer = new WordEmbeddingsTrainer(labelOutputFile, currentDir + "temp/label_out.txt");
+		labelTrainer.loadGensimModel("/home/ole/workspace/MatcherWithWordEmbeddings/py/plot/label_pretrained.bin");
 		finder.setLabelTrainer(labelTrainer);
-
+		
 		finder.createMappings(); // this runs the program
 
-		// evaluating the mappings
+//		 evaluating the mappings
 		System.out.println("--------------------------------------------");
 		System.out.println("The alignments file used to provide anchors: ");
 		MappingsEvaluator evaluator = new ClassMappingsEvaluator(referenceAlignmentsFile, logMapAlignmentsFile,

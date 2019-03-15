@@ -24,6 +24,7 @@ import mappings.evaluation.MappingsEvaluator;
 import mappings.trainer.OntologyProjector;
 import mappings.trainer.WordEmbeddingsTrainer;
 import mappings.utils.AlignmentUtilities;
+import mappings.utils.StringUtils;
 import mappings.utils.TestRunUtils;
 import mappings.utils.VectorUtils;
 import mappings.walks_generator.Walks;
@@ -46,8 +47,8 @@ public class DisambiguateClassAnchorsFinder extends AnchorsCandidateFinder {
 				String iriFromSecondOntology = classFromSecondOntology.getIRI().toString();
 
 				double iriCosine = 0;
-				iriCosine = VectorUtils.cosineSimilarity(trainer.getWordVector(iriFromFirstOntology),
-						trainer.getWordVector(iriFromSecondOntology));
+				iriCosine = VectorUtils.cosineSimilarity(trainer.getWordVector(StringUtils.normalizeFullIRINoSpace(iriFromFirstOntology)),
+						trainer.getWordVector(StringUtils.normalizeFullIRINoSpace(iriFromSecondOntology)));
 				if (Double.isNaN(iriCosine)) {
 					iriCosine = 0;
 				}

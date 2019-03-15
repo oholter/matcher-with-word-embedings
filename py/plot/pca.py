@@ -2,10 +2,11 @@ import gensim
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 
-max_plots = 500
+max_plots = 5000
 #input_file = 'model.bin'
+input_file = 'model2.bin'
 #input_file = 'label.bin'
-input_file = 'label_pretrained.bin'
+#input_file = 'label_pretrained2.bin'
 #input_file = '/home/ole/workspace/MatcherWithWordEmbeddings/target/classes/temp/out.txt'
 
 model = gensim.models.Word2Vec.load(input_file)

@@ -6,6 +6,7 @@ import com.hp.hpl.jena.query.Dataset;
 import com.hp.hpl.jena.rdf.model.Model;
 
 import de.dwslab.petar.walks.WalkGeneratorRand;
+import mappings.utils.TestRunUtils;
 
 public class Walks {
 	private final String CURRENT_DIR;
@@ -35,8 +36,8 @@ public class Walks {
 		REPO_LOCATION = CURRENT_DIR + "/repo";
 //	this.walkGenerator = new WalkGenerator();
 		this.walkGenerator = new WalkGeneratorRand();
-		this.numWalks = 10;
-		this.walkDepth = 4;
+		this.numWalks = 50;
+		this.walkDepth = 40;
 		this.numThreads = 8;
 		this.offset = 0;
 		this.classLimit = 100000;
@@ -91,6 +92,11 @@ public class Walks {
 			walks = new SubClassWalksGenerator(inputFile, getOutputFile(), numThreads, walkDepth, classLimit, numWalks,
 					offset);
 			System.out.println("Using subClassWalks");
+		} else if (type.toLowerCase().equals("secondorder")) {
+			double p = TestRunUtils.p;
+			double q = TestRunUtils.q;
+			walks = new SecondOrderWalksGenerator(inputFile, getOutputFile(), numThreads, walkDepth, classLimit, numWalks, offset, p, q, "fulluri");
+			System.out.println("Using secondOrderWalks");
 		}
 
 		else {

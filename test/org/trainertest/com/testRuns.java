@@ -51,11 +51,11 @@ public class testRuns {
 	public static void main(String[] args) throws Exception {
 		BasicConfigurator.configure();
 
-		int numberOfRuns = 5;
+		int numberOfRuns = 1;
 //		String[] anchorCandidateTypes = new String[] { "allrelationsanchorcandidatefinder",
 //				"bestcandidatefinder", "disambiguateclassanchorsfinder", twodocuments" };
 
-		String type = "twodocuments";
+		String type = "bestcandidatefinder";
 
 		String[] candidateTypes = new String[] { "translationmatrixcandidatefinder", "pretrainedvectorcandidatesfinder" };
 

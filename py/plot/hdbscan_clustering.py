@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 import hdbscan
 
 
-#model = KeyedVectors.load("model.bin")
+model = KeyedVectors.load("model.bin")
 #model = KeyedVectors.load("label.bin")
-model = KeyedVectors.load("label_pretrained.bin")
+#model = KeyedVectors.load("label_pretrained.bin")
 w2v_vectors = model.wv.vectors # here you load vectors for each word in your model
 w2v_indices = {word: model.wv.vocab[word].index for word in model.wv.vocab} # here you load indices - with whom you can find an index of the particular word in your model
 

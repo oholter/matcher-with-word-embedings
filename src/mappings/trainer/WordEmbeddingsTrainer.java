@@ -27,12 +27,13 @@ public class WordEmbeddingsTrainer {
 	String outputFilePath;
 	Word2Vec model;
 	int windowSize = 10; // 15
-	int numIterations = 500; // 1
+	int numIterations = 5; // 1
 	int layerSize = 200; // 100
 	int minWordFrequency = 1;
 	int seed = 42; // 42
 	int batchSize = 50; // 50
 	int numNegativeSamples = 25; // 25
+	WordVectors gensimModel;
 
 	public WordEmbeddingsTrainer(String inputFile, String outputFile) throws Exception {
 		inputFilePath = new File(inputFile).getAbsolutePath();
@@ -80,9 +81,19 @@ public class WordEmbeddingsTrainer {
 		System.out.println("Model saved: " + outputFilePath);
 	}
 
+	public void loadGensimModel(String path) throws Exception {
+		File file = new File(path);
+//		WordVectorSerializer.readWord2VecModel(file, false);
+//		Word2Vec vectors = WordVectorSerializer.readBinaryModel(file, true, false); // word must not be null or empty
+//		WordVectorSerializer.readParagraphVectors(file); // error opening zip-file
+//		WordVectorSerializer.readVocabCache(file);
+//		WordVectorSerializer.loadFullModel(path); // lad vectors from Json
+		gensimModel = WordVectorSerializer.loadTxtVectors(file);
+	}
+
 	public void loadModel() throws Exception {
 		model = WordVectorSerializer.readWord2VecModel(outputFilePath);
-		
+
 		log.info("Model loaded: " + outputFilePath);
 		System.out.println("Model loaded " + outputFilePath);
 //		System.out.println("model has layerSize: " + model.getLayerSize());
@@ -120,7 +131,14 @@ public class WordEmbeddingsTrainer {
 	}
 
 	public double getCosine(String s1, String s2) {
-		return model.similarity(s1, s2);
+		if (model != null) {
+			return model.similarity(s1, s2);
+		} else if (gensimModel != null) {
+			return gensimModel.similarity(s1, s2);
+		} else {
+			System.out.println("No model found!");
+			return Double.NaN;
+		}
 	}
 
 	/**
@@ -132,7 +150,15 @@ public class WordEmbeddingsTrainer {
 	 * @return
 	 */
 	public double getCosine(String s1, String s2, double[] diffVector) {
-		return cosineSimilarity(addTwoVectors(model.getWordVector(s1), diffVector), model.getWordVector(s2));
+		if (model != null) {
+			return cosineSimilarity(addTwoVectors(model.getWordVector(s1), diffVector), model.getWordVector(s2));
+		} else if (gensimModel != null) {
+			return cosineSimilarity(addTwoVectors(gensimModel.getWordVector(s1), diffVector),
+					gensimModel.getWordVector(s2));
+		} else {
+			System.out.println("No model found");
+			return Double.NaN;
+		}
 	}
 
 	public double[] sumVectors(Collection<String> words) {
@@ -240,7 +266,12 @@ public class WordEmbeddingsTrainer {
 		int numberOfTokens = 0;
 
 		for (int i = 0; i < strings.length; i++) {
-			double[] vector = model.getWordVector(strings[i]);
+			double[] vector;
+			if (model != null) {
+				vector = model.getWordVector(strings[i]);
+			} else {
+				vector = gensimModel.getWordVector(strings[i]);
+			}
 //			System.out.println("strings[" + i + "]: " + strings[i]);
 			if (vector != null) {
 				for (int j = 0; j < vector.length; j++) {
@@ -264,7 +295,11 @@ public class WordEmbeddingsTrainer {
 	}
 
 	public double[] getWordVector(String word) {
-		return model.getWordVector(word);
+		if (model != null) {
+			return model.getWordVector(word);
+		} else {
+			return gensimModel.getWordVector(word);
+		}
 	}
 
 	public double cosineSimilarity(double[] vectorA, double[] vectorB) {
@@ -356,6 +391,14 @@ public class WordEmbeddingsTrainer {
 			return sum;
 		} else
 			return -1;
+	}
+
+	public static void main(String[] args) throws Exception {
+		String labelOutputFile = "file:/home/ole/workspace/MatcherWithWordEmbeddings/target/classes/temp/out/label.txt";
+		String currentDir = "/home/ole/workspace/MatcherWithWordEmbeddings/target/classes/";
+		WordEmbeddingsTrainer labelTrainer = new WordEmbeddingsTrainer(labelOutputFile,
+				currentDir + "temp/label_out.txt");
+		labelTrainer.loadGensimModel("/home/ole/workspace/MatcherWithWordEmbeddings/py/plot/label_pretrained.bin");
 	}
 
 }

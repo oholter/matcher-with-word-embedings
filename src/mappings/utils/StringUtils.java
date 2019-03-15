@@ -8,10 +8,16 @@ import java.util.Set;
 import opennlp.tools.stemmer.PorterStemmer;
 
 public class StringUtils {
+	
+	// http://ekaw#ConferenceParticipant -> conference participant
 	public static String normalizeFullIRI(String s) {
 		String httpPattern = "^(http|https)://.*#";
 		s = s.replaceAll(httpPattern, "");
 		return normalizeIRI(s); // replace(" ", "_");
+	}
+	
+	public static String normalizeFullIRINoSpace(String s) {
+		return normalizeFullIRI(s).replaceAll(" ", "_");
 	}
 
 	/* from the python nltk.corpus.stopwords */
@@ -94,6 +100,8 @@ public class StringUtils {
 		return newList.toArray(new String[newList.size()]);
 	}
 
+	// ConferenceParticipant -> conference participant
+	// conference_participant -> conference participant
 	public static String normalizeIRI(String s) {
 		if (s != null) {
 			s = s.replaceAll(String.format("%s|%s|%s", "(?<=[A-Z])(?=[A-Z][a-z])", "(?<=[^A-Z])(?=[A-Z])",

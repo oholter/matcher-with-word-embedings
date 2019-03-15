@@ -43,11 +43,13 @@ public class TestRunUtils {
 //	public static String walksType = "rdf2vec";
 //	public static String walksType = "TwoDocuments";
 	public static String walksType = "subClassWalks";
+//	public static String walksType = "secondorder";
 	
 	
 	public static String logMapAlignmentsFile = "/home/ole/master/logmap_standalone/output/logmap2_mappings.rdf";
 	public static String modelPath = "/home/ole/master/test_onto/merged.ttl";
 	public static String mergedOwlPath = "file:/home/ole/master/test_onto/merged.owl";
+	public static String allConferencePath = "file:/home/ole/master/test_onto/allconf.owl";
 	public static String word2vecModelPath = "/home/ole/master/word2vec/models/fil9.model";
 	public static String owlOutPath = "file:/home/ole/master/test_onto/out.owl";
 	public static String pretrainedModelOutputPath = owlOutPath = "file:/home/ole/master/test_onto/out.model";
@@ -57,8 +59,11 @@ public class TestRunUtils {
 	
 	public static String relatedConceptsPath = "/home/ole/src/thesis/evaluation/ekaw.xml";
 
-	public static double equalityThreshold = 0.50;
-	public static double fractionOfMappings = 0.2;
+	public static double equalityThreshold = 0.0;
+	public static double fractionOfMappings = 1.0;
 
 	public static double labelEqualityThreshold = 0.90; // for the two document 
+	
+	public static double p = 1; // revisit
+	public static double q = 1; // in/out
 }

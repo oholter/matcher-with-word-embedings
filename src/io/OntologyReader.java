@@ -1,15 +1,16 @@
 package io;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.semanticweb.HermiT.ReasonerFactory;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.OWLXMLDocumentFormat;
-import org.semanticweb.owlapi.formats.TurtleDocumentFormat;
-import org.semanticweb.owlapi.formats.RDFDocumentFormat;
 import org.semanticweb.owlapi.formats.RDFXMLDocumentFormat;
+import org.semanticweb.owlapi.formats.TurtleDocumentFormat;
+import org.semanticweb.owlapi.io.OntologyIRIMappingNotFoundException;
 import org.semanticweb.owlapi.model.AddImport;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAxiom;
@@ -45,6 +46,23 @@ public class OntologyReader {
 		OWLReasonerFactory rf = new ReasonerFactory();
 		reasoner = rf.createReasoner(ontology);
 		reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
+	}
+	
+	public OWLOntology readAllConferenceOntologies() throws Exception {
+//		String[] conferenceOntologies = {"cmt", "cocus", "confious", "edas", "ekaw", "iasted", "micro", "paperdyne", "sigkdd", "sofsem"};
+		String[] conferenceOntologies = {"cmt", "edas", "ekaw", "iasted", "micro", "sigkdd"};
+		OntologyReader reader = new OntologyReader();
+		ArrayList<OWLOntology> ontologies = new ArrayList<>();
+		String path = "/home/ole/master/test_onto/";
+		OWLOntologyManager man = OWLManager.createOWLOntologyManager();
+		
+		for (String ontologyFile : conferenceOntologies) {
+			File f = new File(path + ontologyFile + ".owl");
+			OWLOntology onto = man.loadOntologyFromOntologyDocument(f);
+			ontologies.add(onto);
+		}
+		
+		return mergeOntologies("merged", ontologies.toArray(new OWLOntology[ontologies.size()])); 
 	}
 
 	public OWLOntologyManager getMan() {

@@ -23,6 +23,7 @@ import mappings.evaluation.MappingsEvaluator;
 import mappings.trainer.OntologyProjector;
 import mappings.trainer.WordEmbeddingsTrainer;
 import mappings.utils.AlignmentUtilities;
+import mappings.utils.StringUtils;
 import mappings.utils.TestRunUtils;
 import mappings.utils.VectorUtils;
 import mappings.walks_generator.Walks;
@@ -32,7 +33,7 @@ public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 			double distLimit) throws Exception {
 		super(o1, o2, mergedOnto, modelPath, distLimit);
 	}
-	
+
 	/** This generates the best class candidate for each class **/
 	public void generateClassCandidates() {
 		int numCandidates = 0;
@@ -50,11 +51,13 @@ public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 				String iriFromSecondOntology = classFromSecondOntology.getIRI().toString();
 
 				double iriCosine = 0;
-//					System.out.println("TESTING " + iriFromFirstOntology + " and " + iriFromSecondOntology);
 				iriCosine = VectorUtils.cosineSimilarity(trainer.getWordVector(iriFromFirstOntology),
 						trainer.getWordVector(iriFromSecondOntology));
-//					System.out.println("TESTING " + iriFromFirstOntology + " and " + iriFromSecondOntology
-//							+ " gives a similarity of: " + iriCosine);
+//				iriCosine = VectorUtils.cosineSimilarity(
+//						trainer.getWordVector(StringUtils.normalizeFullIRINoSpace(iriFromFirstOntology)),
+//								trainer.getWordVector(StringUtils.normalizeFullIRINoSpace(iriFromSecondOntology)));
+//				System.out.println("TESTING " + iriFromFirstOntology + " and " + iriFromSecondOntology
+//						+ " gives a similarity of: " + iriCosine);
 				if (Double.isNaN(iriCosine)) {
 					iriCosine = 0;
 				}
@@ -83,8 +86,8 @@ public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 
 				System.out.println("Found mapping: " + equivalentClassAxiom + " distance: " + maxSimilarity);
 				try {
-					output.addClassMapping2Output(iriFromFirstOntology, candidate.getIRI().toString(), AlignmentUtilities.EQ,
-							maxSimilarity);
+					output.addClassMapping2Output(iriFromFirstOntology, candidate.getIRI().toString(),
+							AlignmentUtilities.EQ, maxSimilarity);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -95,7 +98,7 @@ public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 
 		System.out.println("Found " + numCandidates + " class candidates:");
 	} // finished generateBestClassCandidates()
-	
+
 	public static void main(String[] args) throws Exception {
 		String firstOntologyFile = TestRunUtils.firstOntologyFile;
 		String secondOntologyFile = TestRunUtils.secondOntologyFile;
@@ -105,12 +108,10 @@ public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 		double fractionOfMappings = TestRunUtils.fractionOfMappings;
 		String walksType = TestRunUtils.walksType;
 
-		
 		Logger log = LoggerFactory.getLogger(WordEmbeddingsTrainer.class);
 		String currentDir = new File(ClassLoader.getSystemClassLoader().getResource("").getPath()).toString();
 		BasicConfigurator.configure();
 
-		
 		OntologyReader reader = new OntologyReader();
 		reader.setFname(firstOntologyFile);
 		reader.readOntology();
@@ -129,8 +130,7 @@ public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 //		finder.findAnchors(); /* this will use word embeddings to find anchors */
 
 		/* Adding anchors by reading an alignments file */
-		AlignmentsReader alignmentsReader = new OAEIAlignmentsReader(
-				referenceAlignmentsFile, onto1, onto2);
+		AlignmentsReader alignmentsReader = new OAEIAlignmentsReader(referenceAlignmentsFile, onto1, onto2);
 //		AlignmentsReader alignmentsReader = new OAEIAlignmentsReader(
 //				"/home/ole/master/logmap_standalone/output/logmap2_mappings.rdf", onto1, onto2);
 
@@ -155,6 +155,7 @@ public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 
 		WordEmbeddingsTrainer trainer = new WordEmbeddingsTrainer(walksFile, currentDir + "/temp/out.txt");
 		trainer.train();
+//		trainer.loadGensimModel("/home/ole/workspace/MatcherWithWordEmbeddings/py/plot/model.bin");
 		finder.setTrainer(trainer);
 
 		finder.createMappings(); // this runs the program
@@ -162,16 +163,14 @@ public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 		// evaluating the mappings
 		System.out.println("--------------------------------------------");
 		System.out.println("The alignments file used to provide anchors: ");
-		MappingsEvaluator evaluator = new ClassMappingsEvaluator(
-				referenceAlignmentsFile,
-				logMapAlignmentsFile, finder.getOnto1(), finder.getOnto2());
+		MappingsEvaluator evaluator = new ClassMappingsEvaluator(referenceAlignmentsFile, logMapAlignmentsFile,
+				finder.getOnto1(), finder.getOnto2());
 		evaluator.printEvaluation();
 		System.out.println("--------------------------------------------");
-		
+
 		System.out.println("This system:");
-		evaluator = new ClassMappingsEvaluator(
-				referenceAlignmentsFile,
-				finder.output.returnAlignmentFile().getFile(), finder.getOnto1(), finder.getOnto2());
+		evaluator = new ClassMappingsEvaluator(referenceAlignmentsFile, finder.output.returnAlignmentFile().getFile(),
+				finder.getOnto1(), finder.getOnto2());
 		evaluator.printEvaluation();
 		System.out.println("--------------------------------------------");
 	}
