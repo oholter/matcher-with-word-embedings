@@ -71,18 +71,26 @@ public class NodeGraph {
 //			System.out.println("src: " + src.toString() + " dst: " + dst.toString());
 
 			// using set to avoid duplicate edges
-			Set<Edge> edgeSet = new HashSet<>(src.edges);
-			edgeSet.addAll(dst.edges);
+			Set<Edge> edgeSet = new HashSet<>(dst.edges);
+//			edgeSet.addAll(src.edges);
 
 			for (Edge e : edgeSet) {
 				double updatedWeight = e.weight;
-				if (e.outNode == src || e.outNode == dst) {
+				if (e.outNode == src) { // || e.outNode == dst) {
 					updatedWeight /= p; // penalizing returning edges
 				}
 
-				if (e.inNode == src) {
-					updatedWeight /= q; // penalizing src edges
+				if (e.outNode.edges != null 
+						&& e.outNode.edges.stream().anyMatch(x -> x.outNode == src)) {
+					// do nothing
+				} else {
+//					System.out.println("Updated weights: " + src + " " + dst);
+					updatedWeight /= q;
 				}
+
+//				if (e.inNode == src) {
+//					updatedWeight /= q; // penalizing src edges
+//				}
 				col.add(updatedWeight, e);
 			}
 			return col.next();
@@ -131,16 +139,15 @@ public class NodeGraph {
 		String str = null;
 		if (outputFormat.toLowerCase().equals("fulluri")) {
 			str = lst.stream().map(n -> n.toString()).collect(Collectors.joining(" "));
-		} else if(outputFormat.toLowerCase().equals("uripart")) {
+		} else if (outputFormat.toLowerCase().equals("uripart")) {
 			str = lst.stream().map(n -> n.getUriPart()).collect(Collectors.joining(" "));
-		} else if(outputFormat.toLowerCase().equals("words")) {
+		} else if (outputFormat.toLowerCase().equals("words")) {
 			str = lst.stream().map(n -> n.getUriWords()).collect(Collectors.joining(" "));
-		} else if(outputFormat.toLowerCase().equals("onesynonym")) {
+		} else if (outputFormat.toLowerCase().equals("onesynonym")) {
 			str = lst.stream().map(n -> n.getOneSynonym()).collect(Collectors.joining(" "));
-		} else if(outputFormat.toLowerCase().equals("allsynonyms")) {
+		} else if (outputFormat.toLowerCase().equals("allsynonyms")) {
 			str = lst.stream().map(n -> n.getAllSynonyms()).collect(Collectors.joining(" "));
-		}
-		else {
+		} else {
 			str = lst.stream().map(n -> n.toString()).collect(Collectors.joining(" "));
 		}
 		return str;

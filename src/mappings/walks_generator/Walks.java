@@ -95,7 +95,7 @@ public class Walks {
 		} else if (type.toLowerCase().equals("secondorder")) {
 			double p = TestRunUtils.p;
 			double q = TestRunUtils.q;
-			walks = new SecondOrderWalksGenerator(inputFile, getOutputFile(), numThreads, walkDepth, classLimit, numWalks, offset, p, q, "fulluri");
+			walks = new SecondOrderWalksGenerator(inputFile, getOutputFile(), numThreads, walkDepth, classLimit, numWalks, offset, p, q, "uripart");
 			System.out.println("Using secondOrderWalks");
 		}
 

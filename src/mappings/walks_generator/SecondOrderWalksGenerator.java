@@ -1,7 +1,6 @@
 package mappings.walks_generator;
 
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -9,8 +8,11 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.BasicConfigurator;
 import org.slf4j.Logger;
@@ -25,13 +27,17 @@ import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 
-import mappings.trainer.WordEmbeddingsTrainer;
+import constraints.uio.ifi.ontology.toolkit.constraint.utils.Utility;
+import mappings.trainer.OntologyProjector;
+import mappings.utils.Rdf4j2Jena;
 import mappings.utils.StringUtils;
+import mappings.utils.TestRunUtils;
 import node_graph.Edge;
 import node_graph.Node;
 import node_graph.NodeGraph;
 
 public class SecondOrderWalksGenerator extends WalksGenerator {
+	Logger log = LoggerFactory.getLogger("Logger");
 	private double p;
 	private double q;
 	private NodeGraph graph;
@@ -47,6 +53,9 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 	private CyclicBarrier cyclicBarrier;
 	private int iter = 0;
 	private String outputFormat;
+	private List<List<Node>> writeBuffer;
+	private int walkThreadsFinished = 0;
+	private Lock writeBufferLock = new ReentrantLock();
 
 	public SecondOrderWalksGenerator(String inputFile, String outputFile, int numberOfThreads, int walkDepth, int limit,
 			int numberOfWalks, int offset, double p, double q, String outputFormat) {
@@ -55,18 +64,28 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		this.q = q;
 		this.outputFormat = outputFormat;
 		this.adjacentPropertiesQuery = "SELECT DISTINCT ?p ?o WHERE {$CLASS$ ?p ?o .} LIMIT " + limit;
-//		this.synonymsQuery = "SELECT DISTINCT ?o WHERE {{$CLASS$ <http://www.w3.org/2000/01/rdf-schema#label> ?o } "
-//				+ "UNION {$CLASS$ <http://www.w3.org/2000/01/rdf-schema#comment> ?o } " + "} LIMIT " + limit;
 		this.synonymsQuery = "SELECT DISTINCT ?o WHERE {$CLASS$ <http://www.w3.org/2000/01/rdf-schema#label> ?o } "
 				+ "LIMIT " + limit;
+
+		BasicConfigurator.configure();
+		writeBuffer = new LinkedList<List<Node>>();
+
+		log.info("Initializing the model");
+		initializeEmptyModel();
+	}
+
+	public void useRdf4jModel(org.eclipse.rdf4j.model.Model rdf4jModel) {
+		rdf4jModel.forEach(stmt -> model.add(Rdf4j2Jena.convert(model, stmt)));
 	}
 
 	public void generateWalks() {
-		initializeEmptyModel();
-		readInputFileToModel();
-		initializeNodeGraph();
+		log.info("preparing document writer");
 		outputWriter = prepareDocumentWriter(outputFilePath);
+		log.info("initializing node graph");
+		initializeNodeGraph();
+		log.info("staring to generate walks");
 		walkTheGraph();
+		log.info("closing document writer");
 		closeDocumentWriter(outputWriter);
 	}
 
@@ -74,14 +93,14 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		model = ModelFactory.createDefaultModel();
 	}
 
-	public void readInputFileToModel() {
+	public void readInputFileToModel(String filePath) {
+		log.info("reading input");
 		model.read(inputFile, fileType);
 	}
 
 	public BufferedWriter prepareDocumentWriter(String outputFilePath) {
 		BufferedWriter writer = null;
 		try {
-			File outputFile = new File(outputFilePath);
 			writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFilePath, false), "utf-8"),
 					32 * 1024);
 		} catch (UnsupportedEncodingException e) {
@@ -131,8 +150,13 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 			if (StringUtils.isUri(result.get("s").toString())) {
 				String currentResult = result.get("s").toString();
 				Node newNode = new Node(currentResult);
-				newNode.synonyms = findSynonyms(newNode);
+
+				if (outputFormat.toLowerCase().equals("allsynonyms")
+						|| outputFormat.toLowerCase().equals("onesynonym")) {
+					newNode.synonyms = findSynonyms(newNode);
+				}
 				nodeList.add(newNode);
+
 			}
 		}
 		qe.close();
@@ -232,19 +256,39 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		}
 	}
 
-	public synchronized void writeToFile(List<List<Node>> walks, BufferedWriter writer) {
+	public void writeToFile(List<List<Node>> walks, BufferedWriter writer) {
 		numberOfWritingsToFile++;
-		if (numberOfWritingsToFile % 100 == 0) {
-//			System.out.println("Processed: " + numberOfWritingsToFile + " writings");
+		if (numberOfWritingsToFile % 1000 == 0) {
+			log.info("Processed: " + numberOfWritingsToFile + " writings");
 		}
-		for (List<Node> walk : walks) {
-			try {
-				String str = NodeGraph.nodeListToString(walk, outputFormat);
-				writer.write(str + "\n");
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+
+		writeBufferLock.lock();
+		try {
+			while(!walks.isEmpty()) {
+				try {
+					List<Node> walk = walks.remove(0);
+					String str = NodeGraph.nodeListToString(walk, outputFormat);
+					writer.write(str + "\n");
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
+		} finally {
+			writeBufferLock.unlock();
+		}
+	}
+
+	public synchronized void threadFinished() {
+		walkThreadsFinished++;
+	}
+
+	public void appendToWriteBuffer(List<List<Node>> walks) {
+		writeBufferLock.lock();
+		try {
+			writeBuffer.addAll(walks);
+		} finally {
+			writeBufferLock.unlock();
 		}
 	}
 
@@ -255,12 +299,46 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 			threads[i] = new Thread(new WalkThread(i));
 			threads[i].start();
 		}
+
+//		Thread writingThread = new Thread(new FileWriter(outputWriter, writeBuffer));
+//		writingThread.start();
+
 		try {
 			for (int i = 0; i < numberOfThreads; i++) {
 				threads[i].join();
+				log.info("joined thread: " + i);
 			}
+
+//			writingThread.join();
+//			log.info("joined writingThread");
 		} catch (Exception e) {
 			e.printStackTrace();
+		}
+	}
+
+	private class FileWriter implements Runnable {
+
+		BufferedWriter writer;
+		List<List<Node>> writeBuffer;
+
+		public FileWriter(BufferedWriter writer, List<List<Node>> writeBuffer) {
+			this.writer = writer;
+			this.writeBuffer = writeBuffer;
+		}
+
+		@Override
+		public void run() {
+
+			
+			int numWrites = 0;
+			while (walkThreadsFinished < numberOfThreads && !writeBuffer.isEmpty()) {
+				numWrites++;
+				if (numWrites % 100 == 0) {
+					log.info("Written : " + numWrites);
+				}
+				writeToFile(writeBuffer, writer);
+			}
+
 		}
 	}
 
@@ -277,6 +355,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 			this.end = (index + 1) * walksPerThread + Math.min(rest, (index + 1));
 		}
 
+		@Override
 		public void run() {
 			for (int walkNum = start; walkNum < end; walkNum++) {
 				List<List<Node>> walks = new ArrayList<>();
@@ -284,22 +363,32 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 					List<Node> walk = graph.createWalks(node, walkDepth);
 					walks.add(walk);
 				}
+//				appendToWriteBuffer(walks);
 				writeToFile(walks, outputWriter);
 			}
+			threadFinished();
 //			System.out.println("Thread: " + index + " finished");
 		}
 
 	}
 
-	public static void main(String[] args) {
-		Logger log = LoggerFactory.getLogger(WordEmbeddingsTrainer.class);
-		BasicConfigurator.configure();
+	public static void main(String[] args) throws Exception {
+		long startTime = System.nanoTime();
+		System.out.println("starting projection");
+//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/bio_data/go.owl");
+//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/ekaw.owl");
+//		projector.projectOntology();
+//		projector.saveModel(TestRunUtils.modelPath);
+//		System.out.println("staring walksgenerator");
+//		org.eclipse.rdf4j.model.Model rdf4jModel = projector.getModel();
 
 //		SecondOrderWalksGenerator(String inputFile, String outputFile, int numberOfThreads, int walkDepth,
 //		int limit, int numberOfWalks, int offset, int p, int q)
-		long startTime = System.nanoTime();
-		SecondOrderWalksGenerator walks = new SecondOrderWalksGenerator("/home/ole/master/test_onto/human.owl",
-				"/home/ole/master/test_onto/walks_out.txt", 4, 20, 10000, 50, 0, 5, 0.5, "onesynonym");
+
+		SecondOrderWalksGenerator walks = new SecondOrderWalksGenerator("/home/ole/master/bio_data/go.owl",
+				"/home/ole/master/test_onto/walks_out.txt", 4, 40, 1000, 50, 0, 1, 0.001, "onesynonym");
+//		walks.useRdf4jModel(rdf4jModel);
+		walks.readInputFileToModel(TestRunUtils.modelPath);
 		walks.generateWalks();
 		long endTime = System.nanoTime();
 		long duration = (endTime - startTime) / 1000000;

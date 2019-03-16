@@ -135,6 +135,8 @@
 			<groupId>uio.ifi.ontology.toolkit</groupId>
 			<artifactId>ontology-service-toolkit</artifactId>
 			<version>1.0.0</version>
+			<scope>system</scope>
+			<systemPath>/home/ole/libs/ontologyservices.jar</systemPath>
 		</dependency>
 
 		<dependency>

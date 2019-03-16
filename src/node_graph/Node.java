@@ -24,9 +24,6 @@ public class Node {
 
 	/** assuming we have synonyms, return any of the names **/
 	public String getSomeName(boolean includeURI) {
-		if (synonyms == null) { // lazy
-			synonyms = findSynonyms();
-		}
 		int numSynonyms = synonyms.size();
 		Random randomNumberGenerator = new Random();
 		int randomIndex = randomNumberGenerator.nextInt(numSynonyms);

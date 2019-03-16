@@ -2,16 +2,19 @@ package mappings.trainer;
 
 import java.util.TreeSet;
 
-import uio.ifi.ontology.toolkit.projection.controller.triplestore.RDFoxSessionManager;
-import uio.ifi.ontology.toolkit.projection.model.GraphProjection;
-import uio.ifi.ontology.toolkit.projection.model.entities.Concept;
-import uio.ifi.ontology.toolkit.projection.view.OptiqueVQSAPI;
+import org.eclipse.rdf4j.model.Model;
+
+import graphp.uio.ifi.ontology.toolkit.projection.controller.triplestore.RDFoxSessionManager;
+import graphp.uio.ifi.ontology.toolkit.projection.model.GraphProjection;
+import graphp.uio.ifi.ontology.toolkit.projection.model.entities.Concept;
+import graphp.uio.ifi.ontology.toolkit.projection.view.OptiqueVQSAPI;
 
 public class OntologyProjector {
 
 	String filePath;
 	GraphProjection graph;
 	OptiqueVQSAPI vqs;
+	Model model;
 
 	public OntologyProjector(String file) {
 		this.filePath = file;
@@ -19,10 +22,15 @@ public class OntologyProjector {
 
 	public void projectOntology() throws Exception {
 		RDFoxSessionManager man = new RDFoxSessionManager();
-		vqs = new OptiqueVQSAPI(man);
-		vqs.loadOntologySession(filePath);
-		graph = vqs.getSessionManager().getSession(filePath).getGraph();
-
+		man.createNewSessionForEmbeddings(filePath);
+//		vqs = new OptiqueVQSAPI(man);
+//		vqs.loadOntologySession(filePath);
+		graph = man.getSession(filePath).getGraph();
+		model = graph.getRDFModel();
+	}
+	
+	public Model getModel() {
+		return model;
 	}
 
 	public void printConcepts() {

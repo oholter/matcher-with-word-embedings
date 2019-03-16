@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import hdbscan
 
 
-model = KeyedVectors.load("model.bin")
+model = KeyedVectors.load("model2.bin")
 #model = KeyedVectors.load("label.bin")
 #model = KeyedVectors.load("label_pretrained.bin")
 w2v_vectors = model.wv.vectors # here you load vectors for each word in your model
