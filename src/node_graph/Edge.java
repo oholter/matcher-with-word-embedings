@@ -5,9 +5,10 @@ import java.util.List;
 public class Edge {
 	double SUBCLASS_WEIGHT = 0.2; //
 	double SUPERCLASS_WEIGHT = 1.0;
-	double TYPE_WEIGHT = 0.2; //
+	double TYPE_WEIGHT = 1.0; //
 	double NORMAL_PROPERTY_WEIGHT = 0.2;
 	double RANDOM_JUMP_WEIGHT = 0; //
+	double MEMBER_WEIGHT = 1;
 
 	public String label;
 	public Node inNode;
@@ -23,6 +24,8 @@ public class Edge {
 			weight = TYPE_WEIGHT;
 		} else if (label.equals("http://www.w3.org/2000/01/rdf-schema#superClassOf")) {
 			weight = SUPERCLASS_WEIGHT;
+		} else if (label.equals("hasMember")) {
+			weight = MEMBER_WEIGHT;
 		} else { // other
 			weight = NORMAL_PROPERTY_WEIGHT;
 		}

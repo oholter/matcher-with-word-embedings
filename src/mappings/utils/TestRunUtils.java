@@ -66,4 +66,5 @@ public class TestRunUtils {
 	
 	public static double p = 1; // revisit
 	public static double q = 1; // in/out
+	public static boolean includeIndividuals = true;
 }

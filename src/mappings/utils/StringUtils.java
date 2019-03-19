@@ -18,8 +18,8 @@ public class StringUtils {
 	
 	public static String getGoUriPart(String s) {
 		String httpPattern = "^(http|https)://.*#";
-		String goPattern = "http://purl.obolibrary.org/obo/";
-		return s.replace(httpPattern, "").replace(goPattern, "");
+		String goPattern = "http://purl.obolibrary.org/obo/GO_";
+		return s.replace(httpPattern, "").replace(goPattern, "GO:");
 	}
 	
 	public static String normalizeFullIRINoSpace(String s) {

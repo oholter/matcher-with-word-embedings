@@ -1,8 +1,10 @@
 package mappings.walks_generator;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
@@ -13,8 +15,21 @@ import java.util.List;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.BasicConfigurator;
+import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.owlapi.io.SystemOutDocumentTarget;
+import org.semanticweb.owlapi.model.IRI;
+import org.semanticweb.owlapi.model.OWLAxiom;
+import org.semanticweb.owlapi.model.OWLClass;
+import org.semanticweb.owlapi.model.OWLDataFactory;
+import org.semanticweb.owlapi.model.OWLNamedIndividual;
+import org.semanticweb.owlapi.model.OWLObjectProperty;
+import org.semanticweb.owlapi.model.OWLOntology;
+import org.semanticweb.owlapi.model.PrefixManager;
+import org.semanticweb.owlapi.util.DefaultPrefixManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +42,7 @@ import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 
+import io.OntologyReader;
 import mappings.trainer.OntologyProjector;
 import mappings.utils.Rdf4j2Jena;
 import mappings.utils.StringUtils;
@@ -48,6 +64,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 	protected String[] UNDESIRED_PROPERTIES = { "http://www.w3.org/2002/07/owl#inverseOf" };
 	private String adjacentPropertiesQuery;
 	private String synonymsQuery;
+	private String membersQuery = "SELECT DISTINCT ?e WHERE {?e a $CLASS$}";
 	private int processedClasses = 0;
 	private int numberOfClasses = 0;
 	private int currentWalkNumber = 0;
@@ -57,9 +74,10 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 	private List<List<Node>> writeBuffer;
 	private int walkThreadsFinished = 0;
 	private Lock writeBufferLock = new ReentrantLock();
+	private boolean includeIndividuals;
 
 	public SecondOrderWalksGenerator(String inputFile, String outputFile, int numberOfThreads, int walkDepth, int limit,
-			int numberOfWalks, int offset, double p, double q, String outputFormat) {
+			int numberOfWalks, int offset, double p, double q, String outputFormat, boolean includeIndividuals) {
 		super(inputFile, outputFile, numberOfThreads, walkDepth, limit, numberOfWalks, offset);
 		this.p = p;
 		this.q = q;
@@ -67,6 +85,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		this.adjacentPropertiesQuery = "SELECT DISTINCT ?p ?o WHERE {$CLASS$ ?p ?o .} LIMIT " + limit;
 		this.synonymsQuery = "SELECT DISTINCT ?o WHERE {$CLASS$ <http://www.w3.org/2000/01/rdf-schema#label> ?o } "
 				+ "LIMIT " + limit;
+		this.includeIndividuals = includeIndividuals;
 
 		BasicConfigurator.configure();
 		writeBuffer = new LinkedList<List<Node>>();
@@ -131,6 +150,10 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		for (Node n : nodeList) {
 			List<Edge> currentEdges = findAdjacentEdges(n);
 			n.edges.addAll(currentEdges);
+			if (includeIndividuals) {
+				List<Edge> memberEdges = findMembersOfClass(n);
+				n.edges.addAll(memberEdges);
+			}
 		}
 	}
 
@@ -258,6 +281,33 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		}
 	}
 
+	public List<Edge> findMembersOfClass(Node node) {
+		String className = node.label;
+		ArrayList<Edge> members = new ArrayList<>();
+		String queryString = membersQuery.replace("$CLASS$", "<" + className + ">");
+		try {
+			Query query = QueryFactory.create(queryString);
+			QueryExecution queryExecution = QueryExecutionFactory.create(query, model);
+			ResultSet res = queryExecution.execSelect();
+			int numRes = 0;
+
+			while (res.hasNext()) {
+				QuerySolution sol = res.next();
+				String currentMemberString = sol.get("?e").toString();
+				Node memberNode = new Node(currentMemberString);
+				Edge memberEdge = new Edge("hasMember");
+				memberEdge.inNode = node;
+				memberEdge.outNode = memberNode;
+				members.add(memberEdge);
+			}
+			return members;
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("The query that failed was: " + queryString);
+			return null;
+		}
+	}
+
 	public void writeToFile(List<List<Node>> walks, BufferedWriter writer) {
 
 		writeBufferLock.lock();
@@ -377,7 +427,12 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 
 	public static void main(String[] args) throws Exception {
 		long startTime = System.nanoTime();
+
+//		addProteinInteractions("/home/ole/master/bio_data/go2.owl");
+
 		System.out.println("starting projection");
+		
+//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/pizza.owl");
 		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/bio_data/go.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/ekaw.owl");
 		projector.projectOntology();
@@ -389,7 +444,8 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 //		int limit, int numberOfWalks, int offset, int p, int q)
 
 		SecondOrderWalksGenerator walks = new SecondOrderWalksGenerator(TestRunUtils.modelPath,
-				"/home/ole/master/test_onto/walks_out.txt", 12, 15, 100000, 50, 0, 1, 1, "gouripart");
+				"/home/ole/master/test_onto/walks_out.txt", 12, 40, 100000, 50, 0, 1, 1, "gouripart",
+				false);
 //		walks.useRdf4jModel(rdf4jModel);
 		walks.readInputFileToModel(TestRunUtils.modelPath);
 		walks.generateWalks();
@@ -397,4 +453,76 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		long duration = (endTime - startTime) / 1000000;
 		System.out.println("duration: " + duration);
 	}
+
+	public static void addProteinInteractions(String ontoPath) throws Exception {
+
+		OntologyReader reader = new OntologyReader();
+		reader.setFname(ontoPath);
+		reader.readOntology();
+		OWLOntology onto = reader.getOntology();
+		IRI ontoIRI = onto.getOntologyID().getDefaultDocumentIRI().get();
+		OWLDataFactory df = OWLManager.getOWLDataFactory();
+
+		OWLObjectProperty hasFunctionProperty = df.getOWLObjectProperty(IRI.create(ontoIRI + "#hasFunction"));
+		PrefixManager pm = new DefaultPrefixManager(null, null, "http://yeast#");
+		pm.setPrefix("GO", "http://purl.obolibrary.org/obo/GO_");
+
+		BufferedReader csvReader = new BufferedReader(new FileReader(
+				"/home/ole/workspace/MatcherWithWordEmbeddings/py/bio_data_preprocessing/yeast_out.csv"));
+		String line = "";
+		System.out.println("Was here");
+		while ((line = csvReader.readLine()) != null) {
+			String protein;
+			String go;
+
+			if (line.charAt(0) == '"') { // compound name
+				String regex = "\"(.*)\",(.*)";
+				Pattern pattern = Pattern.compile(regex);
+				Matcher matcher = pattern.matcher(line);
+				matcher.matches();
+				System.out.println(line);
+				System.out.println(regex);
+				System.out.println(matcher.group(1));
+				System.out.println(matcher.group(2));
+				protein = matcher.group(1);
+				go = matcher.group(2);
+			} else {
+				protein = line.split(",")[0];
+				go = line.split(",")[1];
+			}
+			
+			if (protein.contains("|")) {
+				boolean found = false;
+				String[] parts = protein.split("\\|");
+				String regex = "(Q.{4})|(Y.{6}(.{2})?)";
+				Pattern pattern = Pattern.compile(regex);
+				
+				for (String part : parts) {
+					Matcher matcher = pattern.matcher(part);
+					if(matcher.matches()) {
+						protein = part;
+						found = true;
+						break;
+					}
+				}
+				
+				if (!found) {
+					System.out.println("not found: " + protein);
+					System.out.println("in parts: ");
+					for (String part : parts) {
+						System.out.println(part);
+					}
+					continue;
+				}
+			}
+			OWLNamedIndividual proteinIndividual = df.getOWLNamedIndividual(protein, pm);
+			OWLClass goClass = df.getOWLClass(go, pm);
+			OWLAxiom ax = df.getOWLClassAssertionAxiom(goClass, proteinIndividual);
+			System.out.println(ax);
+			onto.getOWLOntologyManager().addAxiom(onto, ax);
+		}
+		OntologyReader.writeOntology(onto, "file:" + ontoPath, "rdf");
+		System.out.println("Written ontology: " + ontoPath);
+	}
+
 }
