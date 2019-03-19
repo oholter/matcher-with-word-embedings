@@ -45,6 +45,10 @@ public class Node {
 		return label;
 	}
 
+	public String getGoUriPart() {
+		return StringUtils.getGoUriPart(label);
+	}
+	
 	public String getUriPart() {
 		return StringUtils.normalizeFullIRINoSpace(label);
 	}

@@ -16,6 +16,12 @@ public class StringUtils {
 		return normalizeIRI(s); // replace(" ", "_");
 	}
 	
+	public static String getGoUriPart(String s) {
+		String httpPattern = "^(http|https)://.*#";
+		String goPattern = "http://purl.obolibrary.org/obo/";
+		return s.replace(httpPattern, "").replace(goPattern, "");
+	}
+	
 	public static String normalizeFullIRINoSpace(String s) {
 		return normalizeFullIRI(s).replaceAll(" ", "_");
 	}

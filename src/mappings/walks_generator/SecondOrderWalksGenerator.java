@@ -27,7 +27,6 @@ import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 
-import constraints.uio.ifi.ontology.toolkit.constraint.utils.Utility;
 import mappings.trainer.OntologyProjector;
 import mappings.utils.Rdf4j2Jena;
 import mappings.utils.StringUtils;
@@ -49,7 +48,9 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 	protected String[] UNDESIRED_PROPERTIES = { "http://www.w3.org/2002/07/owl#inverseOf" };
 	private String adjacentPropertiesQuery;
 	private String synonymsQuery;
-	protected int numberOfWritingsToFile = 0;
+	private int processedClasses = 0;
+	private int numberOfClasses = 0;
+	private int currentWalkNumber = 0;
 	private CyclicBarrier cyclicBarrier;
 	private int iter = 0;
 	private String outputFormat;
@@ -160,7 +161,8 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 			}
 		}
 		qe.close();
-		System.out.println("TOTAL CLASSES: " + nodeList.size());
+		numberOfClasses = nodeList.size();
+		System.out.println("TOTAL CLASSES: " + numberOfClasses);
 		return nodeList;
 	}
 
@@ -257,14 +259,16 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 	}
 
 	public void writeToFile(List<List<Node>> walks, BufferedWriter writer) {
-		numberOfWritingsToFile++;
-		if (numberOfWritingsToFile % 1000 == 0) {
-			log.info("Processed: " + numberOfWritingsToFile + " writings");
-		}
 
 		writeBufferLock.lock();
 		try {
-			while(!walks.isEmpty()) {
+			processedClasses += walks.size();
+			if (processedClasses >= numberOfClasses) {
+				processedClasses -= numberOfClasses;
+				currentWalkNumber++;
+			}
+			log.info("Finished: walk number: " + currentWalkNumber);
+			while (!walks.isEmpty()) {
 				try {
 					List<Node> walk = walks.remove(0);
 					String str = NodeGraph.nodeListToString(walk, outputFormat);
@@ -329,7 +333,6 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		@Override
 		public void run() {
 
-			
 			int numWrites = 0;
 			while (walkThreadsFinished < numberOfThreads && !writeBuffer.isEmpty()) {
 				numWrites++;
@@ -375,18 +378,18 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 	public static void main(String[] args) throws Exception {
 		long startTime = System.nanoTime();
 		System.out.println("starting projection");
-//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/bio_data/go.owl");
+		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/bio_data/go.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/ekaw.owl");
-//		projector.projectOntology();
-//		projector.saveModel(TestRunUtils.modelPath);
-//		System.out.println("staring walksgenerator");
+		projector.projectOntology();
+		projector.saveModel(TestRunUtils.modelPath);
+		System.out.println("starting walksgenerator");
 //		org.eclipse.rdf4j.model.Model rdf4jModel = projector.getModel();
 
 //		SecondOrderWalksGenerator(String inputFile, String outputFile, int numberOfThreads, int walkDepth,
 //		int limit, int numberOfWalks, int offset, int p, int q)
 
-		SecondOrderWalksGenerator walks = new SecondOrderWalksGenerator("/home/ole/master/bio_data/go.owl",
-				"/home/ole/master/test_onto/walks_out.txt", 4, 40, 1000, 50, 0, 1, 0.001, "onesynonym");
+		SecondOrderWalksGenerator walks = new SecondOrderWalksGenerator(TestRunUtils.modelPath,
+				"/home/ole/master/test_onto/walks_out.txt", 12, 15, 100000, 50, 0, 1, 1, "gouripart");
 //		walks.useRdf4jModel(rdf4jModel);
 		walks.readInputFileToModel(TestRunUtils.modelPath);
 		walks.generateWalks();

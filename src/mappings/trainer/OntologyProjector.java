@@ -4,10 +4,10 @@ import java.util.TreeSet;
 
 import org.eclipse.rdf4j.model.Model;
 
-import graphp.uio.ifi.ontology.toolkit.projection.controller.triplestore.RDFoxSessionManager;
-import graphp.uio.ifi.ontology.toolkit.projection.model.GraphProjection;
-import graphp.uio.ifi.ontology.toolkit.projection.model.entities.Concept;
-import graphp.uio.ifi.ontology.toolkit.projection.view.OptiqueVQSAPI;
+import uio.ifi.ontology.toolkit.projection.controller.triplestore.RDFoxSessionManager;
+import uio.ifi.ontology.toolkit.projection.model.GraphProjection;
+import uio.ifi.ontology.toolkit.projection.model.entities.Concept;
+import uio.ifi.ontology.toolkit.projection.view.OptiqueVQSAPI;
 
 public class OntologyProjector {
 
