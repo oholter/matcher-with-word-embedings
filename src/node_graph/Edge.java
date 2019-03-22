@@ -3,10 +3,10 @@ package node_graph;
 import java.util.List;
 
 public class Edge {
-	double SUBCLASS_WEIGHT = 0.2; //
+	double SUBCLASS_WEIGHT = 1.0; //
 	double SUPERCLASS_WEIGHT = 1.0;
 	double TYPE_WEIGHT = 1.0; //
-	double NORMAL_PROPERTY_WEIGHT = 0.2;
+	double NORMAL_PROPERTY_WEIGHT = 0.4;
 	double RANDOM_JUMP_WEIGHT = 0; //
 	double MEMBER_WEIGHT = 1;
 

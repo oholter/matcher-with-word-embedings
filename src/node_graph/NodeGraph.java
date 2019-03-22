@@ -80,10 +80,9 @@ public class NodeGraph {
 					updatedWeight /= p; // penalizing returning edges
 				}
 
-				if (e.outNode.edges != null 
-						&& e.outNode.edges.stream().anyMatch(x -> x.outNode == src)) {
+				if (e.outNode.edges != null && e.outNode.edges.stream().anyMatch(x -> x.outNode == src)) {
 					// do nothing
-				} else {
+				} else { // penalizing when NO next node with the possibility of returning
 //					System.out.println("Updated weights: " + src + " " + dst);
 					updatedWeight /= q;
 				}
@@ -149,6 +148,8 @@ public class NodeGraph {
 			str = lst.stream().map(n -> n.getAllSynonyms()).collect(Collectors.joining(" "));
 		} else if (outputFormat.toLowerCase().equals("gouripart")) {
 			str = lst.stream().map(n -> n.getGoUriPart()).collect(Collectors.joining(" "));
+		} else if (outputFormat.toLowerCase().equals("allsynonymsanduri")) {
+			str = lst.stream().map(n -> n.getAllSynonymsAndUri()).collect(Collectors.joining(" "));
 		} else {
 			str = lst.stream().map(n -> n.toString()).collect(Collectors.joining(" "));
 		}

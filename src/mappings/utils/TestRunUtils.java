@@ -59,12 +59,12 @@ public class TestRunUtils {
 	
 	public static String relatedConceptsPath = "/home/ole/src/thesis/evaluation/ekaw.xml";
 
-	public static double equalityThreshold = 0.0;
+	public static double equalityThreshold = 0.7;
 	public static double fractionOfMappings = 0.0;
 
 	public static double labelEqualityThreshold = 0.90; // for the two document 
 	
-	public static double p = 1; // revisit
-	public static double q = 1; // in/out
-	public static boolean includeIndividuals = true;
+	public static double p = 0.5; // revisit
+	public static double q = 2; // in/out
+	public static boolean includeIndividuals = false;
 }

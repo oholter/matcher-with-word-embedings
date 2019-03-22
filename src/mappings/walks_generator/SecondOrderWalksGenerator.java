@@ -20,7 +20,6 @@ import java.util.regex.Pattern;
 
 import org.apache.log4j.BasicConfigurator;
 import org.semanticweb.owlapi.apibinding.OWLManager;
-import org.semanticweb.owlapi.io.SystemOutDocumentTarget;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLClass;
@@ -89,7 +88,6 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 
 		BasicConfigurator.configure();
 		writeBuffer = new LinkedList<List<Node>>();
-
 		log.info("Initializing the model");
 		initializeEmptyModel();
 	}
@@ -99,6 +97,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 	}
 
 	public void generateWalks() {
+		readInputFileToModel(inputFile);
 		log.info("preparing document writer");
 		outputWriter = prepareDocumentWriter(outputFilePath);
 		log.info("initializing node graph");
@@ -137,6 +136,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		try {
 			writer.flush();
 			writer.close();
+			log.info("written to file: "+outputFilePath);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -176,7 +176,8 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 				Node newNode = new Node(currentResult);
 
 				if (outputFormat.toLowerCase().equals("allsynonyms")
-						|| outputFormat.toLowerCase().equals("onesynonym")) {
+						|| outputFormat.toLowerCase().equals("onesynonym")
+						|| outputFormat.toLowerCase().equals("allsynonymsanduri")) {
 					newNode.synonyms = findSynonyms(newNode);
 				}
 				nodeList.add(newNode);
@@ -433,8 +434,8 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		System.out.println("starting projection");
 		
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/pizza.owl");
-		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/bio_data/go.owl");
-//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/ekaw.owl");
+//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/bio_data/go.owl");
+		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/ekaw.owl");
 		projector.projectOntology();
 		projector.saveModel(TestRunUtils.modelPath);
 		System.out.println("starting walksgenerator");
@@ -444,11 +445,15 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 //		int limit, int numberOfWalks, int offset, int p, int q)
 
 		SecondOrderWalksGenerator walks = new SecondOrderWalksGenerator(TestRunUtils.modelPath,
-				"/home/ole/master/test_onto/walks_out.txt", 12, 40, 100000, 50, 0, 1, 1, "gouripart",
+				"/home/ole/master/test_onto/walks_out.txt", 12, 40, 100000, 50, 0, 0.2, 5, "uripart",
 				false);
 //		walks.useRdf4jModel(rdf4jModel);
-		walks.readInputFileToModel(TestRunUtils.modelPath);
 		walks.generateWalks();
+		
+//		Walks walks = new Walks(TestRunUtils.modelPath, "secondorder");
+//		walks.generateWalks();
+		
+		
 		long endTime = System.nanoTime();
 		long duration = (endTime - startTime) / 1000000;
 		System.out.println("duration: " + duration);
@@ -464,13 +469,12 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		OWLDataFactory df = OWLManager.getOWLDataFactory();
 
 		OWLObjectProperty hasFunctionProperty = df.getOWLObjectProperty(IRI.create(ontoIRI + "#hasFunction"));
-		PrefixManager pm = new DefaultPrefixManager(null, null, "http://yeast#");
-		pm.setPrefix("GO", "http://purl.obolibrary.org/obo/GO_");
-
+		PrefixManager pm = new DefaultPrefixManager("http://yeast#");
+//		pm.setPrefix("GO", "http://purl.obolibrary.org/obo/GO_");
+		
 		BufferedReader csvReader = new BufferedReader(new FileReader(
-				"/home/ole/workspace/MatcherWithWordEmbeddings/py/bio_data_preprocessing/yeast_out.csv"));
+				"/home/ole/workspace/MatcherWithWordEmbeddings/py/bio_data_processing/yeast_out.csv"));
 		String line = "";
-		System.out.println("Was here");
 		while ((line = csvReader.readLine()) != null) {
 			String protein;
 			String go;
@@ -480,10 +484,6 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 				Pattern pattern = Pattern.compile(regex);
 				Matcher matcher = pattern.matcher(line);
 				matcher.matches();
-				System.out.println(line);
-				System.out.println(regex);
-				System.out.println(matcher.group(1));
-				System.out.println(matcher.group(2));
 				protein = matcher.group(1);
 				go = matcher.group(2);
 			} else {
@@ -518,7 +518,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 			OWLNamedIndividual proteinIndividual = df.getOWLNamedIndividual(protein, pm);
 			OWLClass goClass = df.getOWLClass(go, pm);
 			OWLAxiom ax = df.getOWLClassAssertionAxiom(goClass, proteinIndividual);
-			System.out.println(ax);
+//			System.out.println(ax);
 			onto.getOWLOntologyManager().addAxiom(onto, ax);
 		}
 		OntologyReader.writeOntology(onto, "file:" + ontoPath, "rdf");

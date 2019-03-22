@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.jena.atlas.logging.Log;
 import org.apache.log4j.BasicConfigurator;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLOntology;
@@ -54,6 +55,8 @@ public class AllRelationsAnchorCandidateFinder extends AnchorsCandidateFinder {
 					try {
 						output.addClassMapping2Output(iriFromFirstOntology, classFromSecondOntology.getIRI().toString(),
 								AlignmentUtilities.EQ, currentSimilarity);
+						System.out.println(iriFromFirstOntology + " : " + classFromSecondOntology.getIRI().toString()
+								+ " : " + currentSimilarity);
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
@@ -75,7 +78,6 @@ public class AllRelationsAnchorCandidateFinder extends AnchorsCandidateFinder {
 		double equalityThreshold = TestRunUtils.equalityThreshold;
 		double fractionOfMappings = TestRunUtils.fractionOfMappings;
 		String walksType = TestRunUtils.walksType;
-
 
 		Logger log = LoggerFactory.getLogger(WordEmbeddingsTrainer.class);
 		String currentDir = new File(ClassLoader.getSystemClassLoader().getResource("").getPath()).toString();
@@ -114,16 +116,17 @@ public class AllRelationsAnchorCandidateFinder extends AnchorsCandidateFinder {
 
 		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/merged.owl");
 		projector.projectOntology();
-		projector.saveModel("/home/ole/master/test_onto/merged.ttl");
+		projector.saveModel(TestRunUtils.modelPath);
 
-		Walks walks = new Walks("/home/ole/master/test_onto/merged.ttl", walksType);
+		Walks walks = new Walks(TestRunUtils.modelPath, walksType);
 //		Walks_rdf2vec walks = new Walks_rdf2vec();
 //		walks.loadFromRdfFile("/home/ole/master/test_onto/merged.ttl");
 		walks.generateWalks();
 		String walksFile = walks.getOutputFile();
 
 		WordEmbeddingsTrainer trainer = new WordEmbeddingsTrainer(walksFile, currentDir + "/temp/out.txt");
-		trainer.train();
+//		trainer.train();
+		trainer.loadGensimModel("/home/ole/master/test_onto/model.bin");
 		finder.setTrainer(trainer);
 
 		finder.createMappings(); // this runs the program

@@ -78,6 +78,19 @@ public class Node {
 			return label;
 		}
 	}
+	
+	public String getAllSynonymsAndUri() {
+		if (!synonyms.isEmpty()) {
+			StringBuilder strs = new StringBuilder();
+			for (String s : synonyms) {
+				strs.append(s + " ");
+			}
+			strs.append(label);
+			return strs.toString();
+		} else {
+			return label;
+		}
+	}
 
 	/*
 	 * Two nodes are equal if they have the same label, thus the same URI

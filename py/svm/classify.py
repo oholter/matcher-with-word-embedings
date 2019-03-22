@@ -1,7 +1,7 @@
 from sklearn import svm
 from gensim.models import Word2Vec
 
-input_model = '/home/ole/master/test_onto/model2.bin'
+input_model = '/home/ole/master/test_onto/model.bin'
 
 anchors = [['document', 'document'],
         ['conference_participant', 'person'],

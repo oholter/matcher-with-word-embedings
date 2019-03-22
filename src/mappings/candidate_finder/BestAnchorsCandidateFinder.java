@@ -42,13 +42,15 @@ public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 		for (OWLClass classFromFirstOntology : onto1.getClassesInSignature()) {
 			double maxSimilarity = 0;
 			OWLClass candidate = null;
-			String iriFromFirstOntology = classFromFirstOntology.getIRI().toString();
+//			String iriFromFirstOntology = classFromFirstOntology.getIRI().toString();
+			String iriFromFirstOntology = StringUtils.normalizeFullIRINoSpace(classFromFirstOntology.getIRI().toString());
 
 			for (OWLClass classFromSecondOntology : onto2.getClassesInSignature()) {
 //				if (usedClassesFromSecondOntology.contains(classFromSecondOntology)) {
 //					continue; // this class is already added
 //				}
-				String iriFromSecondOntology = classFromSecondOntology.getIRI().toString();
+//				String iriFromSecondOntology = classFromSecondOntology.getIRI().toString();
+				String iriFromSecondOntology = StringUtils.normalizeFullIRINoSpace(classFromSecondOntology.getIRI().toString());
 
 				double iriCosine = 0;
 				iriCosine = VectorUtils.cosineSimilarity(trainer.getWordVector(iriFromFirstOntology),
@@ -86,7 +88,7 @@ public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 
 				System.out.println("Found mapping: " + equivalentClassAxiom + " distance: " + maxSimilarity);
 				try {
-					output.addClassMapping2Output(iriFromFirstOntology, candidate.getIRI().toString(),
+					output.addClassMapping2Output(classFromFirstOntology.getIRI().toString(), candidate.getIRI().toString(),
 							AlignmentUtilities.EQ, maxSimilarity);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -154,8 +156,8 @@ public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 		String walksFile = walks.getOutputFile();
 
 		WordEmbeddingsTrainer trainer = new WordEmbeddingsTrainer(walksFile, currentDir + "/temp/out.txt");
-		trainer.train();
-//		trainer.loadGensimModel("/home/ole/workspace/MatcherWithWordEmbeddings/py/plot/model.bin");
+//		trainer.train();
+		trainer.loadGensimModel("/home/ole/master/test_onto/model2.bin");
 		finder.setTrainer(trainer);
 
 		finder.createMappings(); // this runs the program
