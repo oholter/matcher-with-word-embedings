@@ -157,7 +157,7 @@ public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 
 		WordEmbeddingsTrainer trainer = new WordEmbeddingsTrainer(walksFile, currentDir + "/temp/out.txt");
 //		trainer.train();
-		trainer.loadGensimModel("/home/ole/master/test_onto/model2.bin");
+		trainer.loadGensimModel("/home/ole/master/test_onto/model3.bin");
 		finder.setTrainer(trainer);
 
 		finder.createMappings(); // this runs the program

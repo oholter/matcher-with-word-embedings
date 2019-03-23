@@ -59,8 +59,8 @@ public class TestRunUtils {
 	
 	public static String relatedConceptsPath = "/home/ole/src/thesis/evaluation/ekaw.xml";
 
-	public static double equalityThreshold = 0.7;
-	public static double fractionOfMappings = 0.0;
+	public static double equalityThreshold = 0.90;
+	public static double fractionOfMappings = 1.0;
 
 	public static double labelEqualityThreshold = 0.90; // for the two document 
 	

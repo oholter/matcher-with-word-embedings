@@ -4,7 +4,7 @@ import logging
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
 input_file = \
-    '/home/ole/workspace/MatcherWithWordEmbeddings/target/classes/temp/out/temp.txt'
+    '/home/ole/master/test_onto/walks_out.txt'
 
 def read_input(input_file):
     """This method reads the input file format"""
@@ -14,14 +14,11 @@ def read_input(input_file):
             if (i % 10000 == 0):
                 logging.info("read {0} reviews".format(i))
             #yield gensim.utils.simple_preprocess(line)
-            yield line.split(' ')
-
+            yield [x.strip() for x in line.split(' ') if x.strip()]  
 
 logging.info("reading input_file: {}".format(input_file))
 documents = list(read_input(input_file))
 
-model = gensim.models.FastText(sg=1, hs=1, size=150, workers=8, word_ngrams=1, sentences=documents, window=5, min_count=1)
-model.build_vocab(sentences=documents, update=True)
-
-model.train(sentences=documents, total_examples=len(documents), epochs=500)
-model.save("model.bin")
+model = gensim.models.FastText(sg=1, hs=1, size=100, workers=8, word_ngrams=1, sentences=documents, window=20, min_count=1, iter=5)
+model.wv.save_word2vec_format("/home/ole/master/test_onto/model3.bin", binary=False)
+#model.save("/home/ole/master/test_onto/model3.bin")
