@@ -37,7 +37,7 @@ public class Walks {
 //	this.walkGenerator = new WalkGenerator();
 		this.walkGenerator = new WalkGeneratorRand();
 		this.numWalks = 50;
-		this.walkDepth = 400;
+		this.walkDepth = 8;
 		this.numThreads = 8;
 		this.offset = 0;
 		this.classLimit = 100000;

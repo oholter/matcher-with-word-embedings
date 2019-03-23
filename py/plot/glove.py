@@ -1,4 +1,4 @@
-import gensim
+from glove import Corpus, Glove
 import logging
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
@@ -16,9 +16,10 @@ def read_input(input_file):
             #yield gensim.utils.simple_preprocess(line)
             yield [x.strip() for x in line.split(' ') if x.strip()]  
 
-logging.info("reading input_file: {}".format(input_file))
-documents = list(read_input(input_file))
+Corpus
 
-model = gensim.models.FastText(sg=1, hs=1, size=100, workers=8, word_ngrams=5, sentences=documents, window=20, min_count=1, iter=5)
-model.wv.save_word2vec_format("/home/ole/master/test_onto/model3.bin", binary=False)
-#model.save("/home/ole/master/test_onto/model3.bin")
+glove = glove.Glove(lines, no_components=5, learning_rate=0.05)
+glove.fit(corpus.matrix, epochs=30, no_threads=4, verbose=True)
+glove.add_dictionary(corpus.dictionary)
+glove.save("/home/ole/master/test_onto/model5.bin")
+
