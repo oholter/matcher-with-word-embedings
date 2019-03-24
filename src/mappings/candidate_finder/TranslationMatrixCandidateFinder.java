@@ -26,12 +26,9 @@ import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hp.hpl.jena.iri.impl.Test;
-
 import io.AlignmentsReader;
 import io.OAEIAlignmentsReader;
 import io.OntologyReader;
-import mapping.object.MappingObjectStr;
 import mappings.evaluation.ClassMappingsEvaluator;
 import mappings.evaluation.MappingsEvaluator;
 import mappings.trainer.GradientDescent;
@@ -42,6 +39,7 @@ import mappings.utils.AlignmentUtilities;
 import mappings.utils.TestRunUtils;
 import mappings.utils.VectorUtils;
 import mappings.walks_generator.Walks;
+import uk.ac.ox.krr.logmap2.mappings.objects.MappingObjectStr;
 
 public class TranslationMatrixCandidateFinder extends CandidateFinder {
 	final double ANCHOR_SIMILARITY = 0.95;

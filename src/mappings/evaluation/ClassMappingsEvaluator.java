@@ -8,8 +8,8 @@ import org.semanticweb.owlapi.model.OWLOntology;
 
 import io.OAEIAlignmentsReader;
 import io.OntologyReader;
-import mapping.object.MappingObjectStr;
 import mappings.utils.AlignmentUtilities;
+import uk.ac.ox.krr.logmap2.mappings.objects.MappingObjectStr;
 
 /**
  * this mappings evaluator does only consider class alignment when calculating

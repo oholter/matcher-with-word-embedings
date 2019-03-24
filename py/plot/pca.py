@@ -2,25 +2,32 @@ import gensim
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 
-max_plots = 5000
+max_plots = 300
+#max_plots = 5000
+input_file = 'model3.bin'
 #input_file = 'model.bin'
-input_file = 'model2.bin'
 #input_file = 'label.bin'
 #input_file = 'label_pretrained2.bin'
 #input_file = '/home/ole/workspace/MatcherWithWordEmbeddings/target/classes/temp/out.txt'
 
-model = gensim.models.Word2Vec.load(input_file)
+#model = gensim.models.Word2Vec.load(input_file)
+model = gensim.models.KeyedVectors.load_word2vec_format(input_file,
+        binary=False)
 pca = PCA(n_components=2)
 
-x = model[model.wv.vocab]
+
+word_list = model.vocab
+#word_list = [word for word in model.wv.vocab if 'yeast' in word]
+#print(word_list)
+x = model[word_list]
 result = pca.fit_transform(x)
 result = result[:max_plots]
-print(result[:,0])
-print(result[:,1])
+#print(result[:,0])
+#print(result[:,1])
 
 plt.scatter(result[:, 0], result[:, 1])
 
-words = list(model.wv.vocab)
+words = list(word_list)
 for i, word in enumerate(words):
     if i >= len(result):
         break

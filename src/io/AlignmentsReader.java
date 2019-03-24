@@ -3,7 +3,7 @@ package io;
 import java.util.ArrayList;
 import java.util.List;
 
-import mapping.object.MappingObjectStr;
+import uk.ac.ox.krr.logmap2.mappings.objects.MappingObjectStr;
 
 public abstract class AlignmentsReader {
 	String fileName;

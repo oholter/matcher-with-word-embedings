@@ -3,7 +3,8 @@ import logging
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
-input_file = '/home/ole/workspace/MatcherWithWordEmbeddings/target/classes/temp/out/temp.txt'
+input_file = '/home/ole/master/test_onto/walks_out.txt'
+output_file = '/home/ole/master/test_onto/model.bin'
 
 
 def read_input(input_file):
@@ -21,6 +22,7 @@ def read_input(input_file):
 logging.info("reading input_file: {}".format(input_file))
 documents = list(read_input(input_file))
 
-model = gensim.models.Word2Vec(documents, size=200, window=10, min_count=1, workers=8, iter=5, negative=25)
-model.wv.save_word2vec_format("model.bin", binary=False)
-model.save("model2.bin")
+model = gensim.models.Word2Vec(documents, size=100, window=5, min_count=1,
+        workers=8, iter=5, sg=1, hs=0, negative=5)
+model.wv.save_word2vec_format(output_file, binary=False)
+#model.save("model.bin")

@@ -4,7 +4,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.jena.atlas.logging.Log;
 import org.apache.log4j.BasicConfigurator;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLOntology;
@@ -14,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import io.AlignmentsReader;
 import io.OAEIAlignmentsReader;
 import io.OntologyReader;
-import mapping.object.MappingObjectStr;
 import mappings.evaluation.ClassMappingsEvaluator;
 import mappings.evaluation.MappingsEvaluator;
 import mappings.trainer.OntologyProjector;
@@ -23,6 +21,7 @@ import mappings.utils.AlignmentUtilities;
 import mappings.utils.TestRunUtils;
 import mappings.utils.VectorUtils;
 import mappings.walks_generator.Walks;
+import uk.ac.ox.krr.logmap2.mappings.objects.MappingObjectStr;
 
 public class AllRelationsAnchorCandidateFinder extends AnchorsCandidateFinder {
 

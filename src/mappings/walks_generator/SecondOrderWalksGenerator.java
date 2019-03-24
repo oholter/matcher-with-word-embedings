@@ -51,7 +51,7 @@ import node_graph.Node;
 import node_graph.NodeGraph;
 
 public class SecondOrderWalksGenerator extends WalksGenerator {
-	Logger log = LoggerFactory.getLogger("Logger");
+	private static final Logger log = LoggerFactory.getLogger(SecondOrderWalksGenerator.class);
 	private double p;
 	private double q;
 	private NodeGraph graph;
@@ -86,7 +86,6 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 				+ "LIMIT " + limit;
 		this.includeIndividuals = includeIndividuals;
 
-		BasicConfigurator.configure();
 		writeBuffer = new LinkedList<List<Node>>();
 		log.info("Initializing the model");
 		initializeEmptyModel();

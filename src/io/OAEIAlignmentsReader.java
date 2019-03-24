@@ -14,8 +14,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import mapping.object.MappingObjectStr;
 import mappings.utils.AlignmentUtilities;
+import uk.ac.ox.krr.logmap2.mappings.objects.MappingObjectStr;
 
 public class OAEIAlignmentsReader extends AlignmentsReader {
 	Document document;

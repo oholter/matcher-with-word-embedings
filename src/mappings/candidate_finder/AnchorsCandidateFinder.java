@@ -22,12 +22,17 @@ import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import mappings.trainer.TranslationMatrix;
 import mappings.trainer.WordEmbeddingsTrainer;
 import mappings.utils.VectorUtils;
+import mappings.walks_generator.SecondOrderWalksGenerator;
+import uk.ac.ox.krr.logmap2.mappings.objects.MappingObjectStr;
 
 public abstract class AnchorsCandidateFinder extends CandidateFinder {
+	private static final Logger log = LoggerFactory.getLogger(AnchorsCandidateFinder.class);
 	final double ANCHOR_SIMILARITY = 0.95;
 	final double TRAINING_RATE = 0.2;
 	final String PRETRAINED_MODEL_PATH = "/home/ole/master/word2vec/models/fil9.model";
@@ -62,6 +67,25 @@ public abstract class AnchorsCandidateFinder extends CandidateFinder {
 
 	}
 
+	public void addAnchor(MappingObjectStr mapping) {
+		try {
+			log.info("adding " + mapping.getIRIStrEnt1() + " : " + mapping.getIRIStrEnt2());
+			addAnchor(mapping.getIRIStrEnt1(), mapping.getIRIStrEnt2());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void addAllAnchors(Set<MappingObjectStr> mappings) {
+		int numMappings = 0;
+		for (MappingObjectStr mapping : mappings) {
+			addAnchor(mapping);
+			numMappings++;
+		}
+		log.info("added " + numMappings + " mappings");
+//		System.exit(0);
+	}
+
 	public void addAnchor(String firstIRI, String secondIRI) throws Exception {
 		if (anchorOntology == null) {
 			OWLOntologyManager man = OWLManager.createOWLOntologyManager();
@@ -83,6 +107,7 @@ public abstract class AnchorsCandidateFinder extends CandidateFinder {
 			OWLClass cl2 = factory.getOWLClass(IRI.create(secondIRI));
 			OWLAxiom ax = factory.getOWLEquivalentClassesAxiom(cl1, cl2);
 			man.addAxiom(anchorOntology, ax);
+			log.info("added axiom: " + ax);
 		} else if (isObjectProperty) {
 			OWLObjectProperty p1 = factory.getOWLObjectProperty(IRI.create(firstIRI));
 			OWLObjectProperty p2 = factory.getOWLObjectProperty(IRI.create(secondIRI));
@@ -94,7 +119,7 @@ public abstract class AnchorsCandidateFinder extends CandidateFinder {
 			OWLAxiom ax = factory.getOWLEquivalentDataPropertiesAxiom(p1, p2);
 			man.addAxiom(anchorOntology, ax);
 		} else {
-			System.out.println("Not able to find type of axiom");
+			log.warn("Not able to find type of axiom");
 		}
 	}
 
@@ -391,4 +416,6 @@ public abstract class AnchorsCandidateFinder extends CandidateFinder {
 		} // finished propertyFromFirstOntology
 		System.out.println("Found " + numCandidates + " data property candidates:");
 	}
+
+
 }

@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 import io.AlignmentsReader;
 import io.OAEIAlignmentsReader;
 import io.OntologyReader;
-import mapping.object.MappingObjectStr;
 import mappings.evaluation.ClassMappingsEvaluator;
 import mappings.evaluation.MappingsEvaluator;
 import mappings.trainer.OntologyProjector;
@@ -32,6 +31,7 @@ import mappings.utils.StringUtils;
 import mappings.utils.TestRunUtils;
 import mappings.utils.VectorUtils;
 import mappings.walks_generator.Walks;
+import uk.ac.ox.krr.logmap2.mappings.objects.MappingObjectStr;
 
 public class MultipleMethodsCandidateFinder extends AnchorsCandidateFinder {
 

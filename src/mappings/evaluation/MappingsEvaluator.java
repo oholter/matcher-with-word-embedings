@@ -5,7 +5,7 @@ import java.util.List;
 
 import io.AlignmentsReader;
 import io.OAEIAlignmentsReader;
-import mapping.object.MappingObjectStr;
+import uk.ac.ox.krr.logmap2.mappings.objects.MappingObjectStr;
 
 public class MappingsEvaluator {
 
