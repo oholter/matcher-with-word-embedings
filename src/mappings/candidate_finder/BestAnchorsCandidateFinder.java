@@ -42,15 +42,15 @@ public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 		for (OWLClass classFromFirstOntology : onto1.getClassesInSignature()) {
 			double maxSimilarity = 0;
 			OWLClass candidate = null;
-//			String iriFromFirstOntology = classFromFirstOntology.getIRI().toString();
-			String iriFromFirstOntology = StringUtils.normalizeFullIRINoSpace(classFromFirstOntology.getIRI().toString());
+			String iriFromFirstOntology = classFromFirstOntology.getIRI().toString();
+//			String iriFromFirstOntology = StringUtils.normalizeFullIRINoSpace(classFromFirstOntology.getIRI().toString());
 
 			for (OWLClass classFromSecondOntology : onto2.getClassesInSignature()) {
 //				if (usedClassesFromSecondOntology.contains(classFromSecondOntology)) {
 //					continue; // this class is already added
 //				}
-//				String iriFromSecondOntology = classFromSecondOntology.getIRI().toString();
-				String iriFromSecondOntology = StringUtils.normalizeFullIRINoSpace(classFromSecondOntology.getIRI().toString());
+				String iriFromSecondOntology = classFromSecondOntology.getIRI().toString();
+//				String iriFromSecondOntology = StringUtils.normalizeFullIRINoSpace(classFromSecondOntology.getIRI().toString());
 
 				double iriCosine = 0;
 				iriCosine = VectorUtils.cosineSimilarity(trainer.getWordVector(iriFromFirstOntology),
@@ -109,6 +109,8 @@ public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 		double equalityThreshold = TestRunUtils.equalityThreshold;
 		double fractionOfMappings = TestRunUtils.fractionOfMappings;
 		String walksType = TestRunUtils.walksType;
+		String walksFile = TestRunUtils.walksFile;
+		
 
 		String currentDir = new File(ClassLoader.getSystemClassLoader().getResource("").getPath()).toString();
 
@@ -151,11 +153,16 @@ public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 //		Walks_rdf2vec walks = new Walks_rdf2vec();
 //		walks.loadFromRdfFile("/home/ole/master/test_onto/merged.ttl");
 		walks.generateWalks();
-		String walksFile = walks.getOutputFile();
 
 		WordEmbeddingsTrainer trainer = new WordEmbeddingsTrainer(walksFile, currentDir + "/temp/out.txt");
 //		trainer.train();
-		trainer.loadGensimModel("/home/ole/master/test_onto/model3.bin");
+		
+		/**
+		 * calling a python script! -> model.bin
+		 */
+//		TestRunUtils.trainEmbeddings(TestRunUtils.embeddingsSystem);
+		
+		trainer.loadGensimModel("/home/ole/master/test_onto/model.bin");
 		finder.setTrainer(trainer);
 
 		finder.createMappings(); // this runs the program

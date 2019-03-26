@@ -79,18 +79,7 @@ public class LogMapEvaluator {
 		System.out.println("duration: " + duration);
 	}
 
-	public static void trainEmbeddings() {
-		// String command = "top -o %CPU";
-		String[] command = { "/home/ole/anaconda3/bin/python",
-				"/home/ole/workspace/MatcherWithWordEmbeddings/py/learn/learn_document.py" };
-		try {
-			Process pr = new ProcessBuilder().command(command).inheritIO().start();
-			pr.waitFor();
-//			System.out.println(pr.exitValue());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+
 
 	public static void evaluateEmbeddings() throws Exception {
 		if (logMapMatcher == null) {
@@ -100,19 +89,60 @@ public class LogMapEvaluator {
 
 		WordEmbeddingsTrainer trainer = new WordEmbeddingsTrainer("", currentDir + "/temp/out.txt");
 		trainer.loadGensimModel("/home/ole/master/test_onto/model.bin");
+		
+		Set<MappingObjectStr> anchors = logMapMatcher.getLogmap2_anchors();
+		System.out.println("Using the anchors: ");
+		anchors.forEach(System.out::println);
 
-		Set<MappingObjectStr> discardedMappings = logMapMatcher.getLogmap2_HardDiscardedMappings();
-		discardedMappings.addAll(logMapMatcher.getLogmap2_ConflictiveMappings());
-		for (MappingObjectStr mapping : discardedMappings) {
-			System.out.print(mapping + " logmap conf: " + mapping.getConfidence());
-			System.out.println(
-					" Embdding conf: " + trainer.getCosine(mapping.getIRIStrEnt1(), mapping.getIRIStrEnt2()));
+		Set<MappingObjectStr> hardDiscardeMappings = logMapMatcher.getLogmap2_HardDiscardedMappings();
+		printResults(hardDiscardeMappings, trainer, "Hard discardet mappings");
+
+		Set<MappingObjectStr> discardetMappings = logMapMatcher.getLogmap2_DiscardedMappings();
+		printResults(discardetMappings, trainer, "discarded mappings");
+
+		Set<MappingObjectStr> conflictiveMappings = logMapMatcher.getLogmap2_ConflictiveMappings();
+		printResults(conflictiveMappings, trainer, "conflictive mappings");
+
+		Set<MappingObjectStr> mappings = logMapMatcher.getLogmap2_Mappings();
+		printResults(mappings, trainer, "Mappings");
+	}
+
+	public static void printResults(Set<MappingObjectStr> mappings, WordEmbeddingsTrainer trainer, String descr) {
+		mappings.addAll(logMapMatcher.getLogmap2_ConflictiveMappings());
+		System.out.println("\n" + descr + ":");
+		System.out.println("< ------ Mapping -------> | sconf |   lconf   |    emb. cosine");
+		double totStrConf = 0;
+		double totCosine = 0;
+		int numMappings = 0;
+
+		for (MappingObjectStr mapping : mappings) {
+			double sconf = mapping.getStructuralConfidenceMapping();
+			double lconf = mapping.getLexicalConfidenceMapping();
+			double cos = trainer.getCosine(mapping.getIRIStrEnt1(), mapping.getIRIStrEnt2());
+			if (!Double.isNaN(cos)) { // properties will return NaN
+				System.out.println(mapping + " ~ " + sconf + " | |" + lconf + " || " + cos);
+				numMappings++;
+				totStrConf += sconf;
+				totCosine += cos;
+			}
 		}
+		
+		/**
+		 * increase in sale:
+		 * (newsale - oldsale) / oldsale
+		 */
+
+		if (numMappings > 0) {
+			double diff = (totCosine - totStrConf);
+			double avgDiff = diff / totStrConf;
+			System.out.println("Avg increase: " + avgDiff);
+		}
+
 	}
 
 	public static void main(String[] args) throws Exception {
-//		generateWalks();
-//		trainEmbeddings();
+		generateWalks();
+		TestRunUtils.trainEmbeddings(TestRunUtils.embeddingsSystem);
 		evaluateEmbeddings();
 	}
 }

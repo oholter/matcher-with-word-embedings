@@ -8,7 +8,7 @@ import hdbscan
 word_limit = 300
 
 #model = KeyedVectors.load("model4.bin")
-model = KeyedVectors.load_word2vec_format("model3.bin", binary=False)
+model = KeyedVectors.load_word2vec_format("/home/ole/master/test_onto/model.bin", binary=False)
 #model = KeyedVectors.load("model2.bin")
 #model = KeyedVectors.load("label.bin")
 #model = KeyedVectors.load("label_pretrained.bin")

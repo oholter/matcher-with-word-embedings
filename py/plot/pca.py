@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 max_plots = 300
 #max_plots = 5000
-input_file = 'model3.bin'
+input_file = '/home/ole/master/test_onto/model.bin'
 #input_file = 'model.bin'
 #input_file = 'label.bin'
 #input_file = 'label_pretrained2.bin'

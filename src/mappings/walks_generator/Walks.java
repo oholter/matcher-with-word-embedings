@@ -36,8 +36,8 @@ public class Walks {
 		REPO_LOCATION = CURRENT_DIR + "/repo";
 //	this.walkGenerator = new WalkGenerator();
 		this.walkGenerator = new WalkGeneratorRand();
-		this.numWalks = 50;
-		this.walkDepth = 8;
+		this.numWalks = 25;
+		this.walkDepth = 64;
 		this.numThreads = 8;
 		this.offset = 0;
 		this.classLimit = 100000;
@@ -60,7 +60,7 @@ public class Walks {
 	}
 
 	public String getOutputFile() {
-		return TEMP_OUT + TEMP_FILE_NAME;
+		return TestRunUtils.walksFile;
 	}
 
 	public String getLabelOutputFile() {
@@ -96,7 +96,7 @@ public class Walks {
 			double p = TestRunUtils.p;
 			double q = TestRunUtils.q;
 			walks = new SecondOrderWalksGenerator(inputFile, getOutputFile(), numThreads, walkDepth, classLimit,
-					numWalks, offset, p, q, "uripart", TestRunUtils.includeIndividuals);
+					numWalks, offset, p, q, TestRunUtils.whatToEmbed, TestRunUtils.includeIndividuals);
 			System.out.println("Using secondOrderWalks");
 		}
 

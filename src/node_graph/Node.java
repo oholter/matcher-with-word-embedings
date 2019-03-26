@@ -80,16 +80,17 @@ public class Node {
 	}
 	
 	public String getAllSynonymsAndUri() {
-		if (!synonyms.isEmpty()) {
+//		if (!synonyms.isEmpty()) {
 			StringBuilder strs = new StringBuilder();
 			for (String s : synonyms) {
 				strs.append(s + " ");
 			}
+			strs.append(StringUtils.normalizeFullIRINoSpace(label) + " ");
 			strs.append(label);
 			return strs.toString();
-		} else {
-			return label;
-		}
+//		} else {
+//			return label;
+//		}
 	}
 
 	/*
