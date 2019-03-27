@@ -9,6 +9,7 @@ import org.semanticweb.owlapi.model.OWLOntology;
 import io.OAEIAlignmentsReader;
 import io.OntologyReader;
 import mappings.utils.AlignmentUtilities;
+import mappings.utils.TestRunUtils;
 import uk.ac.ox.krr.logmap2.mappings.objects.MappingObjectStr;
 
 /**
@@ -62,20 +63,20 @@ public class ClassMappingsEvaluator extends MappingsEvaluator {
 		System.out.println("Reference alignment size after removing properties: " + referenceAlignment.size());
 	}
 
+	
+
 	public static void main(String[] args) throws Exception {
 		OntologyReader reader = new OntologyReader();
-		reader.setFname("/home/ole/master/test_onto/cmt.owl");
+		reader.setFname(TestRunUtils.firstOntologyFile);
 		reader.readOntology();
 		OWLOntology onto1 = reader.getOntology();
 
-		reader = new OntologyReader();
-		reader.setFname("/home/ole/master/test_onto/ekaw.owl");
+		reader.setFname(TestRunUtils.secondOntologyFile);
 		reader.readOntology();
 		OWLOntology onto2 = reader.getOntology();
-
-		MappingsEvaluator evaluator = new ClassMappingsEvaluator(
-				"/home/ole/master/test_onto/reference_alignments/cmt-ekaw.rdf", "/tmp/mappings8471799167972483990.rdf",
-				onto1, onto2);
+		ClassMappingsEvaluator evaluator = new ClassMappingsEvaluator(TestRunUtils.referenceAlignmentsFile,
+				TestRunUtils.logMapAlignmentsFile, onto1, onto2);
+		
 		evaluator.printEvaluation();
 	}
 

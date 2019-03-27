@@ -2,6 +2,7 @@ package mappings.candidate_finder;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.log4j.BasicConfigurator;
@@ -18,6 +19,7 @@ import io.AlignmentsReader;
 import io.OAEIAlignmentsReader;
 import io.OntologyReader;
 import mappings.evaluation.ClassMappingsEvaluator;
+import mappings.evaluation.LogMapEvaluator;
 import mappings.evaluation.MappingsEvaluator;
 import mappings.trainer.OntologyProjector;
 import mappings.trainer.WordEmbeddingsTrainer;
@@ -29,6 +31,7 @@ import mappings.walks_generator.Walks;
 import uk.ac.ox.krr.logmap2.mappings.objects.MappingObjectStr;
 
 public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
+	private static Logger log = LoggerFactory.getLogger(BestAnchorsCandidateFinder.class);
 	public BestAnchorsCandidateFinder(OWLOntology o1, OWLOntology o2, OWLOntology mergedOnto, String modelPath,
 			double distLimit) throws Exception {
 		super(o1, o2, mergedOnto, modelPath, distLimit);
@@ -118,25 +121,23 @@ public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 		reader.setFname(firstOntologyFile);
 		reader.readOntology();
 		OWLOntology onto1 = reader.getOntology();
+		log.info("Read onto: " + firstOntologyFile);
 
 		reader.setFname(secondOntologyFile);
 		reader.readOntology();
 		OWLOntology onto2 = reader.getOntology();
-
+		log.info("Read onto: " + secondOntologyFile);
+		
 		// For training of ontology start:
 		OWLOntology mergedOnto = OntologyReader.mergeOntologies("merged", new OWLOntology[] { onto1, onto2 });
 		AnchorsCandidateFinder finder = new BestAnchorsCandidateFinder(onto1, onto2, mergedOnto,
 				currentDir + "/temp/out.txt", equalityThreshold);
 
-		/* Adding anchors, by using word embeddings or by manually adding them */
-//		finder.findAnchors(); /* this will use word embeddings to find anchors */
-
 		/* Adding anchors by reading an alignments file */
 		AlignmentsReader alignmentsReader = new OAEIAlignmentsReader(referenceAlignmentsFile, onto1, onto2);
-//		AlignmentsReader alignmentsReader = new OAEIAlignmentsReader(
-//				"/home/ole/master/logmap_standalone/output/logmap2_mappings.rdf", onto1, onto2);
 
 		List<MappingObjectStr> mappings = alignmentsReader.getMappings();
+		Collections.shuffle(mappings);
 		for (int i = 0; i < (mappings.size() * fractionOfMappings); i++) {
 			MappingObjectStr mapping = mappings.get(i);
 			finder.addAnchor(mapping.getIRIStrEnt1(), mapping.getIRIStrEnt2());
@@ -147,20 +148,18 @@ public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 
 		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/merged.owl");
 		projector.projectOntology();
-		projector.saveModel("/home/ole/master/test_onto/merged.ttl");
+		projector.saveModel(TestRunUtils.modelPath);
 
-		Walks walks = new Walks("/home/ole/master/test_onto/merged.ttl", walksType);
-//		Walks_rdf2vec walks = new Walks_rdf2vec();
-//		walks.loadFromRdfFile("/home/ole/master/test_onto/merged.ttl");
+		Walks walks = new Walks(TestRunUtils.modelPath, walksType);
 		walks.generateWalks();
-
+		
 		WordEmbeddingsTrainer trainer = new WordEmbeddingsTrainer(walksFile, currentDir + "/temp/out.txt");
 //		trainer.train();
 		
 		/**
 		 * calling a python script! -> model.bin
 		 */
-//		TestRunUtils.trainEmbeddings(TestRunUtils.embeddingsSystem);
+		TestRunUtils.trainEmbeddings(TestRunUtils.embeddingsSystem);
 		
 		trainer.loadGensimModel("/home/ole/master/test_onto/model.bin");
 		finder.setTrainer(trainer);

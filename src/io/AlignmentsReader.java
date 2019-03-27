@@ -1,7 +1,9 @@
 package io;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import uk.ac.ox.krr.logmap2.mappings.objects.MappingObjectStr;
 
@@ -22,6 +24,12 @@ public abstract class AlignmentsReader {
 	
 	public List<MappingObjectStr> getMappings() {
 		return mappings;
+	}
+	
+	public Set<MappingObjectStr> getMappingsAsSet() {
+		Set<MappingObjectStr> set = new HashSet<>();
+		set.addAll(mappings);
+		return set;
 	}
 	
 	public String getFileName() {

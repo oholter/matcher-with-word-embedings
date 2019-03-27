@@ -10,13 +10,13 @@ public class TestRunUtils {
 //	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/ekaw-ekaw2.rdf";
 
 	// EKAW-CMT
-	public static String firstOntologyFile = "/home/ole/master/test_onto/cmt.owl";
-	public static String secondOntologyFile = "/home/ole/master/test_onto/ekaw.owl";
-	public static String nameSpaceString1 = "cmt";
-	public static String nameSpaceString2 = "ekaw";
-	public static String baseUriString1 = "http://cmt";
-	public static String baseUriString2 = "http://ekaw";
-	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/cmt-ekaw.rdf";
+//	public static String firstOntologyFile = "/home/ole/master/test_onto/cmt.owl";
+//	public static String secondOntologyFile = "/home/ole/master/test_onto/ekaw.owl";
+//	public static String nameSpaceString1 = "cmt";
+//	public static String nameSpaceString2 = "ekaw";
+//	public static String baseUriString1 = "http://cmt";
+//	public static String baseUriString2 = "http://ekaw";
+//	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/cmt-ekaw.rdf";
 
 	// PIZZA
 //	public static String firstOntologyFile = "";
@@ -28,14 +28,27 @@ public class TestRunUtils {
 //	public static String referenceAlignmentsFile = "";
 
 	// ANATOMY
-//	public static String firstOntologyFile = "/home/ole/master/test_onto/mouse.owl";
-//	public static String secondOntologyFile = "/home/ole/master/test_onto/human.owl";
-//	public static String nameSpaceString1 = "mouse";
-//	public static String nameSpaceString2 = "human";
-//	public static String baseUriString1 = "http://mouse";
-//	public static String baseUriString2 = "http://human";
-//	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/mouse-human.rdf";
+	public static String firstOntologyFile = "/home/ole/master/test_onto/mouse.owl";
+	public static String secondOntologyFile = "/home/ole/master/test_onto/human.owl";
+	public static String nameSpaceString1 = "mouse";
+	public static String nameSpaceString2 = "human";
+	public static String baseUriString1 = "http://mouse";
+	public static String baseUriString2 = "http://human";
+	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/mouse-human.rdf";
 
+	// Largebio
+//	public static String firstOntologyFile = "/home/ole/master/test_onto/oaei_FMA_small_overlapping_nci.owl";
+//	public static String secondOntologyFile = "/home/ole/master/test_onto/oaei_NCI_small_overlapping_fma.owl";
+//	public static String firstOntologyFile = "/home/ole/master/test_onto/hp.owl";
+//	public static String secondOntologyFile = "/home/ole/master/test_onto/mp.owl";
+//	public static String nameSpaceString1 = "nci";
+//	public static String nameSpaceString2 = "fma";
+//	public static String baseUriString1 = "http://nci";
+//	public static String baseUriString2 = "http://fma";
+//	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/oaei_FMA2NCI_UMLS_mappings_with_flagged_repairs.rdf";
+
+	
+	
 //	public static String walksType = "synonymsowl2vec";
 //	public static String walksType = "owl2vec";
 //	public static String walksType = "rdf2vec";
@@ -44,7 +57,7 @@ public class TestRunUtils {
 	public static String walksType = "secondorder";
 
 	public static String whatToEmbed = "fulluri";
-	public static String embeddingsSystem = "starspace";
+	public static String embeddingsSystem = "word2vec";
 
 	public static String logMapAlignmentsFile = "/home/ole/master/test_onto/logmap_out/logmap2_mappings.rdf";
 	public static String modelPath = "/home/ole/master/test_onto/merged.ttl";
@@ -54,6 +67,7 @@ public class TestRunUtils {
 	public static String owlOutPath = "file:/home/ole/master/test_onto/out.owl";
 	public static String pretrainedModelOutputPath = owlOutPath = "file:/home/ole/master/test_onto/out.model";
 	public static String walksFile = "/home/ole/master/test_onto/walks_out.txt";
+	public static String logFile = "/home/ole/master/test_onto/log.txt";
 
 	public static String referenceFilePath = "/home/ole/master/test_onto/ref.txt";
 	public static String resultFilePath = "/home/ole/master/test_onto/res.txt";
@@ -61,12 +75,12 @@ public class TestRunUtils {
 	public static String relatedConceptsPath = "/home/ole/src/thesis/evaluation/ekaw.xml";
 
 	public static double equalityThreshold = 0.95;
-	public static double fractionOfMappings = 0.5;
+	public static double fractionOfMappings = 1.0;
 
 	public static double labelEqualityThreshold = 0.90; // for the two document
 
-	public static double p = 0.2; // revisit
-	public static double q = 3; // in/out
+	public static double p = 0.5; // revisit
+	public static double q = 2; // in/out
 	public static boolean includeIndividuals = false;
 
 	public static void trainEmbeddings(String model) {
@@ -85,22 +99,14 @@ public class TestRunUtils {
 			command[1] = "/home/ole/workspace/MatcherWithWordEmbeddings/py/learn/fasttext_learn_document.py";
 		} else if (model.toLowerCase().equals("starspace")) {
 			System.out.println("Running starspace");
-			String cmdString = "/home/ole/master/StarSpace/starspace "
-					+ "train "
+			String cmdString = "/home/ole/master/StarSpace/starspace " + "train "
 					+ "-trainFile /home/ole/master/test_onto/walks_out.txt "
-					+ "-model /home/ole/master/test_onto/cache/starspace.model "
-					+ "-dim 50 "
-					+ "-loss hinge "
-					+ "-thread 10 "
-					+ "-similarity cosine " // only used for hinge
-					+ "-minCount 1 "
-					+ "-ngrams 2 "
-					+ "-trainMode 5 "
-					+ "-epoch 1 "
-					+ "-maxNegSamples 25 "
-					+ "-lr 0.01" // learning rate
+					+ "-model /home/ole/master/test_onto/cache/starspace.model " + "-dim 50 " + "-loss hinge "
+					+ "-thread 10 " + "-similarity cosine " // only used for hinge
+					+ "-minCount 1 " + "-ngrams 2 " + "-trainMode 5 " + "-epoch 1 " + "-maxNegSamples 25 " + "-lr 0.01" // learning
+																														// rate
 					+ "-ws 5"; // windows
-			
+
 			command = cmdString.split(" ");
 		}
 
@@ -114,7 +120,7 @@ public class TestRunUtils {
 			System.exit(0);
 		}
 	}
-	
+
 	public static void main(String[] args) {
 		trainEmbeddings(embeddingsSystem);
 	}

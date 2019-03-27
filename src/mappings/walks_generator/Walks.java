@@ -27,6 +27,7 @@ public class Walks {
 	private Model model;
 	private String inputFile;
 	private String type;
+	String outputFile;
 
 	public Walks(String inputFile, String type) {
 		this.inputFile = inputFile;
@@ -36,8 +37,8 @@ public class Walks {
 		REPO_LOCATION = CURRENT_DIR + "/repo";
 //	this.walkGenerator = new WalkGenerator();
 		this.walkGenerator = new WalkGeneratorRand();
-		this.numWalks = 25;
-		this.walkDepth = 64;
+		this.numWalks = 50;
+		this.walkDepth = 40;
 		this.numThreads = 8;
 		this.offset = 0;
 		this.classLimit = 100000;
