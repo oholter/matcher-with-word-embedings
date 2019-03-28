@@ -10,13 +10,13 @@ public class TestRunUtils {
 //	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/ekaw-ekaw2.rdf";
 
 	// EKAW-CMT
-//	public static String firstOntologyFile = "/home/ole/master/test_onto/cmt.owl";
-//	public static String secondOntologyFile = "/home/ole/master/test_onto/ekaw.owl";
-//	public static String nameSpaceString1 = "cmt";
-//	public static String nameSpaceString2 = "ekaw";
-//	public static String baseUriString1 = "http://cmt";
-//	public static String baseUriString2 = "http://ekaw";
-//	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/cmt-ekaw.rdf";
+	public static String firstOntologyFile = "/home/ole/master/test_onto/cmt.owl";
+	public static String secondOntologyFile = "/home/ole/master/test_onto/ekaw.owl";
+	public static String nameSpaceString1 = "cmt";
+	public static String nameSpaceString2 = "ekaw";
+	public static String baseUriString1 = "http://cmt";
+	public static String baseUriString2 = "http://ekaw";
+	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/cmt-ekaw.rdf";
 
 	// PIZZA
 //	public static String firstOntologyFile = "";
@@ -28,25 +28,32 @@ public class TestRunUtils {
 //	public static String referenceAlignmentsFile = "";
 
 	// ANATOMY
-	public static String firstOntologyFile = "/home/ole/master/test_onto/mouse.owl";
-	public static String secondOntologyFile = "/home/ole/master/test_onto/human.owl";
-	public static String nameSpaceString1 = "mouse";
-	public static String nameSpaceString2 = "human";
-	public static String baseUriString1 = "http://mouse";
-	public static String baseUriString2 = "http://human";
-	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/mouse-human.rdf";
+//	public static String firstOntologyFile = "/home/ole/master/test_onto/mouse.owl";
+//	public static String secondOntologyFile = "/home/ole/master/test_onto/human.owl";
+//	public static String nameSpaceString1 = "mouse";
+//	public static String nameSpaceString2 = "human";
+//	public static String baseUriString1 = "http://mouse";
+//	public static String baseUriString2 = "http://human";
+//	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/mouse-human.rdf";
 
-	// Largebio
+	// Largebio small
 //	public static String firstOntologyFile = "/home/ole/master/test_onto/oaei_FMA_small_overlapping_nci.owl";
 //	public static String secondOntologyFile = "/home/ole/master/test_onto/oaei_NCI_small_overlapping_fma.owl";
-//	public static String firstOntologyFile = "/home/ole/master/test_onto/hp.owl";
-//	public static String secondOntologyFile = "/home/ole/master/test_onto/mp.owl";
 //	public static String nameSpaceString1 = "nci";
 //	public static String nameSpaceString2 = "fma";
 //	public static String baseUriString1 = "http://nci";
 //	public static String baseUriString2 = "http://fma";
 //	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/oaei_FMA2NCI_UMLS_mappings_with_flagged_repairs.rdf";
 
+	// Largebio complete
+//	public static String firstOntologyFile = "/home/ole/master/test_onto/oaei_FMA_whole_ontology.owl";
+//	public static String secondOntologyFile = "/home/ole/master/test_onto/oaei_NCI_whole_ontology.owl";
+//	public static String nameSpaceString1 = "nci";
+//	public static String nameSpaceString2 = "fma";
+//	public static String baseUriString1 = "http://nci";
+//	public static String baseUriString2 = "http://fma";
+//	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/oaei_FMA2NCI_UMLS_mappings_with_flagged_repairs.rdf";
+	
 	
 	
 //	public static String walksType = "synonymsowl2vec";
@@ -74,8 +81,8 @@ public class TestRunUtils {
 
 	public static String relatedConceptsPath = "/home/ole/src/thesis/evaluation/ekaw.xml";
 
-	public static double equalityThreshold = 0.95;
-	public static double fractionOfMappings = 1.0;
+	public static double equalityThreshold = 0.90;
+	public static double fractionOfMappings = 0.6;
 
 	public static double labelEqualityThreshold = 0.90; // for the two document
 
@@ -122,6 +129,6 @@ public class TestRunUtils {
 	}
 
 	public static void main(String[] args) {
-		trainEmbeddings(embeddingsSystem);
+//		trainEmbeddings(embeddingsSystem);
 	}
 }

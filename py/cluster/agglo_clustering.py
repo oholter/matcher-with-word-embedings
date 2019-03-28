@@ -1,6 +1,7 @@
 from gensim.models import KeyedVectors
 import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans
+import scipy.cluster.hierarchy as sch
+from sklearn.cluster import AgglomerativeClustering
 import numpy as np
 from sklearn.decomposition import PCA
 from functools import reduce
@@ -9,7 +10,7 @@ from functools import reduce
 
 input_model = "/home/ole/master/test_onto/model.bin"
 word_limit = 10000
-num_clusters = 100
+num_clusters = 500
 
 def prepare_data(input_model, word_limit):
     model = KeyedVectors.load_word2vec_format(input_model, binary=False)
@@ -24,31 +25,31 @@ def prepare_data(input_model, word_limit):
     
 
 def create_clusters(data):
-    kmeans = KMeans(n_clusters=num_clusters).fit(data)
-    return kmeans
-
+    dendrogram = sch.dendrogram(sch.linkage(data, method='ward'))
+    hc = AgglomerativeClustering(n_clusters=num_clusters, affinity = 'euclidean', linkage = 'ward')
+    agglo = hc.fit_predict(data)
+    return agglo
 
     
     
-def print_clusters(kmeans, data, model):
-    labels = kmeans.labels_
-    clusters = {}
+def print_clusters(agglo, data, model):
+    print(agglo)
+    clusters = [[] for i in range(max(agglo) + 1)]
     n = 0
-    for item in labels:
-        if item in clusters:
-            clusters[item].append(data[n])
-        else:
-            clusters[item] = [data[n]]
+    for clustno, word in zip(agglo, data):
+        clusters[clustno].append(word)
         n +=1
     
+    print("Tot: {} elem".format(n))
+    
     n = 0
-    for item in clusters:
-        print("\nCluster {}".format(item))
-        sum_vector = add_vectors([model[w] for w in clusters[item]])
+    for cluster in clusters:
+        print("\nCluster {}".format(n))
+        n += 1
+        sum_vector = add_vectors([model[w] for w in cluster])
         central_concept = model.most_similar(positive=[sum_vector], topn=1)[0]
         print("Title: {}".format(central_concept[0]))
-        for i in clusters[item]:
-            n += 1
+        for i in cluster:
             print(i)
     
     print("\nTot elements: {}".format(n))
@@ -86,7 +87,9 @@ def add_vectors(vectors):
             
 if __name__ == "__main__":
     words, vectors, model = prepare_data(input_model, word_limit)
-    kmeans = create_clusters(vectors)
-    print_clusters(kmeans, words, model)
+    agglo = create_clusters(vectors)
+    print_clusters(agglo, words, model)
     #plot_cluster_data(vectors, kmeans)
+#    print_cluster_title(kmeans, vectors, model)
+    
     

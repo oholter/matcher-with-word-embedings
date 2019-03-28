@@ -17,8 +17,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
-import org.apache.log4j.BasicConfigurator;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAxiom;
@@ -74,10 +74,21 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 	private int walkThreadsFinished = 0;
 	private Lock writeBufferLock = new ReentrantLock();
 	private boolean includeIndividuals;
+	private String[] validOutputFormats = { "fulluri", "uripart", "onesynonym", "allsynonyms", "words",
+			"allsynonymsanduri", "gouripart", "twodocuments" };
+	final private String[] synonymOutputFormats = { "onesynonym", "allsynonyms", "allsynonymsanduri", "twodocuments" };
+	private String secondOutputFile;
+	private BufferedWriter secondOutputWriter;
+	private boolean includeUriPartInSynonyms = false;
 
 	public SecondOrderWalksGenerator(String inputFile, String outputFile, int numberOfThreads, int walkDepth, int limit,
 			int numberOfWalks, int offset, double p, double q, String outputFormat, boolean includeIndividuals) {
 		super(inputFile, outputFile, numberOfThreads, walkDepth, limit, numberOfWalks, offset);
+		boolean validOutputFormat = Arrays.stream(validOutputFormats).anyMatch(outputFormat.toLowerCase()::equals);
+		if (!validOutputFormat) {
+			throw new IllegalArgumentException("Output format: " + outputFormat + " is not known");
+		}
+
 		this.p = p;
 		this.q = q;
 		this.outputFormat = outputFormat;
@@ -91,6 +102,18 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		initializeEmptyModel();
 	}
 
+	/*
+	 * Constructor for twodocuments type output format
+	 */
+	public SecondOrderWalksGenerator(String inputFile, String outputFile, String secondOutputFile, int numberOfThreads,
+			int walkDepth, int limit, int numberOfWalks, int offset, double p, double q, String outputFormat,
+			boolean includeIndividuals) {
+		this(inputFile, outputFile, numberOfThreads, walkDepth, limit, numberOfWalks, offset, p, q, outputFormat,
+				includeIndividuals);
+
+		this.secondOutputFile = secondOutputFile;
+	}
+
 	public void useRdf4jModel(org.eclipse.rdf4j.model.Model rdf4jModel) {
 		rdf4jModel.forEach(stmt -> model.add(Rdf4j2Jena.convert(model, stmt)));
 	}
@@ -99,12 +122,18 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		readInputFileToModel(inputFile);
 		log.info("preparing document writer");
 		outputWriter = prepareDocumentWriter(outputFilePath);
+		if (outputFormat.toLowerCase().equals("twodocuments")) {
+			secondOutputWriter = prepareDocumentWriter(secondOutputFile);
+		}
 		log.info("initializing node graph");
 		initializeNodeGraph();
 		log.info("staring to generate walks");
 		walkTheGraph();
 		log.info("closing document writer");
 		closeDocumentWriter(outputWriter);
+		if (outputFormat.toLowerCase().equals("twodocuments")) {
+			closeDocumentWriter(secondOutputWriter);
+		}
 	}
 
 	public void initializeEmptyModel() {
@@ -135,7 +164,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		try {
 			writer.flush();
 			writer.close();
-			log.info("written to file: "+outputFilePath);
+			log.info("written to file");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -174,10 +203,12 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 				String currentResult = result.get("s").toString();
 				Node newNode = new Node(currentResult);
 
-				if (outputFormat.toLowerCase().equals("allsynonyms")
-						|| outputFormat.toLowerCase().equals("onesynonym")
-						|| outputFormat.toLowerCase().equals("allsynonymsanduri")) {
+				boolean needSynonyms = Arrays.stream(synonymOutputFormats).anyMatch(outputFormat.toLowerCase()::equals);
+				if (needSynonyms) {
 					newNode.synonyms = findSynonyms(newNode);
+					if (includeUriPartInSynonyms) {
+						newNode.synonyms.add(StringUtils.normalizeFullIRINoSpace(newNode.label));
+					}
 				}
 				nodeList.add(newNode);
 
@@ -202,9 +233,11 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 
 		while (results.hasNext()) {
 			QuerySolution result = results.next();
-			String synonym = result.get("o").asLiteral().getValue().toString();
-			synonyms.add(synonym);
-//			System.out.println("found synonym: " + synonym);
+			String synonym = result.get("?o").asLiteral().getValue().toString();
+			if (!StringUtils.isUri(synonym)) {
+				synonyms.add(StringUtils.normalizeLiteral(synonym));
+//				System.out.println("found synonym: " + synonym);
+			}
 		}
 		qe.close();
 //		System.out.println("synonyms: ");
@@ -322,6 +355,16 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 				try {
 					List<Node> walk = walks.remove(0);
 					String str = NodeGraph.nodeListToString(walk, outputFormat);
+					if (outputFormat.toLowerCase().equals("twodocuments")) {
+						String[] parts = str.split(" ");
+						List<String[]> tokens = Arrays.stream(parts).map(p -> p.split("->"))
+								.collect(Collectors.toList());
+						str = tokens.stream().map(t -> t[0]).collect(Collectors.joining(" "));
+//						System.out.println("normal writer: " + str);
+						String labelstr = tokens.stream().map(t -> t[1]).collect(Collectors.joining(" "));
+//						System.out.println("label writer: " + labelstr);
+						secondOutputWriter.write(labelstr + "\n");
+					}
 					writer.write(str + "\n");
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
@@ -390,8 +433,10 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 					log.info("Written : " + numWrites);
 				}
 				writeToFile(writeBuffer, writer);
+				if (outputFormat.toLowerCase().equals("twodocuments")) {
+					writeToFile(writeBuffer, secondOutputWriter);
+				}
 			}
-
 		}
 	}
 
@@ -416,7 +461,6 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 					List<Node> walk = graph.createWalks(node, walkDepth);
 					walks.add(walk);
 				}
-//				appendToWriteBuffer(walks);
 				writeToFile(walks, outputWriter);
 			}
 			threadFinished();
@@ -431,8 +475,11 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 //		addProteinInteractions("/home/ole/master/bio_data/go2.owl");
 
 		System.out.println("starting projection");
-		
-		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/pizza.owl");
+
+//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/pizza.owl");
+//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/NTNames.owl");
+//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/foaf.rdf");
+		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/human.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/bio_data/go.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/ekaw.owl");
 		projector.projectOntology();
@@ -444,15 +491,14 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 //		int limit, int numberOfWalks, int offset, int p, int q)
 
 		SecondOrderWalksGenerator walks = new SecondOrderWalksGenerator(TestRunUtils.modelPath,
-				"/home/ole/master/test_onto/walks_out.txt", 12, 40, 100000, 50, 0, 0.2, 5, "fulluri",
-				false);
+				"/home/ole/master/test_onto/walks_out.txt", "/home/ole/master/test_onto/labels_out.txt", 12, 40, 100000,
+				50, 0, 0.2, 5, "twodocuments", false);
 //		walks.useRdf4jModel(rdf4jModel);
 		walks.generateWalks();
-		
+
 //		Walks walks = new Walks(TestRunUtils.modelPath, "secondorder");
 //		walks.generateWalks();
-		
-		
+
 		long endTime = System.nanoTime();
 		long duration = (endTime - startTime) / 1000000;
 		System.out.println("duration: " + duration);
@@ -470,9 +516,9 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		OWLObjectProperty hasFunctionProperty = df.getOWLObjectProperty(IRI.create(ontoIRI + "#hasFunction"));
 		PrefixManager pm = new DefaultPrefixManager("http://yeast#");
 //		pm.setPrefix("GO", "http://purl.obolibrary.org/obo/GO_");
-		
-		BufferedReader csvReader = new BufferedReader(new FileReader(
-				"/home/ole/workspace/MatcherWithWordEmbeddings/py/bio_data_processing/yeast_out.csv"));
+
+		BufferedReader csvReader = new BufferedReader(
+				new FileReader("/home/ole/workspace/MatcherWithWordEmbeddings/py/bio_data_processing/yeast_out.csv"));
 		String line = "";
 		while ((line = csvReader.readLine()) != null) {
 			String protein;
@@ -489,22 +535,22 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 				protein = line.split(",")[0];
 				go = line.split(",")[1];
 			}
-			
+
 			if (protein.contains("|")) {
 				boolean found = false;
 				String[] parts = protein.split("\\|");
 				String regex = "(Q.{4})|(Y.{6}(.{2})?)";
 				Pattern pattern = Pattern.compile(regex);
-				
+
 				for (String part : parts) {
 					Matcher matcher = pattern.matcher(part);
-					if(matcher.matches()) {
+					if (matcher.matches()) {
 						protein = part;
 						found = true;
 						break;
 					}
 				}
-				
+
 				if (!found) {
 					System.out.println("not found: " + protein);
 					System.out.println("in parts: ");

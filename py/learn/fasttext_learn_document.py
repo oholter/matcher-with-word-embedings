@@ -4,7 +4,7 @@ import logging
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
 input_file = \
-    '/home/ole/master/test_onto/walks_out.txt'
+    '/home/ole/master/test_onto/labels_out.txt'
 
 
 def read_input(input_file):

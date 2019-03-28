@@ -48,7 +48,7 @@ public class Node {
 	public String getGoUriPart() {
 		return StringUtils.getGoUriPart(label);
 	}
-	
+
 	public String getUriPart() {
 		return StringUtils.normalizeFullIRINoSpace(label);
 	}
@@ -57,8 +57,14 @@ public class Node {
 		return StringUtils.normalizeFullIRI(label);
 	}
 
+	public String getTwoDocumentsFormat() {
+		String uri = label;
+		String synonym = getOneSynonym();
+		return uri + "->" + synonym;
+	}
+
 	public String getOneSynonym() {
-		if (!synonyms.isEmpty()) {
+		if (synonyms != null && synonyms.size() > 0) {
 			Random random = new Random();
 			int pos = random.nextInt(synonyms.size());
 			return synonyms.get(pos);
@@ -78,19 +84,15 @@ public class Node {
 			return label;
 		}
 	}
-	
+
 	public String getAllSynonymsAndUri() {
-//		if (!synonyms.isEmpty()) {
-			StringBuilder strs = new StringBuilder();
-			for (String s : synonyms) {
-				strs.append(s + " ");
-			}
-			strs.append(StringUtils.normalizeFullIRINoSpace(label) + " ");
-			strs.append(label);
-			return strs.toString();
-//		} else {
-//			return label;
-//		}
+		StringBuilder strs = new StringBuilder();
+		for (String s : synonyms) {
+			strs.append(s + " ");
+		}
+		strs.append(StringUtils.normalizeFullIRINoSpace(label) + " ");
+		strs.append(label);
+		return strs.toString();
 	}
 
 	/*

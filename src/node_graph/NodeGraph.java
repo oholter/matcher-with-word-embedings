@@ -150,6 +150,8 @@ public class NodeGraph {
 			str = lst.stream().map(n -> n.getGoUriPart()).collect(Collectors.joining(" "));
 		} else if (outputFormat.toLowerCase().equals("allsynonymsanduri")) {
 			str = lst.stream().map(n -> n.getAllSynonymsAndUri()).collect(Collectors.joining(" "));
+		} else if (outputFormat.toLowerCase().equals("twodocuments")) {
+			str = lst.stream().map(n -> n.getTwoDocumentsFormat()).collect(Collectors.joining(" "));
 		} else {
 			str = lst.stream().map(n -> n.toString()).collect(Collectors.joining(" "));
 		}

@@ -3,7 +3,6 @@ package mappings.evaluation;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -77,7 +76,7 @@ public class LogMapEvaluator {
 //		int limit, int numberOfWalks, int offset, int p, int q)
 
 		SecondOrderWalksGenerator walks = new SecondOrderWalksGenerator(TestRunUtils.modelPath,
-				"/home/ole/master/test_onto/walks_out.txt", 12, 40, 100000, 50, 0, 0.2, 5, TestRunUtils.whatToEmbed,
+				"/home/ole/master/test_onto/walks_out.txt", 12, 8, 1000000, 10, 0, TestRunUtils.p, TestRunUtils.q, TestRunUtils.whatToEmbed,
 				false);
 		walks.generateWalks();
 
@@ -181,10 +180,13 @@ public class LogMapEvaluator {
 		double stdDev = StatUtils.getStandardDeviation(allCosines);
 //		double cutoff = 0;
 //		double cutoff = mean;
-		double cutoff = mean + stdDev;
+//		double cutoff = mean + stdDev;
 //		double cutoff = mean + (2 * stdDev);
 //		double cutoff = StatUtils.getIQROutLayersCutoff(allCosines, true);
-//		double cutoff = StatUtils.getTopnCutoff(allCosines, 10);
+		double cutoff = StatUtils.getTopnCutoff(allCosines, 20);
+
+		// remove missing values for the large bio track
+		allCosines = allCosines.stream().filter(n -> ! Double.isNaN(n)).collect(Collectors.toSet());
 		
 		Set<MappingObjectStr> possible = discarded.stream()
 				.filter(m -> trainer.getCosine(m.getIRIStrEnt1(), m.getIRIStrEnt2()) > cutoff)
@@ -195,6 +197,7 @@ public class LogMapEvaluator {
 		if (anchorSet == null) {
 			createAnchorSet();
 		}
+		
 
 		
 		// Can discard if already exist in anchor. - not useful for largebio 
@@ -202,7 +205,6 @@ public class LogMapEvaluator {
 //				.filter(m -> !anchorSet.contains(m.getIRIStrEnt1()) && !anchorSet.contains(m.getIRIStrEnt2()))
 //				.collect(Collectors.toSet());
 
-		printResults(possible, trainer, "Possible wrongly discarded embeddings");
 		System.out.println("mean: " + mean + ", stdDev: " + stdDev + ", " + "cutoff: " + cutoff);
 		
 		return possible;
@@ -219,11 +221,14 @@ public class LogMapEvaluator {
 		double stdDev = StatUtils.getStandardDeviation(allCosines);
 //		double cutoff = 1;
 //		double cutoff = mean;
-		double cutoff = (mean - stdDev);
+//		double cutoff = (mean - stdDev);
 //		double cutoff = mean - (2 * stdDev);
 //		double cutoff = StatUtils.getIQROutLayersCutoff(allCosines, false);
-//		double cutoff = StatUtils.getBotnCutoff(allCosines, 10);
+		double cutoff = StatUtils.getBotnCutoff(allCosines, 20);
 
+		
+		// remove missing vocabulary for the largebio track
+		allCosines = allCosines.stream().filter(n -> ! Double.isNaN(n)).collect(Collectors.toSet());
 
 		Set<MappingObjectStr> dubious = lmapAnchors.parallelStream()
 				.filter(m -> trainer.getCosine(m.getIRIStrEnt1(), m.getIRIStrEnt2()) < cutoff)
@@ -233,7 +238,7 @@ public class LogMapEvaluator {
 		
 		return dubious;
 	}
-
+	
 	public static void improveAlignment(WordEmbeddingsTrainer trainer) throws Exception {
 		Set<MappingObjectStr> dAnchors = findDubiousAnchors(trainer);
 		Set<MappingObjectStr> whard = findWrongDiscardedMappings(logMapMatcher.getLogmap2_HardDiscardedMappings(), trainer);
@@ -247,30 +252,31 @@ public class LogMapEvaluator {
 		
 		double anchorsSize = dAnchors.size();
 		dAnchors = dAnchors.stream().filter(m -> !gs.contains(m)).collect(Collectors.toSet());
-		System.out.println("Anchors --- Before: " + anchorsSize + " after: " + dAnchors.size());
+		printBoth("\nFiltering potentially bad anchors and discarded mappings");
+		printBoth("Anchors --- Before: " + anchorsSize + " after: " + dAnchors.size());
 		
 		double whardSize = whard.size();
 		whard = whard.stream().filter(m -> gs.contains(m)).collect(Collectors.toSet());
-		System.out.println("Hard --- Before: " + whardSize + " after: " + whard.size());
+		printBoth("Hard --- Before: " + whardSize + " after: " + whard.size());
 		
 		double wconflictSize = wconflict.size();
 		wconflict = wconflict.stream().filter(m -> gs.contains(m)).collect(Collectors.toSet());
-		System.out.println("Conflict --- Before: " + wconflictSize + " after: " + wconflict.size());
+		printBoth("Conflict --- Before: " + wconflictSize + " after: " + wconflict.size());
 
 		double wdiscardedSize = wdiscarded.size();
-		wdiscarded = wconflict.stream().filter(m -> gs.contains(m)).collect(Collectors.toSet());
-		System.out.println("Discarded --- Before: " + wdiscardedSize + " after: " + wdiscarded.size());
+		wdiscarded = wdiscarded.stream().filter(m -> gs.contains(m)).collect(Collectors.toSet());
+		printBoth("Discarded --- Before: " + wdiscardedSize + " after: " + wdiscarded.size());
 	}
 
 	public static void main(String[] args) throws Exception {
 		out = new PrintWriter(new File(TestRunUtils.logFile));
 		
 //		generateWalks();
-		long startTime = System.nanoTime();
-		TestRunUtils.trainEmbeddings(TestRunUtils.embeddingsSystem);
-		long endTime = System.nanoTime();
-		long duration = (endTime - startTime) / 1000000;
-		printBoth("time to train: " + duration + "ms");
+//		long startTime = System.nanoTime();
+//		TestRunUtils.trainEmbeddings(TestRunUtils.embeddingsSystem);
+//		long endTime = System.nanoTime();
+//		long duration = (endTime - startTime) / 1000000;
+//		printBoth("time to train: " + duration + "ms");
 
 		evaluateEmbeddings();
 

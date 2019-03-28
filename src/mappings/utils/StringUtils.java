@@ -121,7 +121,11 @@ public class StringUtils {
 		}
 		return s;
 	}
-
+	/**
+	 * This is someKindof-String! -> this is somekindof string
+	 * @param s
+	 * @return
+	 */
 	public static String normalizeString(String s) {
 		if (s != null) {
 			s = s.toLowerCase(); // case normalization
@@ -141,6 +145,11 @@ public class StringUtils {
 		return uri;
 	}
 
+	/**
+	 * This is, a someKindOf-literal.. -> this_is_somekindof_literal
+	 * @param literal
+	 * @return
+	 */
 	public static String normalizeLiteral(String literal) {
 		literal = literal.replaceAll("[-]", "_"); // link normalization
 		literal = literal.replaceAll("[.,']", ""); // remove punctuation

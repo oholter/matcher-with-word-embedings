@@ -4,6 +4,8 @@ from sklearn import metrics
 import numpy as np
 import matplotlib.pyplot as plt
 import hdbscan
+from functools import reduce
+
 
 word_limit = 300
 
@@ -24,7 +26,7 @@ l = l[:word_limit]
 
 array = np.array(l)
 
-hdb = hdbscan.HDBSCAN(min_cluster_size=2, min_samples=1,
+hdb = hdbscan.HDBSCAN(min_cluster_size=2, min_samples=None,
         gen_min_span_tree=True,
         cluster_selection_method='eom',
         #cluster_selection_method='leaf',
@@ -51,6 +53,12 @@ l = [ [] for i in range(n_clusters_) ]
 #words_to_use = [w for w in words if 'yeast' in w]
 words_to_use = [w for w in words]
 
+def add_vectors(vectors):
+    sum_vec = reduce(lambda x, y : x + y, vectors)
+    #ave_vec = sum_vec / len(vectors)
+    #return ave_vec
+    return sum_vec   
+
 for w, label in zip(words_to_use, labels):
     if label == -1:
         continue
@@ -58,4 +66,8 @@ for w, label in zip(words_to_use, labels):
     l[label].append(w)
 
 for liste in l:
-    print(liste)
+    sum_vec = add_vectors([model[w] for w in liste])
+    central_concept = model.most_similar(positive=[sum_vec], topn=1)[0]
+    print("\nCluster: {}".format(central_concept[0]))
+    for element in liste:
+        print(element)

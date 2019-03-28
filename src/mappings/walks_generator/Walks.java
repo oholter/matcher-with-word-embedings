@@ -39,9 +39,9 @@ public class Walks {
 		this.walkGenerator = new WalkGeneratorRand();
 		this.numWalks = 50;
 		this.walkDepth = 40;
-		this.numThreads = 8;
+		this.numThreads = 12;
 		this.offset = 0;
-		this.classLimit = 100000;
+		this.classLimit = 10000;
 		this.childLimit = 100;
 		TEMP_DIR = CURRENT_DIR + "/temp/";
 		TEMP_OUT = TEMP_DIR + "out/";
