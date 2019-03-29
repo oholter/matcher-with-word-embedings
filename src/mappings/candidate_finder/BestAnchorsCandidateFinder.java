@@ -32,6 +32,7 @@ import uk.ac.ox.krr.logmap2.mappings.objects.MappingObjectStr;
 
 public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 	private static Logger log = LoggerFactory.getLogger(BestAnchorsCandidateFinder.class);
+
 	public BestAnchorsCandidateFinder(OWLOntology o1, OWLOntology o2, OWLOntology mergedOnto, String modelPath,
 			double distLimit) throws Exception {
 		super(o1, o2, mergedOnto, modelPath, distLimit);
@@ -91,8 +92,8 @@ public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 
 				System.out.println("Found mapping: " + equivalentClassAxiom + " distance: " + maxSimilarity);
 				try {
-					output.addClassMapping2Output(classFromFirstOntology.getIRI().toString(), candidate.getIRI().toString(),
-							AlignmentUtilities.EQ, maxSimilarity);
+					output.addClassMapping2Output(classFromFirstOntology.getIRI().toString(),
+							candidate.getIRI().toString(), AlignmentUtilities.EQ, maxSimilarity);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -113,7 +114,6 @@ public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 		double fractionOfMappings = TestRunUtils.fractionOfMappings;
 		String walksType = TestRunUtils.walksType;
 		String walksFile = TestRunUtils.walksFile;
-		
 
 		String currentDir = new File(ClassLoader.getSystemClassLoader().getResource("").getPath()).toString();
 
@@ -127,7 +127,7 @@ public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 		reader.readOntology();
 		OWLOntology onto2 = reader.getOntology();
 		log.info("Read onto: " + secondOntologyFile);
-		
+
 		// For training of ontology start:
 		OWLOntology mergedOnto = OntologyReader.mergeOntologies("merged", new OWLOntology[] { onto1, onto2 });
 		AnchorsCandidateFinder finder = new BestAnchorsCandidateFinder(onto1, onto2, mergedOnto,
@@ -150,17 +150,23 @@ public class BestAnchorsCandidateFinder extends AnchorsCandidateFinder {
 		projector.projectOntology();
 		projector.saveModel(TestRunUtils.modelPath);
 
-		Walks walks = new Walks(TestRunUtils.modelPath, walksType);
+//		Walks walks = new Walks(TestRunUtils.modelPath, walksType);
+		// String inputFile, String type, String outputFile, String labelOutputFile, int
+		// numWalks, int walkDepth, int numThreads, int offset, int classLimit
+		Walks walks = new Walks(TestRunUtils.modelPath, TestRunUtils.walksType, TestRunUtils.walksFile,
+				TestRunUtils.numWalks, TestRunUtils.walkDepth, TestRunUtils.numThreads, TestRunUtils.offset,
+				TestRunUtils.classLimit);
+
 		walks.generateWalks();
-		
+
 		WordEmbeddingsTrainer trainer = new WordEmbeddingsTrainer(walksFile, currentDir + "/temp/out.txt");
 //		trainer.train();
-		
+
 		/**
 		 * calling a python script! -> model.bin
 		 */
 		TestRunUtils.trainEmbeddings(TestRunUtils.embeddingsSystem);
-		
+
 		trainer.loadGensimModel("/home/ole/master/test_onto/model.bin");
 		finder.setTrainer(trainer);
 

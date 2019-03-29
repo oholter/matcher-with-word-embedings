@@ -75,11 +75,12 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 	private Lock writeBufferLock = new ReentrantLock();
 	private boolean includeIndividuals;
 	private String[] validOutputFormats = { "fulluri", "uripart", "onesynonym", "allsynonyms", "words",
-			"allsynonymsanduri", "gouripart", "twodocuments" };
+			"allsynonymsanduri", "gouripart", "twodocuments", "uripartnonormalized" };
 	final private String[] synonymOutputFormats = { "onesynonym", "allsynonyms", "allsynonymsanduri", "twodocuments" };
 	private String secondOutputFile;
 	private BufferedWriter secondOutputWriter;
 	private boolean includeUriPartInSynonyms = false;
+	private boolean includeCommentsInSynonyms = false;
 
 	public SecondOrderWalksGenerator(String inputFile, String outputFile, int numberOfThreads, int walkDepth, int limit,
 			int numberOfWalks, int offset, double p, double q, String outputFormat, boolean includeIndividuals) {
@@ -93,8 +94,14 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		this.q = q;
 		this.outputFormat = outputFormat;
 		this.adjacentPropertiesQuery = "SELECT DISTINCT ?p ?o WHERE {$CLASS$ ?p ?o .} LIMIT " + limit;
-		this.synonymsQuery = "SELECT DISTINCT ?o WHERE {$CLASS$ <http://www.w3.org/2000/01/rdf-schema#label> ?o } "
-				+ "LIMIT " + limit;
+		if (includeCommentsInSynonyms) {
+			this.synonymsQuery = "SELECT DISTINCT ?o WHERE { { $CLASS$ <http://www.w3.org/2000/01/rdf-schema#label> ?o } "
+					+ "UNION " + "{ $CLASS$ <http://www.w3.org/2000/01/rdf-schema#comment> ?o } . } " + "LIMIT "
+					+ limit;
+		} else {
+			this.synonymsQuery = "SELECT DISTINCT ?o WHERE { $CLASS$ <http://www.w3.org/2000/01/rdf-schema#label> ?o } "
+					+ "LIMIT " + limit;
+		}
 		this.includeIndividuals = includeIndividuals;
 
 		writeBuffer = new LinkedList<List<Node>>();
@@ -355,8 +362,10 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 				try {
 					List<Node> walk = walks.remove(0);
 					String str = NodeGraph.nodeListToString(walk, outputFormat);
+
+					// must split the string into the two components
 					if (outputFormat.toLowerCase().equals("twodocuments")) {
-						String[] parts = str.split(" ");
+						String[] parts = str.split("\n");
 						List<String[]> tokens = Arrays.stream(parts).map(p -> p.split("->"))
 								.collect(Collectors.toList());
 						str = tokens.stream().map(t -> t[0]).collect(Collectors.joining(" "));
@@ -365,6 +374,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 //						System.out.println("label writer: " + labelstr);
 						secondOutputWriter.write(labelstr + "\n");
 					}
+
 					writer.write(str + "\n");
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
@@ -479,9 +489,9 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/pizza.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/NTNames.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/foaf.rdf");
-		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/human.owl");
+//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/human.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/bio_data/go.owl");
-//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/ekaw.owl");
+		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/ekaw.owl");
 		projector.projectOntology();
 		projector.saveModel(TestRunUtils.modelPath);
 		System.out.println("starting walksgenerator");
@@ -492,7 +502,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 
 		SecondOrderWalksGenerator walks = new SecondOrderWalksGenerator(TestRunUtils.modelPath,
 				"/home/ole/master/test_onto/walks_out.txt", "/home/ole/master/test_onto/labels_out.txt", 12, 40, 100000,
-				50, 0, 0.2, 5, "twodocuments", false);
+				100, 0, 0.2, 5, "fulluri", false);
 //		walks.useRdf4jModel(rdf4jModel);
 		walks.generateWalks();
 

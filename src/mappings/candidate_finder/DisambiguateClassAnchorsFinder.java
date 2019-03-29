@@ -47,8 +47,9 @@ public class DisambiguateClassAnchorsFinder extends AnchorsCandidateFinder {
 				String iriFromSecondOntology = classFromSecondOntology.getIRI().toString();
 
 				double iriCosine = 0;
-				iriCosine = VectorUtils.cosineSimilarity(trainer.getWordVector(StringUtils.normalizeFullIRINoSpace(iriFromFirstOntology)),
-						trainer.getWordVector(StringUtils.normalizeFullIRINoSpace(iriFromSecondOntology)));
+//				iriCosine = VectorUtils.cosineSimilarity(trainer.getWordVector(StringUtils.normalizeFullIRINoSpace(iriFromFirstOntology)),
+//						trainer.getWordVector(StringUtils.normalizeFullIRINoSpace(iriFromSecondOntology)));
+				iriCosine = trainer.getCosine(iriFromFirstOntology, iriFromSecondOntology);
 				if (Double.isNaN(iriCosine)) {
 					iriCosine = 0;
 				}
@@ -56,8 +57,11 @@ public class DisambiguateClassAnchorsFinder extends AnchorsCandidateFinder {
 				double currentSimilarity = iriCosine; //
 
 				if (currentSimilarity > distLimit) { // candidate
+					System.out.println("added candidate");
 					candidates.add(classFromSecondOntology);
 				}
+				
+//				System.out.println(": " + classFromFirstOntology + " : " + classFromSecondOntology + " cosine: " + iriCosine);
 
 			} // end classFromSecondOntology
 
@@ -198,9 +202,9 @@ public class DisambiguateClassAnchorsFinder extends AnchorsCandidateFinder {
 		projector.projectOntology();
 		projector.saveModel("/home/ole/master/test_onto/merged.ttl");
 
-		Walks walks = new Walks("/home/ole/master/test_onto/merged.ttl", walksType);
-//		Walks_rdf2vec walks = new Walks_rdf2vec();
-//		walks.loadFromRdfFile("/home/ole/master/test_onto/merged.ttl");
+		Walks walks = new Walks(TestRunUtils.modelPath, TestRunUtils.walksType, TestRunUtils.walksFile,
+				TestRunUtils.numWalks, TestRunUtils.walkDepth, TestRunUtils.numThreads, TestRunUtils.offset,
+				TestRunUtils.classLimit);
 		walks.generateWalks();
 		String walksFile = walks.getOutputFile();
 

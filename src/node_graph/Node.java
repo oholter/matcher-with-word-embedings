@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import mappings.utils.StringUtils;
 
@@ -52,6 +53,10 @@ public class Node {
 	public String getUriPart() {
 		return StringUtils.normalizeFullIRINoSpace(label);
 	}
+	
+	public String getUriPartNoNormalized() {
+		return StringUtils.getUriPart(label);
+	}
 
 	public String getUriWords() {
 		return StringUtils.normalizeFullIRI(label);
@@ -59,7 +64,7 @@ public class Node {
 
 	public String getTwoDocumentsFormat() {
 		String uri = label;
-		String synonym = getOneSynonym();
+		String synonym = getOneSynonymAsWords();
 		return uri + "->" + synonym;
 	}
 
@@ -72,7 +77,19 @@ public class Node {
 			return label;
 		}
 	}
+	
+	public String getOneSynonymAsWords() {
+		String synonym = getOneSynonym();
+		Set<String> stringSet = StringUtils.string2Set(synonym);
+		return stringSet.stream().collect(Collectors.joining(" "));
+	}
 
+	public String getAllSynonymsAsWords() {
+		String synonyms = getAllSynonyms();
+		Set<String> stringSet = StringUtils.string2Set(synonyms);
+		return stringSet.stream().collect(Collectors.joining(" "));
+	}
+	
 	public String getAllSynonyms() {
 		if (!synonyms.isEmpty()) {
 			StringBuilder strs = new StringBuilder();

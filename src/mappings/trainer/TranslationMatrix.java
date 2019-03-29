@@ -1,22 +1,22 @@
 package mappings.trainer;
 
 import java.io.IOException;
-import java.util.ArrayList;
 
-import org.deeplearning4j.models.word2vec.Word2Vec;
+import org.deeplearning4j.models.embeddings.wordvectors.WordVectors;
 import org.jblas.DoubleMatrix;
 import org.jblas.Solve;
 
 public class TranslationMatrix {
 
-	Word2Vec model;
+	WordEmbeddingsTrainer trainer;
 	DoubleMatrix translationMatrix;
 	int columns;
 
-	public TranslationMatrix(Word2Vec model, String[] sourceWords, String[] targetWords) throws IOException {
+	public TranslationMatrix(WordEmbeddingsTrainer trainer, String[] sourceWords, String[] targetWords) throws IOException {
 		super();
-		this.model = model;
-		this.columns = model.getLayerSize();
+		this.trainer = trainer;
+//		this.columns = model.getLayerSize();
+		this.columns = trainer.layerSize;
 		calculateTranslationMatrix(sourceWords, targetWords);
 	}
 
@@ -24,10 +24,10 @@ public class TranslationMatrix {
 		DoubleMatrix m = new DoubleMatrix(words.length, columns);
 		for (int i = 0; i < words.length; i++) {
 			try {
-				m.putRow(i, new DoubleMatrix(model.getWordVector(words[i])));
+				m.putRow(i, new DoubleMatrix(trainer.getWordVector(words[i])));
 			} catch (NullPointerException npe) {
 				System.out.println("NOT IN DICT: " + words[i]);
-//				System.exit(0);
+//				System.exit(0); objectProperties will not be in dict, ignore them
 			}
 		}
 		return m;

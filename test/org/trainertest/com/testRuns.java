@@ -2,6 +2,7 @@ package org.trainertest.com;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.log4j.BasicConfigurator;
@@ -36,7 +37,7 @@ public class testRuns {
 	public static double fractionOfMappings = TestRunUtils.fractionOfMappings;
 	public static Logger log = LoggerFactory.getLogger(WordEmbeddingsTrainer.class);
 	public static String currentDir = new File(ClassLoader.getSystemClassLoader().getResource("").getPath()).toString();
-	
+
 	public static String firstOntologyFile = TestRunUtils.firstOntologyFile;
 	public static String secondOntologyFile = TestRunUtils.secondOntologyFile;
 	public static String referenceAlignmentsFile = TestRunUtils.referenceAlignmentsFile;
@@ -46,7 +47,13 @@ public class testRuns {
 	public static String modelPath = TestRunUtils.modelPath;
 	public static String nameSpaceString = TestRunUtils.nameSpaceString1;
 	public static String mergedOwlPath = TestRunUtils.mergedOwlPath;
-	
+	public static String walksFile = TestRunUtils.walksFile;
+	public static String labelsFile = TestRunUtils.labelsFile;
+	public static int numWalks = TestRunUtils.numWalks;
+	public static int walkDepth = TestRunUtils.walkDepth;
+	public static int numThreads = TestRunUtils.numThreads;
+	public static int offset = TestRunUtils.offset;
+	public static int classLimit = TestRunUtils.classLimit;
 
 	public static void main(String[] args) throws Exception {
 		BasicConfigurator.configure();
@@ -55,9 +62,11 @@ public class testRuns {
 //		String[] anchorCandidateTypes = new String[] { "allrelationsanchorcandidatefinder",
 //				"bestcandidatefinder", "disambiguateclassanchorsfinder", twodocuments" };
 
-		String type = "bestcandidatefinder";
+//		String type = "bestcandidatefinder";
+		String type = "translationmatrixcandidatefinder";
 
-		String[] candidateTypes = new String[] { "translationmatrixcandidatefinder", "pretrainedvectorcandidatesfinder" };
+		String[] candidateTypes = new String[] { "translationmatrixcandidatefinder",
+				"pretrainedvectorcandidatesfinder" };
 
 		File outputFile = new File(testResultsFile);
 		out = new PrintWriter(outputFile);
@@ -114,7 +123,6 @@ public class testRuns {
 
 	public static void runTest(String finderType, int runNo) throws Exception {
 
-
 		OntologyReader reader = new OntologyReader();
 		reader.setFname(firstOntologyFile);
 		reader.readOntology();
@@ -150,6 +158,8 @@ public class testRuns {
 
 		AlignmentsReader alignmentsReader = new OAEIAlignmentsReader(referenceAlignmentsFile, onto1, onto2);
 		List<MappingObjectStr> mappings = alignmentsReader.getMappings();
+		Collections.shuffle(mappings);
+
 		for (int i = 0; i < (mappings.size() * fractionOfMappings); i++) {
 			MappingObjectStr mapping = mappings.get(i);
 			finder.addAnchor(mapping.getIRIStrEnt1(), mapping.getIRIStrEnt2());
@@ -160,12 +170,20 @@ public class testRuns {
 		OntologyProjector projector = new OntologyProjector(mergedOwlPath);
 		projector.projectOntology();
 		projector.saveModel(modelPath);
-		Walks walks = new Walks("/home/ole/master/test_onto/merged.ttl", walksType);
+		Walks walks = new Walks(modelPath, walksType, walksFile, labelsFile, numWalks, walkDepth, numThreads, offset,
+				classLimit);
 		walks.generateWalks();
 		String walksFile = walks.getOutputFile();
 
 		WordEmbeddingsTrainer trainer = new WordEmbeddingsTrainer(walksFile, currentDir + "/temp/out.txt");
-		trainer.train();
+		// trainer.train();
+		
+		/**
+		 * python gensim trainer
+		 */
+		TestRunUtils.trainEmbeddings(TestRunUtils.embeddingsSystem);
+
+		trainer.loadGensimModel("/home/ole/master/test_onto/model.bin");
 		finder.setTrainer(trainer);
 		finder.createMappings();
 
@@ -182,7 +200,7 @@ public class testRuns {
 		recalls[runNo] = evaluator.calculateRecall();
 		fmeasures[runNo] = evaluator.calculateFMeasure();
 	}
-	
+
 	public static void runTwoDocumentsTest(int runNo) throws Exception {
 		OntologyReader reader = new OntologyReader();
 		reader.setFname(firstOntologyFile);
@@ -220,13 +238,21 @@ public class testRuns {
 		String walksFile = walks.getOutputFile();
 		String labelOutputFile = walks.getLabelOutputFile();
 
-		WordEmbeddingsTrainer trainer = new WordEmbeddingsTrainer(walksFile, currentDir + "/temp/out.txt");
+		WordEmbeddingsTrainer trainer = new WordEmbeddingsTrainer(walksFile, TestRunUtils.modelPath);
 		trainer.train();
 		finder.setTrainer(trainer);
 
 		WordEmbeddingsTrainer labelTrainer = new WordEmbeddingsTrainer(labelOutputFile,
-				currentDir + "/temp/label_out.txt");
-		labelTrainer.train();
+				TestRunUtils.labelsFile);
+//		labelTrainer.train();
+		
+		/**
+		 * python gensim trainer
+		 */
+		TestRunUtils.trainEmbeddings(TestRunUtils.embeddingsSystem);
+
+		trainer.loadGensimModel("/home/ole/master/test_onto/model.bin");
+		
 		finder.setLabelTrainer(labelTrainer);
 
 		finder.createMappings(); // this runs the program
@@ -240,13 +266,13 @@ public class testRuns {
 		System.out.println("--------------------------------------------");
 
 		System.out.println("This system:");
-		evaluator = new ClassMappingsEvaluator(referenceAlignmentsFile, finder.getOutputAlignment().returnAlignmentFile().getFile(),
-				finder.getOnto1(), finder.getOnto2());
+		evaluator = new ClassMappingsEvaluator(referenceAlignmentsFile,
+				finder.getOutputAlignment().returnAlignmentFile().getFile(), finder.getOnto1(), finder.getOnto2());
 		evaluator.printEvaluation();
 		System.out.println("--------------------------------------------");
-		
+
 		System.out.println("Dette er dette er dette er two documents!!!!!!!!!");
-		
+
 		precisions[runNo] = evaluator.calculatePrecision();
 		recalls[runNo] = evaluator.calculateRecall();
 		fmeasures[runNo] = evaluator.calculateFMeasure();
@@ -272,6 +298,7 @@ public class testRuns {
 		AlignmentsReader alignmentsReader = new OAEIAlignmentsReader(referenceAlignmentsFile, onto1, onto2);
 
 		List<MappingObjectStr> mappings = alignmentsReader.getMappings();
+		Collections.shuffle(mappings);
 		for (int i = 0; i < (mappings.size() * fractionOfMappings); i++) {
 			MappingObjectStr mapping = mappings.get(i);
 			finder.addAnchor(mapping.getIRIStrEnt1(), mapping.getIRIStrEnt2());
@@ -286,7 +313,13 @@ public class testRuns {
 		String walksFile = walks.getOutputFile();
 
 		WordEmbeddingsTrainer trainer = new WordEmbeddingsTrainer(walksFile, currentDir + "/temp/out.txt");
-		trainer.train();
+//		trainer.train();
+		/**
+		 * python gensim trainer
+		 */
+		TestRunUtils.trainEmbeddings(TestRunUtils.embeddingsSystem);
+
+		trainer.loadGensimModel("/home/ole/master/test_onto/model.bin");
 		finder.setTrainer(trainer);
 
 		finder.createMappings(); // this runs the program

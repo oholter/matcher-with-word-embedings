@@ -384,7 +384,7 @@ public class WeightedDirectedGraph {
 		synonyms.add(uriLabel);
 		synonyms.add(StringUtils.normalizeFullIRI(uriLabel));
 //		for (String token : StringUtils.removeStopWords(StringUtils.normalizeFullIRI(uriLabel).split(" "))) {
-		for (String token : StringUtils.uri2Bag(uriLabel)) {
+		for (String token : StringUtils.uri2Set(uriLabel)) {
 			synonyms.add(token);
 		}
 
@@ -397,7 +397,7 @@ public class WeightedDirectedGraph {
 //					synonyms.add(StringUtils.normalizeFullIRI(synonymLabel));
 //					for (String token : StringUtils
 //							.removeStopWords(StringUtils.normalizeString(synonymLabel).split(" "))) {
-					for (String token : StringUtils.uri2Bag(synonymLabel)) {
+					for (String token : StringUtils.uri2Set(synonymLabel)) {
 						synonyms.add(token);
 					}
 				}

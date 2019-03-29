@@ -10,7 +10,7 @@ from functools import reduce
 
 input_model = "/home/ole/master/test_onto/model.bin"
 word_limit = 10000
-num_clusters = 500
+num_clusters = 7
 
 def prepare_data(input_model, word_limit):
     model = KeyedVectors.load_word2vec_format(input_model, binary=False)
@@ -33,7 +33,6 @@ def create_clusters(data):
     
     
 def print_clusters(agglo, data, model):
-    print(agglo)
     clusters = [[] for i in range(max(agglo) + 1)]
     n = 0
     for clustno, word in zip(agglo, data):
@@ -55,28 +54,41 @@ def print_clusters(agglo, data, model):
     print("\nTot elements: {}".format(n))
     
     
-    #todo: must fix plot
-def plot_cluster_data(vectors, kmeans):
-    pca = PCA(n_components=2)
-    result = pca.fit_transform(vectors)
-
-    labels = kmeans.labels_
-    clusters = {}
+def find_titles(agglo, words, model):
+    clusters = [[] for i in range(max(agglo) + 1)]
+    central_concepts = []
     n = 0
-    for item in labels:
-        if item in clusters:
-            clusters[item].append(result[n])
-        else:
-            clusters[item] = [result[n]]
+    for clustno, word in zip(agglo, words):
+        clusters[clustno].append(word)
         n +=1
     
     n = 0
-    for item in clusters:
-        cluster = clusters[item]
-        print(cluster)
-        print("\nCluster {}".format(cluster[:,0]))
+    for cluster in clusters:
+        sum_vector = add_vectors([model[w] for w in cluster])
+        central_concept = model.most_similar(positive=[sum_vector], topn=1)[0]
+        central_concepts.append(central_concept)
+    
+    return np.array(central_concepts)[:,0]
+    
+    
+    #todo: must fix plot
+def plot_cluster_data(vectors, agglo, central_concepts):
+    pca = PCA(n_components=2)
+    result = pca.fit_transform(vectors)
+    plt.clf()
 
+    n = 0
+    clusters = [[] for i in range(max(agglo) + 1)]
+    for clustno, vector in zip(agglo, result):
+        clusters[clustno].append(result[n])
+        n += 1
+    
+    for i, cluster in enumerate(clusters):
+        cluster = np.array(cluster)
         plt.scatter(cluster[:,0], cluster[:,1])
+        concept = central_concepts[i]
+        #concept = concept.split("#")[1]
+        plt.annotate(concept, xy=(cluster[0,0], cluster[0,1]))
     plt.show()
     
 def add_vectors(vectors):
@@ -89,7 +101,8 @@ if __name__ == "__main__":
     words, vectors, model = prepare_data(input_model, word_limit)
     agglo = create_clusters(vectors)
     print_clusters(agglo, words, model)
-    #plot_cluster_data(vectors, kmeans)
+    titles = find_titles(agglo, words, model)
+    plot_cluster_data(vectors, agglo, titles)
 #    print_cluster_title(kmeans, vectors, model)
     
     

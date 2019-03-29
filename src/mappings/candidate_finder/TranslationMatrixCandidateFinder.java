@@ -2,6 +2,7 @@ package mappings.candidate_finder;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -84,8 +85,8 @@ public class TranslationMatrixCandidateFinder extends CandidateFinder {
 			listAnchorVectors(mappings);
 			System.out.println(anchorsFromFirstOntology.size() + ": " + anchorsFromSecondOntology.size());
 //			createTranslationMatrix();
-			translationMatrix = new TranslationMatrix(trainer.getModel(),
-					anchorsFromFirstOntology.toArray(new String[0]), anchorsFromSecondOntology.toArray(new String[0]));
+			translationMatrix = new TranslationMatrix(trainer, anchorsFromFirstOntology.toArray(new String[0]),
+					anchorsFromSecondOntology.toArray(new String[0]));
 
 //			System.out.println("similarity between http://ekaw#Person and http://cmt#Person is: " + Vector
 //					.cosineSimilarity(translationMatrix.estimateTarget(trainer.getWordVector("http://ekaw#Person")),
@@ -302,8 +303,8 @@ public class TranslationMatrixCandidateFinder extends CandidateFinder {
 				iriCosine = VectorUtils.cosineSimilarity(
 						translationMatrix.estimateTarget(trainer.getWordVector(iriFromFirstOntology)),
 						trainer.getWordVector(iriFromSecondOntology));
-//					System.out.println("TESTING " + iriFromFirstOntology + " and " + iriFromSecondOntology
-//							+ " gives a similarity of: " + iriCosine);
+				System.out.println("TESTING " + iriFromFirstOntology + " and " + iriFromSecondOntology
+						+ " gives a similarity of: " + iriCosine);
 				if (Double.isNaN(iriCosine)) {
 					iriCosine = 0;
 				}
@@ -682,7 +683,6 @@ public class TranslationMatrixCandidateFinder extends CandidateFinder {
 		OWLOntology mergedOnto = OntologyReader.mergeOntologies("merged", new OWLOntology[] { onto1, onto2 });
 		OntologyReader.writeOntology(mergedOnto, mergedOwlPath, "owl");
 
-
 		// For training of ontology start:
 //		public TranslationMatrixCandidateFinder(OWLOntology o1, OWLOntology o2, String modelPath, double distLimit,
 //				String nameSpace1) throws Exception {
@@ -700,6 +700,7 @@ public class TranslationMatrixCandidateFinder extends CandidateFinder {
 //				"/home/ole/master/logmap_standalone/output/logmap2_mappings.rdf", onto1, onto2);
 
 		List<MappingObjectStr> mappings = alignmentsReader.getMappings();
+		Collections.shuffle(mappings);
 		for (int i = 0; i < (mappings.size() * fractionOfMappings); i++) {
 			MappingObjectStr mapping = mappings.get(i);
 			finder.addAnchor(mapping.getIRIStrEnt1(), mapping.getIRIStrEnt2());
@@ -710,14 +711,23 @@ public class TranslationMatrixCandidateFinder extends CandidateFinder {
 		projector.projectOntology();
 		projector.saveModel(modelPath);
 
-		Walks walks = new Walks(modelPath, walksType);
+		// String inputFile, String type, String outputFile, String labelOutputFile, int
+		// numWalks, int walkDepth, int numThreads, int offset, int classLimit
+		Walks walks = new Walks(modelPath, walksType, TestRunUtils.walksFile, TestRunUtils.numWalks,
+				TestRunUtils.walkDepth, TestRunUtils.numThreads, TestRunUtils.offset, TestRunUtils.classLimit);
 //		Walks_rdf2vec walks = new Walks_rdf2vec();
 //		walks.loadFromRdfFile("/home/ole/master/test_onto/merged.ttl");
 		walks.generateWalks();
 		String walksFile = walks.getOutputFile();
 
 		WordEmbeddingsTrainer trainer = new WordEmbeddingsTrainer(walksFile, currentDir + "/temp/out.txt");
-		trainer.train();
+//		trainer.train();
+		/**
+		 * python gensim trainer
+		 */
+		TestRunUtils.trainEmbeddings(TestRunUtils.embeddingsSystem);
+
+		trainer.loadGensimModel("/home/ole/master/test_onto/model.bin");
 		finder.setTrainer(trainer);
 
 		finder.createMappings(); // this runs the program

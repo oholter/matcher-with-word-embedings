@@ -171,7 +171,7 @@ public abstract class AnchorsCandidateFinder extends CandidateFinder {
 		}
 
 		System.out.println("Added " + numSuperClasses + " superClasses and " + numSubClasses + " subClasses");
-		superClassMatrix = new TranslationMatrix(trainer.getModel(), superClassIRIs.toArray(new String[0]),
+		superClassMatrix = new TranslationMatrix(trainer, superClassIRIs.toArray(new String[0]),
 				subClassIRIs.toArray(new String[0]));
 	}
 

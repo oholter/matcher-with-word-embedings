@@ -8,12 +8,9 @@ import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import org.deeplearning4j.models.embeddings.WeightLookupTable;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
 import org.deeplearning4j.models.embeddings.wordvectors.WordVectors;
-import org.deeplearning4j.models.word2vec.VocabWord;
 import org.deeplearning4j.models.word2vec.Word2Vec;
-import org.deeplearning4j.models.word2vec.wordstore.VocabCache;
 import org.deeplearning4j.text.sentenceiterator.BasicLineIterator;
 import org.deeplearning4j.text.sentenceiterator.SentenceIterator;
 import org.deeplearning4j.text.tokenization.tokenizerfactory.DefaultTokenizerFactory;
@@ -28,7 +25,7 @@ public class WordEmbeddingsTrainer {
 	Word2Vec model;
 	int windowSize = 20; // 15
 	int numIterations = 5; // 1
-	int layerSize = 300; // 100
+	int layerSize = 200; // 100
 	int minWordFrequency = 1;
 	int seed = 42; // 42
 	int batchSize = 50; // 50
@@ -122,8 +119,14 @@ public class WordEmbeddingsTrainer {
 		this.outputFilePath = outputFilePath;
 	}
 
-	public Word2Vec getModel() {
-		return model;
+	public WordVectors getModel() {
+		if (model != null) {
+			return model;
+		} else if (gensimModel != null) {
+			return gensimModel;
+		} else {
+			return null;
+		}
 	}
 
 	public void setModel(Word2Vec model) {

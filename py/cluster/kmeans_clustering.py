@@ -9,7 +9,7 @@ from functools import reduce
 
 input_model = "/home/ole/master/test_onto/model.bin"
 word_limit = 10000
-num_clusters = 100
+num_clusters = 7
 
 def prepare_data(input_model, word_limit):
     model = KeyedVectors.load_word2vec_format(input_model, binary=False)

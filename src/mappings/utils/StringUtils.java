@@ -8,67 +8,70 @@ import java.util.Set;
 import opennlp.tools.stemmer.PorterStemmer;
 
 public class StringUtils {
-	
+
 	// http://ekaw#ConferenceParticipant -> conference participant
 	public static String normalizeFullIRI(String s) {
 		String httpPattern = "^(http|https)://.*#";
 		s = s.replaceAll(httpPattern, "");
 		return normalizeIRI(s); // replace(" ", "_");
 	}
-	
+
 	public static String getGoUriPart(String s) {
 		String httpPattern = "^(http|https)://.*#";
 		String goPattern = "http://purl.obolibrary.org/obo/GO_";
 		return s.replace(httpPattern, "").replace(goPattern, "GO:");
 	}
 	
+	public static String getUriPart(String s) {
+		String httpPattern = "^(http|https)://.*#";
+		s = s.replaceAll(httpPattern, "");
+		return s;
+	}
+
 	public static String normalizeFullIRINoSpace(String s) {
 		return normalizeFullIRI(s).replaceAll(" ", "_");
 	}
 
 	/* from the python nltk.corpus.stopwords */
-	public static String[] stopWords = {
-			"ourselves", "hers", "between", "yourself", "but", "again", "there",
-			"about", "once", "during", "out", "very", "having", "with", 
-			"they", "own", "an", "be", "some", "for", "do", "its", "yours", 
-			"such", "into", "of", "most", "itself", "other", "off", "is", "s", 
-			"am", "or", "who", "as", "from", "him", "each", "the", "themselves", 
-			"until", "below", "are", "we", "these", "your", "his", 
-			"through", "don", "nor", "me", "were", "her", "more", "himself", 
-			"this", "down", "should", "our", "their", "while", "above", "both", 
-			"up", "to", "ours", "had", "she", "all", "no", "when", "at", "any", 
-			"before", "them", "same", "and", "been", "have", "in", "will", "on", 
-			"does", "yourselves", "then", "that", "because", "what", "over", "why", 
-			"so", "can", "did", "not", "now", "under", "he", "you", "herself", "has", 
-			"just", "where", "too", "only", "myself", "which", "those", "i", 
-			"after", "few", "whom", "t", "being", "if", "theirs", "my", "against", 
-			"a", "by", "doing", "it", "how", "further", "was", "here", "than"
-	};
+	public static String[] stopWords = { "ourselves", "hers", "between", "yourself", "but", "again", "there", "about",
+			"once", "during", "out", "very", "having", "with", "they", "own", "an", "be", "some", "for", "do", "its",
+			"yours", "such", "into", "of", "most", "itself", "other", "off", "is", "s", "am", "or", "who", "as", "from",
+			"him", "each", "the", "themselves", "until", "below", "are", "we", "these", "your", "his", "through", "don",
+			"nor", "me", "were", "her", "more", "himself", "this", "down", "should", "our", "their", "while", "above",
+			"both", "up", "to", "ours", "had", "she", "all", "no", "when", "at", "any", "before", "them", "same", "and",
+			"been", "have", "in", "will", "on", "does", "yourselves", "then", "that", "because", "what", "over", "why",
+			"so", "can", "did", "not", "now", "under", "he", "you", "herself", "has", "just", "where", "too", "only",
+			"myself", "which", "those", "i", "after", "few", "whom", "t", "being", "if", "theirs", "my", "against", "a",
+			"by", "doing", "it", "how", "further", "was", "here", "than" };
 
-	public static Set<String> uri2Bag(String uri) {
+	public static Set<String> uri2Set(String uri) {
 		Set<String> bag = new HashSet<>();
 		String normUri = normalizeFullIRI(uri);
 		String[] normWords = normUri.split(" ");
 		normWords = removeStopWords(normWords);
-		normWords = stemming(normWords);
+//		normWords = stemming(normWords);
 		for (String word : normWords) {
 			bag.add(word);
 		}
 		return bag;
 	}
-	
+
 	public static Set<String> string2Set(String string) {
-		Set<String> set = new HashSet<>();
-		String normString = normalizeString(string);
-		String[] strings = normString.split(" ");
-		strings = removeStopWords(strings);
-		strings = stemming(strings);
-		for (String word : strings) {
-			set.add(word);
+		if (isUri(string)) {
+			return uri2Set(string);
+		} else {
+			Set<String> set = new HashSet<>();
+			String normString = normalizeString(string);
+			String[] strings = normString.split(" ");
+			strings = removeStopWords(strings);
+			//strings = stemming(strings);
+			for (String word : strings) {
+				set.add(word);
+			}
+			return set;
 		}
-		return set;
 	}
-	
+
 	public static String[] stemming(String[] strs) {
 		ArrayList<String> newList = new ArrayList<>();
 		for (String s : strs) {
@@ -76,32 +79,32 @@ public class StringUtils {
 		}
 		return newList.toArray(new String[newList.size()]);
 	}
-	
+
 	public static String stemming(String string) {
 		PorterStemmer stemmer = new PorterStemmer();
 		String stemmedString = stemmer.stem(string);
 		return stemmedString;
 	}
-	
+
 	public static List<String> removeStopWords(List<String> bag) {
 		for (String stopWord : stopWords) {
 			bag.remove(stopWord);
 		}
 		return bag;
 	}
-	
+
 	public static String[] removeStopWords(String[] bag) {
 		ArrayList<String> newList = new ArrayList<>();
-			for (String b : bag) {
-				boolean isStopWord = false;
-				for (String stopWord : stopWords) {
-					if (b.equals(stopWord)) {
-						isStopWord = true;
-					}
-			}
-				if (!isStopWord) {
-					newList.add(b);
+		for (String b : bag) {
+			boolean isStopWord = false;
+			for (String stopWord : stopWords) {
+				if (b.equals(stopWord)) {
+					isStopWord = true;
 				}
+			}
+			if (!isStopWord) {
+				newList.add(b);
+			}
 		}
 		return newList.toArray(new String[newList.size()]);
 	}
@@ -121,8 +124,10 @@ public class StringUtils {
 		}
 		return s;
 	}
+
 	/**
 	 * This is someKindof-String! -> this is somekindof string
+	 * 
 	 * @param s
 	 * @return
 	 */
@@ -130,7 +135,7 @@ public class StringUtils {
 		if (s != null) {
 			s = s.toLowerCase(); // case normalization
 			s = s.replaceAll("[_-]", " "); // link normalization
-			s = s.replaceAll("[.,!?]", ""); // remove punctuation and exclamation/interrogation
+			s = s.replaceAll("[.,!?)(]", ""); // remove punctuation and exclamation/interrogation
 			s = s.replaceAll("\\s", " "); // blank normalization
 			s = s.replaceAll("\\s+", " "); // only one blank
 			s = s.trim();
@@ -147,6 +152,7 @@ public class StringUtils {
 
 	/**
 	 * This is, a someKindOf-literal.. -> this_is_somekindof_literal
+	 * 
 	 * @param literal
 	 * @return
 	 */

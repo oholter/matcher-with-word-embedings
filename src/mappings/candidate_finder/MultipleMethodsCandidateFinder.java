@@ -10,7 +10,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.log4j.BasicConfigurator;
-import org.deeplearning4j.models.word2vec.Word2Vec;
+import org.deeplearning4j.models.embeddings.wordvectors.WordVectors;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLClass;
@@ -127,8 +127,8 @@ public class MultipleMethodsCandidateFinder extends AnchorsCandidateFinder {
 			String firstIri = mapping.getIRIStrEnt1();
 			String secondIri = mapping.getIRIStrEnt2();
 
-			Set<String> firstSet = StringUtils.uri2Bag(firstIri);
-			Set<String> secondSet = StringUtils.uri2Bag(secondIri);
+			Set<String> firstSet = StringUtils.uri2Set(firstIri);
+			Set<String> secondSet = StringUtils.uri2Set(secondIri);
 
 			if (firstSet.equals(secondSet)) {
 				mapping.setConfidenceMapping(1.0);
@@ -156,8 +156,8 @@ public class MultipleMethodsCandidateFinder extends AnchorsCandidateFinder {
 			String firstIri = candidate.getIRIStrEnt1();
 			String secondIri = candidate.getIRIStrEnt2();
 
-			Set<String> firstSet = StringUtils.uri2Bag(firstIri);
-			Set<String> secondSet = StringUtils.uri2Bag(secondIri);
+			Set<String> firstSet = StringUtils.uri2Set(firstIri);
+			Set<String> secondSet = StringUtils.uri2Set(secondIri);
 
 			OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
 			OWLDataFactory firstFactory = manager.getOWLDataFactory();
@@ -237,7 +237,7 @@ public class MultipleMethodsCandidateFinder extends AnchorsCandidateFinder {
 		double cutoff = 0.5;
 		int minIntersectionSize = 1;
 
-		Word2Vec model = owl2vecTrainer.getModel();
+		WordVectors model = owl2vecTrainer.getModel();
 		ArrayList<Set<String>> allSets = new ArrayList<Set<String>>();
 
 		for (OWLClass classFromFirstOntology : onto1.getClassesInSignature()) {

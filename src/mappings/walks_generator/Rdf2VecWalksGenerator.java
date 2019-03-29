@@ -41,7 +41,8 @@ public class Rdf2VecWalksGenerator extends WalksGenerator {
 		super(inputFile, outputFile, numberOfThreads, walkDepth, limit, numberOfWalks, offset);
 		File classpathRoot = new File(ClassLoader.getSystemClassLoader().getResource("").getPath());
 		CURRENT_DIR = classpathRoot.toString();
-		REPO_LOCATION = CURRENT_DIR + "/repo";
+//		REPO_LOCATION = CURRENT_DIR + "/repo";
+		REPO_LOCATION = "/home/ole/master/test_onto/test_repo/";
 //		this.walkGenerator = new WalkGenerator();
 		this.walkGenerator = new WalkGeneratorRand();
 		TEMP_DIR = CURRENT_DIR + "/temp/";
@@ -180,12 +181,12 @@ public class Rdf2VecWalksGenerator extends WalksGenerator {
 	}
 
 	public static void main(String[] args) {
-		String in = "/home/ole/master/test_onto/merged.ttl";
+		String in = "/home/ole/master/test_onto/projection.ttl";
 		String out = "/home/ole/master/test_onto/walks_out.txt";
 		
 //		String inputFile, String outputFile, int numberOfThreads, int walkDepth,
 //				int limit, int numberOfWalks, int offset
-		Rdf2VecWalksGenerator p = new Rdf2VecWalksGenerator(in, out, 8, 3, 1000, 1, 0);
+		Rdf2VecWalksGenerator p = new Rdf2VecWalksGenerator(in, out, 12, 5, 1000, 50, 0);
 		p.generateWalks();
 	}
 }

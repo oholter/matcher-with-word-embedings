@@ -6,9 +6,9 @@ from gensim.models import KeyedVectors
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
-#pretrained_model = "/home/ole/master/word2vec/models/fil9.model"
-pretrained_model = "/home/ole/Downloads/GoogleNews-vectors-negative300.bin"
-walks_document = '/home/ole/workspace/MatcherWithWordEmbeddings/target/classes/temp/out/label.txt'
+pretrained_model = "/home/ole/master/word2vec/models/fil9.model"
+#pretrained_model = "/home/ole/Downloads/GoogleNews-vectors-negative300.bin"
+walks_document = '/home/ole/master/test_onto/labels_out.txt'
 
 def read_input(input_file):
     """This method reads the input file format"""
@@ -25,13 +25,11 @@ logging.info("reading input_file: {}".format(walks_document))
 documents = list(read_input(walks_document))
 
 
-model = Word2Vec(size=300, min_count=1)
+model = Word2Vec(size=100, min_count=1, sg=1, hs=0, negative=25, window=20, workers=12)
 model.build_vocab(documents)
 tot_examples = model.corpus_count
 
-#pretrained_model = KeyedVectors.load_word2vec_format(pretrained_model, binary=True)
 model.intersect_word2vec_format(pretrained_model, binary=True, lockf=1.0)
 model.train(documents, total_examples=tot_examples, epochs=5)
 
-model.wv.save_word2vec_format('label_pretrained.bin', binary=False)
-model.save("label_pretrained2.bin")
+model.wv.save_word2vec_format('/home/ole/master/test_onto/model.bin', binary=False)

@@ -1,6 +1,8 @@
 package mappings.utils;
 
 public class TestRunUtils {
+	
+	// EKAW-EKAW
 //	public static String firstOntologyFile = "/home/ole/master/test_onto/ekaw.owl";
 //	public static String secondOntologyFile = "/home/ole/master/test_onto/ekaw2.owl";
 //	public static String nameSpaceString1 = "ekaw";
@@ -63,7 +65,7 @@ public class TestRunUtils {
 //	public static String walksType = "subClassWalks";
 	public static String walksType = "secondorder";
 
-	public static String whatToEmbed = "fulluri";
+	public static String whatToEmbed = "twodocuments";
 	public static String embeddingsSystem = "word2vec";
 
 	public static String logMapAlignmentsFile = "/home/ole/master/test_onto/logmap_out/logmap2_mappings.rdf";
@@ -72,22 +74,30 @@ public class TestRunUtils {
 	public static String allConferencePath = "file:/home/ole/master/test_onto/allconf.owl";
 	public static String word2vecModelPath = "/home/ole/master/word2vec/models/fil9.model";
 	public static String owlOutPath = "file:/home/ole/master/test_onto/out.owl";
-	public static String pretrainedModelOutputPath = owlOutPath = "file:/home/ole/master/test_onto/out.model";
+	public static String pretrainedModelOutputPath = "file:/home/ole/master/test_onto/out.model";
 	public static String walksFile = "/home/ole/master/test_onto/walks_out.txt";
+	public static String labelsFile = "/home/ole/master/test_onto/labels_out.txt";
 	public static String logFile = "/home/ole/master/test_onto/log.txt";
+	public static String walksModel = "/home/ole/master/test_onto/model.bin";
+	public static String labelModel = "/home/ole/master/test_onto/labels.bin";
 
 	public static String referenceFilePath = "/home/ole/master/test_onto/ref.txt";
 	public static String resultFilePath = "/home/ole/master/test_onto/res.txt";
 
 	public static String relatedConceptsPath = "/home/ole/src/thesis/evaluation/ekaw.xml";
 
-	public static double equalityThreshold = 0.90;
-	public static double fractionOfMappings = 0.6;
+	public static double equalityThreshold = 0.7;
+	public static double fractionOfMappings = 0.8;
 
 	public static double labelEqualityThreshold = 0.90; // for the two document
 
 	public static double p = 0.5; // revisit
 	public static double q = 2; // in/out
+	public static int numWalks = 50;
+	public static int walkDepth = 40;
+	public static int numThreads = 12;
+	public static int offset = 0;
+	public static int classLimit = 1000000;
 	public static boolean includeIndividuals = false;
 
 	public static void trainEmbeddings(String model) {

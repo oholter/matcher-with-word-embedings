@@ -151,7 +151,9 @@ public class NodeGraph {
 		} else if (outputFormat.toLowerCase().equals("allsynonymsanduri")) {
 			str = lst.stream().map(n -> n.getAllSynonymsAndUri()).collect(Collectors.joining(" "));
 		} else if (outputFormat.toLowerCase().equals("twodocuments")) {
-			str = lst.stream().map(n -> n.getTwoDocumentsFormat()).collect(Collectors.joining(" "));
+			str = lst.stream().map(n -> n.getTwoDocumentsFormat()).collect(Collectors.joining("\n"));
+		} else if (outputFormat.toLowerCase().equals("uripartnonormalized")) {
+			str = lst.stream().map(n -> n.getUriPartNoNormalized()).collect(Collectors.joining(" "));
 		} else {
 			str = lst.stream().map(n -> n.toString()).collect(Collectors.joining(" "));
 		}
