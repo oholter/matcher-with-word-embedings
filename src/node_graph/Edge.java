@@ -2,19 +2,19 @@ package node_graph;
 
 import java.util.List;
 
-public class Edge {
+import mappings.utils.StringUtils;
+
+public class Edge extends Element {
 	double SUBCLASS_WEIGHT = 1.0; //
-	double SUPERCLASS_WEIGHT = 1.0;
+	double SUPERCLASS_WEIGHT = 0.7;
 	double TYPE_WEIGHT = 0.0; //
-	double NORMAL_PROPERTY_WEIGHT = 0.4;
+	double NORMAL_PROPERTY_WEIGHT = 0.3;
 	double RANDOM_JUMP_WEIGHT = 0; //
 	double MEMBER_WEIGHT = 0;
 
-	public String label;
 	public Node inNode;
 	public Node outNode;
 	public double weight;
-	List<String> synonyms;
 
 	public Edge(String label) { // todo: add subRsome/only
 		this.label = label;
@@ -32,7 +32,7 @@ public class Edge {
 	}
 
 	public String toString() {
-		return label;
+		return StringUtils.replaceNamespaces(label);
 	}
 
 	/*

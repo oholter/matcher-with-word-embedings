@@ -11,7 +11,6 @@ input_file = '/home/ole/master/test_onto/model.bin'
 
 positive = [['review', 'document'],
             ['positive_review', 'document'],
-            ['meta_review', 'document'],
             ['neutral_review', 'document'],
             ['negative_review', 'document'],
             ['pc_member', 'person'],
@@ -28,12 +27,7 @@ positive = [['review', 'document'],
             ['submitted_paper', 'document'],
             ['camera_ready_paper', 'document'],
             ['conference_paper', 'document'],
-            ['author', 'person'],
-            ['co_author', 'person'],
-            ['author_not_reviewer', 'person'],
             ['possible_reviewer', 'person'],
-            ['reviewer', 'person'],
-            ['conference_member', 'person'],
             ['multi_author_volume', 'document'],
             ['flyer', 'document'],
             ['programme_brochure', 'document'],
@@ -42,11 +36,7 @@ positive = [['review', 'document'],
             ['paper', 'paper']
             ]
 
-negative = [['decision', 'person'],
-            ['acceptance', 'person'],
-            ['rejection', 'person'],
-            ['decision', 'document'],
-            ['acceptance', 'document'],
+negative = [
             ['person', 'scientific_event'],
             ['conference_participant', 'scientific_event'],
             ['document', 'scientific_event'],

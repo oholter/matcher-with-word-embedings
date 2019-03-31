@@ -86,19 +86,20 @@ public class TestRunUtils {
 
 	public static String relatedConceptsPath = "/home/ole/src/thesis/evaluation/ekaw.xml";
 
-	public static double equalityThreshold = 0.7;
+	public static double equalityThreshold = 0.9;
 	public static double fractionOfMappings = 0.8;
 
 	public static double labelEqualityThreshold = 0.90; // for the two document
 
-	public static double p = 0.5; // revisit
-	public static double q = 2; // in/out
+	public static double p = 0.6; // revisit
+	public static double q = 1.0; // in/out
 	public static int numWalks = 50;
 	public static int walkDepth = 40;
 	public static int numThreads = 12;
 	public static int offset = 0;
 	public static int classLimit = 1000000;
 	public static boolean includeIndividuals = false;
+	public static boolean includeEdges = true;
 
 	public static void trainEmbeddings(String model) {
 		// String command = "top -o %CPU";

@@ -186,7 +186,7 @@ public class Rdf2VecWalksGenerator extends WalksGenerator {
 		
 //		String inputFile, String outputFile, int numberOfThreads, int walkDepth,
 //				int limit, int numberOfWalks, int offset
-		Rdf2VecWalksGenerator p = new Rdf2VecWalksGenerator(in, out, 12, 5, 1000, 50, 0);
+		Rdf2VecWalksGenerator p = new Rdf2VecWalksGenerator(in, out, 12, 5, 1000, 100, 0);
 		p.generateWalks();
 	}
 }

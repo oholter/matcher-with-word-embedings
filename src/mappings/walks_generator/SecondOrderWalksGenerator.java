@@ -47,6 +47,7 @@ import mappings.utils.Rdf4j2Jena;
 import mappings.utils.StringUtils;
 import mappings.utils.TestRunUtils;
 import node_graph.Edge;
+import node_graph.Element;
 import node_graph.Node;
 import node_graph.NodeGraph;
 
@@ -81,9 +82,10 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 	private BufferedWriter secondOutputWriter;
 	private boolean includeUriPartInSynonyms = false;
 	private boolean includeCommentsInSynonyms = false;
+	private boolean includeEdges;
 
 	public SecondOrderWalksGenerator(String inputFile, String outputFile, int numberOfThreads, int walkDepth, int limit,
-			int numberOfWalks, int offset, double p, double q, String outputFormat, boolean includeIndividuals) {
+			int numberOfWalks, int offset, double p, double q, String outputFormat, boolean includeIndividuals, boolean includeEdges) {
 		super(inputFile, outputFile, numberOfThreads, walkDepth, limit, numberOfWalks, offset);
 		boolean validOutputFormat = Arrays.stream(validOutputFormats).anyMatch(outputFormat.toLowerCase()::equals);
 		if (!validOutputFormat) {
@@ -103,6 +105,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 					+ "LIMIT " + limit;
 		}
 		this.includeIndividuals = includeIndividuals;
+		this.includeEdges = includeEdges;
 
 		writeBuffer = new LinkedList<List<Node>>();
 		log.info("Initializing the model");
@@ -114,9 +117,9 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 	 */
 	public SecondOrderWalksGenerator(String inputFile, String outputFile, String secondOutputFile, int numberOfThreads,
 			int walkDepth, int limit, int numberOfWalks, int offset, double p, double q, String outputFormat,
-			boolean includeIndividuals) {
+			boolean includeIndividuals, boolean includeEdges) {
 		this(inputFile, outputFile, numberOfThreads, walkDepth, limit, numberOfWalks, offset, p, q, outputFormat,
-				includeIndividuals);
+				includeIndividuals, includeEdges);
 
 		this.secondOutputFile = secondOutputFile;
 	}
@@ -181,7 +184,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 	public void initializeNodeGraph() {
 		List<Node> nodeList = findAllClasses();
 //		nodeList.forEach(System.out::println);
-		graph = new NodeGraph(nodeList, p, q);
+		graph = new NodeGraph(nodeList, p, q, includeEdges);
 		for (Node n : nodeList) {
 			List<Edge> currentEdges = findAdjacentEdges(n);
 			n.edges.addAll(currentEdges);
@@ -348,7 +351,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		}
 	}
 
-	public void writeToFile(List<List<Node>> walks, BufferedWriter writer) {
+	public void writeToFile(List<List<Element>> walks, BufferedWriter writer) {
 
 		writeBufferLock.lock();
 		try {
@@ -360,8 +363,8 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 			log.info("Finished: walk number: " + currentWalkNumber);
 			while (!walks.isEmpty()) {
 				try {
-					List<Node> walk = walks.remove(0);
-					String str = NodeGraph.nodeListToString(walk, outputFormat);
+					List<Element> walk = walks.remove(0);
+					String str = NodeGraph.walk2String(walk, outputFormat);
 
 					// must split the string into the two components
 					if (outputFormat.toLowerCase().equals("twodocuments")) {
@@ -426,9 +429,9 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 	private class FileWriter implements Runnable {
 
 		BufferedWriter writer;
-		List<List<Node>> writeBuffer;
+		List<List<Element>> writeBuffer;
 
-		public FileWriter(BufferedWriter writer, List<List<Node>> writeBuffer) {
+		public FileWriter(BufferedWriter writer, List<List<Element>> writeBuffer) {
 			this.writer = writer;
 			this.writeBuffer = writeBuffer;
 		}
@@ -466,9 +469,9 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		@Override
 		public void run() {
 			for (int walkNum = start; walkNum < end; walkNum++) {
-				List<List<Node>> walks = new ArrayList<>();
+				List<List<Element>> walks = new ArrayList<>();
 				for (Node node : graph.getNodeList()) {
-					List<Node> walk = graph.createWalks(node, walkDepth);
+					List<Element> walk = graph.createWalks(node, walkDepth);
 					walks.add(walk);
 				}
 				writeToFile(walks, outputWriter);
@@ -502,7 +505,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 
 		SecondOrderWalksGenerator walks = new SecondOrderWalksGenerator(TestRunUtils.modelPath,
 				"/home/ole/master/test_onto/walks_out.txt", "/home/ole/master/test_onto/labels_out.txt", 12, 40, 100000,
-				100, 0, 0.2, 5, "fulluri", false);
+				100, 0, 1, 1, "fulluri", false, true);
 //		walks.useRdf4jModel(rdf4jModel);
 		walks.generateWalks();
 

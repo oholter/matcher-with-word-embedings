@@ -27,8 +27,8 @@ wanted_words = ['http://ekaw#Person',
                 'http://ekaw#Scientific_Event']
 
 
+#word_list = wanted_words
 word_list = wanted_words
-#word_list = [word for word in model.wv.vocab if 'yeast' in word]
 #print(word_list)
 x = model[word_list]
 x = x[:max_plots]

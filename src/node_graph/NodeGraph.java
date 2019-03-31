@@ -13,12 +13,14 @@ public class NodeGraph {
 	private double q; // difference between inward/outward nodes
 	private List<Node> nodeList;
 	private HashMap<String, Node> uri2Node;
+	private boolean includeEdges;
 
-	public NodeGraph(List<Node> nodeList, double p, double q) {
+	public NodeGraph(List<Node> nodeList, double p, double q, boolean includeEdges) {
 		this.q = q;
 		this.p = p;
 		this.nodeList = nodeList;
 		this.uri2Node = createUri2Node();
+		this.includeEdges = includeEdges;
 	}
 
 	public int size() {
@@ -128,13 +130,13 @@ public class NodeGraph {
 	}
 
 	/**
-	 * returns the a string representation of a nodeList this is useful for writing
-	 * the walks
+	 * returns the a string representation of a walks this is useful for writing the
+	 * walks
 	 * 
 	 * @param lst
 	 * @return
 	 */
-	public static String nodeListToString(List<Node> lst, String outputFormat) {
+	public static String walk2String(List<Element> lst, String outputFormat) {
 		String str = null;
 		if (outputFormat.toLowerCase().equals("fulluri")) {
 			str = lst.stream().map(n -> n.toString()).collect(Collectors.joining(" "));
@@ -160,26 +162,40 @@ public class NodeGraph {
 		return str;
 	}
 
-	public List<Node> createWalks(Node startNode, int walkDepth) {
-		ArrayList<Node> lst = new ArrayList<>();
+	public List<Element> createWalks(Node startNode, int walkDepth) {
+		ArrayList<Element> lst = new ArrayList<>();
 		lst.add(startNode);
-		while (lst.size() < walkDepth) {
-			Node current = lst.get(lst.size() - 1);
+		int numNodes = 0;
+		while (numNodes < walkDepth) {
+			Node current = (Node) lst.get(lst.size() - 1);
 			if (lst.size() == 1) {
 				Edge nextEdge = findNextEdge(current);
 				if (nextEdge != null) {
 					Node nextNode = nextEdge.outNode;
+					if (includeEdges) {
+						lst.add(nextEdge);
+					}
 					lst.add(nextNode);
+					numNodes++;
 				} else {
 					break; // node has no edges
 				}
 			} else {
 //				System.out.println(nodeListToString(lst));
-				Node previous = lst.get(lst.size() - 2);
+				Node previous;
+				if (includeEdges) {
+					previous = (Node) lst.get(lst.size() - 3);
+				} else {
+					previous = (Node) lst.get(lst.size() - 2);
+				}
 				Edge nextEdge = findNextEdge(previous, current);
 				if (nextEdge != null) {
 					Node nextNode = nextEdge.outNode;
+					if (includeEdges) {
+						lst.add(nextEdge);
+					}
 					lst.add(nextNode);
+					numNodes++;
 				} else {
 					break;
 				}

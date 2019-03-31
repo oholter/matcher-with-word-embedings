@@ -77,7 +77,7 @@ public class LogMapEvaluator {
 
 		SecondOrderWalksGenerator walks = new SecondOrderWalksGenerator(TestRunUtils.modelPath,
 				"/home/ole/master/test_onto/walks_out.txt", 12, 8, 1000000, 10, 0, TestRunUtils.p, TestRunUtils.q, TestRunUtils.whatToEmbed,
-				false);
+				TestRunUtils.includeIndividuals, TestRunUtils.includeEdges);
 		walks.generateWalks();
 
 		long endTime = System.nanoTime();
