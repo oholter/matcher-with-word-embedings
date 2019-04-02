@@ -8,12 +8,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import mappings.utils.StringUtils;
+
 public class NodeGraph {
 	private double p; // likely to revisit node
 	private double q; // difference between inward/outward nodes
 	private List<Node> nodeList;
 	private HashMap<String, Node> uri2Node;
 	private boolean includeEdges;
+	private HashMap<Node, HashMap<Node, EdgeCollection>> edgeCollections;
 
 	public NodeGraph(List<Node> nodeList, double p, double q, boolean includeEdges) {
 		this.q = q;
@@ -21,6 +24,7 @@ public class NodeGraph {
 		this.nodeList = nodeList;
 		this.uri2Node = createUri2Node();
 		this.includeEdges = includeEdges;
+		this.edgeCollections = new HashMap<>();
 	}
 
 	public int size() {
@@ -69,14 +73,23 @@ public class NodeGraph {
 	 */
 	public Edge findNextEdge(Node src, Node dst) {
 		if (dst.edges.size() > 0 && src.edges.size() > 0) {
-			EdgeCollection col = new EdgeCollection();
+			HashMap<Node, EdgeCollection> lookup = edgeCollections.get(src);
+			EdgeCollection col = null;
+
+			// if collection is cached, return next
+			if (lookup != null) {
+				col = lookup.get(dst);
+			}
+			if (col != null) {
+				return col.next();
+			}
+
+			// if not cached -> find, cache and return next edge
+			
+			col = new EdgeCollection();
 //			System.out.println("src: " + src.toString() + " dst: " + dst.toString());
 
-			// using set to avoid duplicate edges
-			Set<Edge> edgeSet = new HashSet<>(dst.edges);
-//			edgeSet.addAll(src.edges);
-
-			for (Edge e : edgeSet) {
+			for (Edge e : dst.edges) {
 				double updatedWeight = e.weight;
 				if (e.outNode == src) { // || e.outNode == dst) {
 					updatedWeight /= p; // penalizing returning edges
@@ -94,8 +107,15 @@ public class NodeGraph {
 //				}
 				col.add(updatedWeight, e);
 			}
+			if (lookup == null) {
+				HashMap<Node, EdgeCollection> newMap = new HashMap<>();
+				edgeCollections.put(src, newMap);
+				newMap.put(dst, col);
+			}
 			return col.next();
-		} else if (dst.edges.size() == 0) {
+		} else if (dst.edges.size() == 0)
+
+		{
 			Edge e = findNextEdge(src);
 			if (e != null && !e.outNode.equals(dst)) {
 				return e;
@@ -142,6 +162,7 @@ public class NodeGraph {
 			str = lst.stream().map(n -> n.toString()).collect(Collectors.joining(" "));
 		} else if (outputFormat.toLowerCase().equals("uripart")) {
 			str = lst.stream().map(n -> n.getUriPart()).collect(Collectors.joining(" "));
+			str = StringUtils.getUriPart(str);
 		} else if (outputFormat.toLowerCase().equals("words")) {
 			str = lst.stream().map(n -> n.getUriWords()).collect(Collectors.joining(" "));
 		} else if (outputFormat.toLowerCase().equals("onesynonym")) {

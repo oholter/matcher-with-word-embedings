@@ -1,5 +1,5 @@
-input_file = "/home/ole/master/test_onto/cache/starspace.model.tsv"
-output_file = "/home/ole/master/test_onto/model.bin"
+input_file = "/home/ole/master/StarSpace/tagspace.bin.tsv"
+output_file = "/home/ole/master/test_onto/tagspace.bin"
 
 with open(input_file, 'r') as inp, open(output_file, 'w') as outp:
     line_count = '...'    # line count of the tsv file (as string)

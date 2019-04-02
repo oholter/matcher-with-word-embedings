@@ -91,7 +91,8 @@
 			<groupId>uk.ox.jrdfox</groupId>
 			<artifactId>jrdfox</artifactId>
 			<version>1.2776.2017</version>
-			<!-- scope>system</scope> <systemPath>${basedir}/lib/JRDFox.jar</systemPath -->
+			<scope>system</scope> 
+			<systemPath>/home/ole/libs/JRDFox-linux.jar</systemPath>
 		</dependency>
 
 		<dependency>

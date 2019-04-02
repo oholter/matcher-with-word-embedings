@@ -5,8 +5,8 @@ import random
 
 max_plots = 100
 # max_plots = 5000
-input_file = '/home/ole/master/test_onto/model.bin'
-# input_file = 'model.bin'
+#input_file = '/home/ole/master/test_onto/model.bin'
+input_file = '/home/ole/master/test_onto/tagspace.bin'
 # input_file = 'label.bin'
 # input_file = 'label_pretrained2.bin'
 # input_file = '/home/ole/workspace/MatcherWithWordEmbeddings/target/classes/temp/out.txt'

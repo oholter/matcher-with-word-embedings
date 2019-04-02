@@ -5,26 +5,36 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import opennlp.tools.stemmer.PorterStemmer;
 
 public class StringUtils {
+	public static final String httpPatternString = "(http|https)://.*#";
+	public static final String goPatternString = "http://purl.obolibrary.org/obo/GO_";
+	public static final Pattern httpPattern = Pattern.compile(httpPatternString);
+	public static final Pattern goPattern = Pattern.compile(goPatternString);
 
 	// http://ekaw#ConferenceParticipant -> conference participant
 	public static String normalizeFullIRI(String s) {
-		String httpPattern = "^(http|https)://.*#";
-		s = s.replaceAll(httpPattern, "");
+		s = httpPattern.matcher(s).replaceAll("");
 		return normalizeIRI(s); // replace(" ", "_");
 	}
 
 	public static String getGoUriPart(String s) {
-		String httpPattern = "^(http|https)://.*#";
-		String goPattern = "http://purl.obolibrary.org/obo/GO_";
-		return s.replace(httpPattern, "").replace(goPattern, "GO:");
+		s = httpPattern.matcher(s).replaceAll("");
+		s = goPattern.matcher(s).replaceAll("GO:");
+		return s;
 	}
 	
 	public static String getUriPart(String s) {
-		String httpPattern = "^(http|https)://.*#";
-		s = s.replaceAll(httpPattern, "");
+		return httpPattern.matcher(s).replaceAll("");
+	}
+	
+	public static String removeBrackets(String s) {
+		String pattern = "[<>\"]";
+		s = s.replaceAll(pattern, "");
 		return s;
 	}
 

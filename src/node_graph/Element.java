@@ -9,6 +9,7 @@ import mappings.utils.StringUtils;
 
 public abstract class Element {
 	public String label;
+	public String uriPart;
 	public List<String> synonyms;
 
 	/** assuming we have synonyms, return any of the names **/
@@ -34,11 +35,17 @@ public abstract class Element {
 	}
 
 	public String getGoUriPart() {
-		return StringUtils.getGoUriPart(label);
+		if (uriPart == null) {
+			uriPart = StringUtils.getGoUriPart(label);
+		}
+		return uriPart;
 	}
 
 	public String getUriPart() {
-		return StringUtils.normalizeFullIRINoSpace(label);
+		if (uriPart == null) {
+			uriPart = StringUtils.normalizeFullIRINoSpace(label);
+		}
+		return uriPart;
 	}
 	
 	public String getUriPartNoNormalized() {

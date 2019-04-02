@@ -8,9 +8,11 @@ from functools import reduce
 
 
 
-input_model = "/home/ole/master/test_onto/model.bin"
+#input_model = "/home/ole/master/test_onto/model.bin"
+input_model = '/home/ole/master/test_onto/tagspace.bin'
+
 word_limit = 10000
-num_clusters = 7
+num_clusters = 10
 
 def prepare_data(input_model, word_limit):
     model = KeyedVectors.load_word2vec_format(input_model, binary=False)
