@@ -50,9 +50,9 @@ public class OutputStarSpaceFormat {
 		String queryString = "SELECT DISTINCT ?x ?y ?z "
 				+ "WHERE{ ?x ?y ?z . ?x <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> . } ";
 		TupleIterator tupleIterator = store.compileQuery(queryString, prefixes);
-		String q = "SELECT ?z WHERE { ?x ?y ?z } LIMIT 10";
+		String q = "SELECT ?z WHERE { ?x ?y ?z }";
 		System.out.println(queryString);
-		TupleIterator it = store.compileQuery(q);
+		TupleIterator it = store.compileQuery(queryString);
 
 		outputQuery(it);
 	}

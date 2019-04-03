@@ -3,22 +3,22 @@ package mappings.utils;
 public class TestRunUtils {
 	
 	// EKAW-EKAW
-//	public static String firstOntologyFile = "/home/ole/master/test_onto/ekaw.owl";
-//	public static String secondOntologyFile = "/home/ole/master/test_onto/ekaw2.owl";
-//	public static String nameSpaceString1 = "ekaw";
-//	public static String nameSpaceString2 = "ekaw2";
-//	public static String baseUriString1 = "http://ekaw";
-//	public static String baseUriString2 = "http://ekaw2";
-//	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/ekaw-ekaw2.rdf";
+	public static String firstOntologyFile = "/home/ole/master/test_onto/ekaw.owl";
+	public static String secondOntologyFile = "/home/ole/master/test_onto/ekaw2.owl";
+	public static String nameSpaceString1 = "ekaw";
+	public static String nameSpaceString2 = "ekaw2";
+	public static String baseUriString1 = "http://ekaw";
+	public static String baseUriString2 = "http://ekaw2";
+	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/ekaw-ekaw2.rdf";
 
 	// EKAW-CMT
-	public static String firstOntologyFile = "/home/ole/master/test_onto/cmt.owl";
-	public static String secondOntologyFile = "/home/ole/master/test_onto/ekaw.owl";
-	public static String nameSpaceString1 = "cmt";
-	public static String nameSpaceString2 = "ekaw";
-	public static String baseUriString1 = "http://cmt";
-	public static String baseUriString2 = "http://ekaw";
-	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/cmt-ekaw.rdf";
+//	public static String firstOntologyFile = "/home/ole/master/test_onto/cmt.owl";
+//	public static String secondOntologyFile = "/home/ole/master/test_onto/ekaw.owl";
+//	public static String nameSpaceString1 = "cmt";
+//	public static String nameSpaceString2 = "ekaw";
+//	public static String baseUriString1 = "http://cmt";
+//	public static String baseUriString2 = "http://ekaw";
+//	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/cmt-ekaw.rdf";
 
 	// PIZZA
 //	public static String firstOntologyFile = "";
@@ -65,8 +65,10 @@ public class TestRunUtils {
 //	public static String walksType = "subClassWalks";
 	public static String walksType = "secondorder";
 
-	public static String whatToEmbed = "twodocuments";
-	public static String embeddingsSystem = "word2vec";
+	public static String whatToEmbed = "allsynonymsanduri";
+	
+//	public static String embeddingsSystem = "word2vec";
+	public static String embeddingsSystem = "fasttext";
 
 	public static String logMapAlignmentsFile = "/home/ole/master/test_onto/logmap_out/logmap2_mappings.rdf";
 	public static String modelPath = "/home/ole/master/test_onto/merged.ttl";
@@ -86,20 +88,21 @@ public class TestRunUtils {
 
 	public static String relatedConceptsPath = "/home/ole/src/thesis/evaluation/ekaw.xml";
 
-	public static double equalityThreshold = 0.9;
-	public static double fractionOfMappings = 0.8;
+	public static double equalityThreshold = 0.90;
+	public static double fractionOfMappings = 1;
 
-	public static double labelEqualityThreshold = 0.90; // for the two document
+	public static double labelEqualityThreshold = 0.70; // for the two document
 
-	public static double p = 0.6; // revisit
+	public static double p = 1; // revisit
 	public static double q = 1.0; // in/out
 	public static int numWalks = 50;
 	public static int walkDepth = 40;
+//	public static int walkDepth = 4;
 	public static int numThreads = 12;
 	public static int offset = 0;
 	public static int classLimit = 1000000;
 	public static boolean includeIndividuals = false;
-	public static boolean includeEdges = true;
+	public static boolean includeEdges = false;
 
 	public static void trainEmbeddings(String model) {
 		// String command = "top -o %CPU";

@@ -1,4 +1,4 @@
-package org.trainertest.com;
+package mappings.evaluation;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -19,8 +19,6 @@ import mappings.candidate_finder.BestAnchorsCandidateFinder;
 import mappings.candidate_finder.DisambiguateClassAnchorsFinder;
 import mappings.candidate_finder.TranslationMatrixCandidateFinder;
 import mappings.candidate_finder.TwoDocumentsCandidateFinder;
-import mappings.evaluation.ClassMappingsEvaluator;
-import mappings.evaluation.MappingsEvaluator;
 import mappings.trainer.OntologyProjector;
 import mappings.trainer.WordEmbeddingsTrainer;
 import mappings.utils.TestRunUtils;
@@ -30,7 +28,7 @@ import uk.ac.ox.krr.logmap2.mappings.objects.MappingObjectStr;
 public class testRuns {
 
 	public static PrintWriter out;
-	public static String testResultsFile = "/home/ole/master/test_onto/test_runs.txt";
+	public static String testResultsDir = "/home/ole/master/test_onto/log/";
 	public static double[] precisions;
 	public static double[] recalls;
 	public static double[] fmeasures;
@@ -46,6 +44,7 @@ public class testRuns {
 	public static String walksType = TestRunUtils.walksType;
 	public static String modelPath = TestRunUtils.modelPath;
 	public static String nameSpaceString = TestRunUtils.nameSpaceString1;
+	public static String nameSpaceString2 = TestRunUtils.nameSpaceString2;
 	public static String mergedOwlPath = TestRunUtils.mergedOwlPath;
 	public static String walksFile = TestRunUtils.walksFile;
 	public static String labelsFile = TestRunUtils.labelsFile;
@@ -55,20 +54,27 @@ public class testRuns {
 	public static int offset = TestRunUtils.offset;
 	public static int classLimit = TestRunUtils.classLimit;
 
-	public static void main(String[] args) throws Exception {
-		BasicConfigurator.configure();
+	public static File createLogFile(String finderType) throws Exception {
+		String fileDir = testResultsDir;
+		String fileName = walksType + "_" + finderType + "_" + nameSpaceString + "_" + nameSpaceString2 + ".txt";
+		String fullPath = fileDir + fileName;
+		File outputFile = new File(fullPath);
+		return outputFile;
+	}
 
-		int numberOfRuns = 1;
+	public static void main(String[] args) throws Exception {
+
+		int numberOfRuns = 5;
 //		String[] anchorCandidateTypes = new String[] { "allrelationsanchorcandidatefinder",
 //				"bestcandidatefinder", "disambiguateclassanchorsfinder", twodocuments" };
 
-//		String type = "bestcandidatefinder";
-		String type = "translationmatrixcandidatefinder";
+		String type = "bestcandidatefinder";
+//		String type = "translationmatrixcandidatefinder";
 
 		String[] candidateTypes = new String[] { "translationmatrixcandidatefinder",
 				"pretrainedvectorcandidatesfinder" };
-
-		File outputFile = new File(testResultsFile);
+		
+		File outputFile = createLogFile(type);
 		out = new PrintWriter(outputFile);
 //		out.println("--------------------------------------------");
 //		out.println();
@@ -177,7 +183,7 @@ public class testRuns {
 
 		WordEmbeddingsTrainer trainer = new WordEmbeddingsTrainer(walksFile, currentDir + "/temp/out.txt");
 		// trainer.train();
-		
+
 		/**
 		 * python gensim trainer
 		 */
@@ -242,17 +248,16 @@ public class testRuns {
 		trainer.train();
 		finder.setTrainer(trainer);
 
-		WordEmbeddingsTrainer labelTrainer = new WordEmbeddingsTrainer(labelOutputFile,
-				TestRunUtils.labelsFile);
+		WordEmbeddingsTrainer labelTrainer = new WordEmbeddingsTrainer(labelOutputFile, TestRunUtils.labelsFile);
 //		labelTrainer.train();
-		
+
 		/**
 		 * python gensim trainer
 		 */
 		TestRunUtils.trainEmbeddings(TestRunUtils.embeddingsSystem);
 
 		trainer.loadGensimModel("/home/ole/master/test_onto/model.bin");
-		
+
 		finder.setLabelTrainer(labelTrainer);
 
 		finder.createMappings(); // this runs the program

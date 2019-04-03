@@ -12,6 +12,7 @@ x = np.array([1, 0.8, 0.6, 0.4, 0.2, 0])
 #y = np.array([0.12, 0.12, 0.14, 0.12, 0.12, 0.13]) #rdf2vec best
 #y = np.array([0.77, 0.70, 0.70, 0.68, 0.46, 0.04]) #two documents
 #y = np.array([0.89, 0.89, 0.66, 0.51, 0.31, 0.0]) # secondorder
+#y = np.array([0.60, 0.69, 0.68, 0.65, 0.48, 0.04]) # subclass
 
 
 # EKAW-CMT
@@ -23,7 +24,8 @@ x = np.array([1, 0.8, 0.6, 0.4, 0.2, 0])
 #y = np.array([1.00, 0.75, 0.63, 0.38, 0.38, 0.13]) #synonyms translation m
 #y = np.array([0.05, 0.13, 0.05, 0.06, 0.10, 0.04]) #rdf2vec best
 #y = np.array([0.58, 0.50, 0.38, 0.18, 0.20, 0.23]) #two documents
-y = np.array([1.00, 0.75, 0.75, 0.25, 0.13, 0.0]) # secondorder
+#y = np.array([1.00, 0.75, 0.75, 0.25, 0.13, 0.0]) # secondorder
+y = np.array([0.95, 0.80, 0.75, 0.53, 0.40, 0.23]) # subclass
 
 
 # ANATOMY

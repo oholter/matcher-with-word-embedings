@@ -70,8 +70,6 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 	private int processedClasses = 0;
 	private int numberOfClasses = 0;
 	private int currentWalkNumber = 0;
-	private CyclicBarrier cyclicBarrier;
-	private int iter = 0;
 	private String outputFormat;
 	private List<List<Node>> writeBuffer;
 	private int walkThreadsFinished = 0;
@@ -103,7 +101,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		if (includeCommentsInSynonyms) {
 			this.synonymsQuery = "SELECT DISTINCT ?o WHERE { { $CLASS$ <http://www.w3.org/2000/01/rdf-schema#label> ?o } "
 					+ "UNION " + "{ $CLASS$ <http://www.w3.org/2000/01/rdf-schema#comment> ?o } . } "; // + "LIMIT "
-					//+ limit;
+			// + limit;
 		} else {
 			this.synonymsQuery = "SELECT DISTINCT ?o WHERE { $CLASS$ <http://www.w3.org/2000/01/rdf-schema#label> ?o } ";
 //					+ "LIMIT " + limit;
@@ -142,7 +140,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		log.info("initializing node graph");
 		initializeNodeGraph();
 		log.info("staring to generate walks");
-		closeModel(); // at this stage the model is not longer needed
+//		closeModel(); // at this stage the model is not longer needed
 		walkTheGraph();
 		log.info("closing document writer");
 		closeDocumentWriter(outputWriter);
@@ -150,7 +148,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 			closeDocumentWriter(secondOutputWriter);
 		}
 	}
-	
+
 	public void closeModel() {
 		model.dispose();
 	}
@@ -219,7 +217,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		long endTime = System.nanoTime();
 		long duration = (endTime - startTime) / 1000000;
 		log.info("Created node graph in: " + duration + " milliseconds");
-		
+
 	}
 
 	public List<Node> findAllClasses() {
@@ -230,7 +228,6 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 
 		try {
 			TupleIterator tupIt = model.compileQuery(queryString, prefixes);
-
 			for (long multiplicity = tupIt.open(); multiplicity > 0; multiplicity = tupIt.advance()) {
 				Resource resource = tupIt.getResource(0);
 				String rString = StringUtils.removeBrackets(resource.toString());
@@ -388,32 +385,30 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 			}
 			log.info("Finished: walk number: " + currentWalkNumber);
 			while (!walks.isEmpty()) {
-				try {
-					List<Element> walk = walks.remove(0);
-					String str = NodeGraph.walk2String(walk, outputFormat);
+				List<Element> walk = walks.remove(0);
+				String str = NodeGraph.walk2String(walk, outputFormat);
 
-					// must split the string into the two components
-					if (outputFormat.toLowerCase().equals("twodocuments")) {
-						String[] parts = str.split("\n");
-						List<String[]> tokens = Arrays.stream(parts).map(p -> p.split("->"))
-								.collect(Collectors.toList());
-						str = tokens.stream().map(t -> t[0]).collect(Collectors.joining(" "));
+				// must split the string into the two components
+				if (outputFormat.toLowerCase().equals("twodocuments")) {
+					String[] parts = str.split("\n");
+					List<String[]> tokens = Arrays.stream(parts).map(p -> p.split("->")).collect(Collectors.toList());
+					str = tokens.stream().map(t -> t[0]).collect(Collectors.joining(" "));
 //						System.out.println("normal writer: " + str);
-						String labelstr = tokens.stream().map(t -> t[1]).collect(Collectors.joining(" "));
+					String labelstr = tokens.stream().map(t -> t[1]).collect(Collectors.joining(" "));
 //						System.out.println("label writer: " + labelstr);
-						
-						/** the actual writing of second doc **/
-						secondOutputWriter.write(labelstr + "\n");
-					}
 
-					/** the writing of first doc **/
-					writer.write(str + "\n");
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					/** the actual writing of second doc **/
+					secondOutputWriter.write(labelstr + "\n");
 				}
+
+				/** the writing of first doc **/
+				writer.write(str + "\n");
 			}
-		} finally {
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally
+
+		{
 			writeBufferLock.unlock();
 		}
 	}
@@ -522,15 +517,15 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/NTNames.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/foaf.rdf");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/human.owl");
-		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/bio_data/go.owl");
-//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/ekaw.owl");
+//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/bio_data/go.owl");
+		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/ekaw.owl");
 		projector.projectOntology();
 		projector.saveModel(TestRunUtils.modelPath);
-		
+
 		long projectionTime = System.nanoTime();
 		long projectionDuration = (projectionTime - startTime) / 1000000;
 		log.info("projection finished in  " + projectionDuration + " milliseconds");
-		
+
 		System.out.println("starting walksgenerator");
 //		org.eclipse.rdf4j.model.Model rdf4jModel = projector.getModel();
 
@@ -539,7 +534,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 
 		SecondOrderWalksGenerator walks = new SecondOrderWalksGenerator(TestRunUtils.modelPath,
 				"/home/ole/master/test_onto/walks_out.txt", "/home/ole/master/test_onto/labels_out.txt", 12, 40, 100000,
-				50, 0, 1, 1, "gouripart", false, false);
+				100, 0, 1, 1, "fulluri", false, false);
 //		walks.useRdf4jModel(rdf4jModel);
 		walks.generateWalks();
 

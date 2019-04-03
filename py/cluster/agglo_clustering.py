@@ -9,7 +9,7 @@ from functools import reduce
 
 
 #input_model = "/home/ole/master/test_onto/model.bin"
-input_model = '/home/ole/master/test_onto/tagspace.bin'
+input_model = '/home/ole/master/test_onto/model.bin'
 
 word_limit = 10000
 num_clusters = 10
