@@ -22,6 +22,6 @@ logging.info("reading input_file: {}".format(input_file))
 documents = list(read_input(input_file))
 
 model = gensim.models.FastText(sg=1, hs=0, size=100, workers=12, word_ngrams=1, 
-                               min_n=3, max_n=6, sentences=documents, window=10, min_count=1, iter=2, negative=25)
+                               min_n=3, max_n=6, sentences=documents, window=10, min_count=1, iter=1, negative=25)
 model.wv.save_word2vec_format("/home/ole/master/test_onto/model.bin", binary=False)
 # model.save("/home/ole/master/test_onto/model3.bin")

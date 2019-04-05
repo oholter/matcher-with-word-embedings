@@ -18,9 +18,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.OntologyReader;
+import mappings.evaluation.ClassMappingsEvaluator;
+import mappings.evaluation.MappingsEvaluator;
 import mappings.trainer.WordEmbeddingsTrainer;
 import mappings.utils.AlignmentUtilities;
 import mappings.utils.TestRunUtils;
+import mappings.utils.VectorUtils;
 
 public class PretrainedVectorCandidateFinder extends CandidateFinder {
 
@@ -46,41 +49,44 @@ public class PretrainedVectorCandidateFinder extends CandidateFinder {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public void addAnchor(String uri1, String uri2) {
 		// do nothing, does not need anchors
 	}
-	
+
 	public void addAnchorsToOntology(OWLOntology onto) {
 		// do nothing
 	}
-	
+
 	public void setTrainer(WordEmbeddingsTrainer trainer) {
 		this.trainer = trainer;
 	}
 
 	public void generateClassCandidates() {
 		int numCandidates = 0;
-		ArrayList<OWLClass> usedClassesFromSecondOntology = new ArrayList<>();
-
+		int firstOntoNumClasses = 0;
 		for (OWLClass classFromFirstOntology : onto1.getClassesInSignature()) {
+			firstOntoNumClasses++;
 			double maxSimilarity = 0;
 			OWLClass candidate = null;
-			String iriFromFirstOntology = normalizeIRI(classFromFirstOntology.getIRI().getFragment());
+			String iriFromFirstOntology = classFromFirstOntology.getIRI().toString();
+
+			if (iriFromFirstOntology.equals("http://www.w3.org/2002/07/owl#Thing")) {
+				continue; // do not include owl:Thing in mapping
+			}
+			String fragmentFromFirstOntology = normalizeIRI(classFromFirstOntology.getIRI().getFragment());
 			String labelFromFirstOntology = normalizeString(findAnnotation(classFromFirstOntology, onto1, "label"));
 			String commentFromFirstOntology = normalizeString(findAnnotation(classFromFirstOntology, onto1, "comment"));
 
 			for (OWLClass classFromSecondOntology : onto2.getClassesInSignature()) {
-				if (usedClassesFromSecondOntology.contains(classFromSecondOntology)) {
-					continue; // this class is already added
-				}
-				String iriFromSecondOntology = normalizeIRI(classFromSecondOntology.getIRI().getFragment());
+				String fragmentFromSecondOntology = normalizeIRI(classFromSecondOntology.getIRI().getFragment());
 				String labelFromSecondOntology = normalizeString(
 						findAnnotation(classFromSecondOntology, onto2, "label"));
 				String commentFromSecondOntology = normalizeString(
 						findAnnotation(classFromSecondOntology, onto2, "comment"));
 
-				double iriCosine = trainer.getCosine(iriFromFirstOntology, iriFromSecondOntology);
+				double iriCosine = trainer.getAvgVectorCosine(fragmentFromFirstOntology.split(" "),
+						fragmentFromSecondOntology.split(" "));
 				if (Double.isNaN(iriCosine)) {
 					iriCosine = 0;
 				}
@@ -97,6 +103,8 @@ public class PretrainedVectorCandidateFinder extends CandidateFinder {
 				}
 
 				double currentSimilarity = max(iriCosine, labelCosine, commentCosine);
+//				System.out.println("TESTING " + fragmentFromFirstOntology + " and " + fragmentFromSecondOntology
+//						+ " gives a similarity of: " + currentSimilarity);
 
 				if (currentSimilarity > maxSimilarity) {
 					maxSimilarity = currentSimilarity;
@@ -106,11 +114,12 @@ public class PretrainedVectorCandidateFinder extends CandidateFinder {
 
 			if (maxSimilarity > distLimit) {
 				try {
-					output.addClassMapping2Output(iriFromFirstOntology, candidate.getIRI().toString(), AlignmentUtilities.EQ,
-							maxSimilarity);
+					output.addClassMapping2Output(iriFromFirstOntology, candidate.getIRI().toString(),
+							AlignmentUtilities.EQ, maxSimilarity);
 				} catch (Exception e) {
 					e.printStackTrace();
-				}				OWLEquivalentClassesAxiom equivalentClassAxiom = mappingsFactory
+				}
+				OWLEquivalentClassesAxiom equivalentClassAxiom = mappingsFactory
 						.getOWLEquivalentClassesAxiom(classFromFirstOntology, candidate);
 //				mappings.add(equivalentClassAxiom); owlapi5
 				mappingsManager.addAxiom(mappings, equivalentClassAxiom);
@@ -123,13 +132,12 @@ public class PretrainedVectorCandidateFinder extends CandidateFinder {
 
 //				mappings.add(annotationAssertionAxiom);
 				mappingsManager.addAxiom(mappings, annotationAssertionAxiom);
-				usedClassesFromSecondOntology.add(candidate);
 
-//				System.out.println("Found mapping: " + equivalentClassAxiom);
+				System.out.println("Found mapping: " + equivalentClassAxiom + " : " + maxSimilarity);
 				numCandidates++;
 			}
 		} // finished classFromFirstOntology
-
+		System.out.println("Tested: " + firstOntoNumClasses + " classes");
 		System.out.println("Found " + numCandidates + " class candidates:");
 	} // finished generateClassCandidates()
 
@@ -255,6 +263,7 @@ public class PretrainedVectorCandidateFinder extends CandidateFinder {
 			} // finished propertyFromSecondOntology
 //			System.out.println("Data property max similarity: " + maxSimilarity);
 			if (maxSimilarity > distLimit) {
+
 				OWLEquivalentDataPropertiesAxiom equivalentPropertiesAxiom = mappingsFactory
 						.getOWLEquivalentDataPropertiesAxiom(propertyFromFirstOntology, candidate);
 //				mappings.add(equivalentPropertiesAxiom);
@@ -288,6 +297,7 @@ public class PretrainedVectorCandidateFinder extends CandidateFinder {
 		double equalityThreshold = TestRunUtils.equalityThreshold;
 		double fractionOfMappings = TestRunUtils.fractionOfMappings;
 		String walksType = TestRunUtils.walksType;
+		String pretrainedModel = TestRunUtils.word2vecModelPath;
 		BasicConfigurator.configure();
 
 		OntologyReader reader = new OntologyReader();
@@ -299,11 +309,24 @@ public class PretrainedVectorCandidateFinder extends CandidateFinder {
 		reader.readOntology();
 		OWLOntology onto2 = reader.getOntology();
 
-		PretrainedVectorCandidateFinder finder = new PretrainedVectorCandidateFinder(onto1, onto2,
-				equalityThreshold, "/home/ole/master/word2vec/models/fil9.model");
+		PretrainedVectorCandidateFinder finder = new PretrainedVectorCandidateFinder(onto1, onto2, equalityThreshold,
+				pretrainedModel);
 		finder.createMappings();
-		OWLOntology o = finder.getMappings();
-		System.out.println(o);
-		OntologyReader.writeOntology(o, TestRunUtils.owlOutPath, "owl");
+//		OWLOntology o = finder.getMappings();
+//		System.out.println(o);
+//		OntologyReader.writeOntology(o, TestRunUtils.owlOutPath, "owl");
+
+		System.out.println("--------------------------------------------");
+		System.out.println("The alignments file used to provide anchors: ");
+		MappingsEvaluator evaluator = new ClassMappingsEvaluator(referenceAlignmentsFile, logMapAlignmentsFile,
+				finder.getOnto1(), finder.getOnto2());
+		evaluator.printEvaluation();
+		System.out.println("--------------------------------------------");
+
+		System.out.println("This system:");
+		evaluator = new ClassMappingsEvaluator(referenceAlignmentsFile, finder.output.returnAlignmentFile().getFile(),
+				finder.getOnto1(), finder.getOnto2());
+		evaluator.printEvaluation();
+		System.out.println("--------------------------------------------");
 	}
 }

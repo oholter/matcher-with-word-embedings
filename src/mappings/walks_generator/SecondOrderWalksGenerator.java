@@ -84,12 +84,15 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 	private boolean includeCommentsInSynonyms = false;
 	private boolean includeEdges;
 	private Prefixes prefixes = Prefixes.DEFAULT_IMMUTABLE_INSTANCE;
+	private boolean cacheEdgeWeights;
+	private int numEdges = 0;
 
 	public SecondOrderWalksGenerator(String inputFile, String outputFile, int numberOfThreads, int walkDepth, int limit,
 			int numberOfWalks, int offset, double p, double q, String outputFormat, boolean includeIndividuals,
-			boolean includeEdges) {
+			boolean includeEdges, boolean cacheEdgeWeights) {
 		super(inputFile, outputFile, numberOfThreads, walkDepth, limit, numberOfWalks, offset);
 		boolean validOutputFormat = Arrays.stream(validOutputFormats).anyMatch(outputFormat.toLowerCase()::equals);
+		
 		if (!validOutputFormat) {
 			throw new IllegalArgumentException("Output format: " + outputFormat + " is not known");
 		}
@@ -97,7 +100,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		this.p = p;
 		this.q = q;
 		this.outputFormat = outputFormat;
-		this.adjacentPropertiesQuery = "SELECT DISTINCT ?p ?o WHERE {$CLASS$ ?p ?o .} "; // LIMIT " + limit;
+		this.adjacentPropertiesQuery = "SELECT DISTINCT ?p ?o WHERE { $CLASS$ ?p ?o . } "; // LIMIT " + limit;
 		if (includeCommentsInSynonyms) {
 			this.synonymsQuery = "SELECT DISTINCT ?o WHERE { { $CLASS$ <http://www.w3.org/2000/01/rdf-schema#label> ?o } "
 					+ "UNION " + "{ $CLASS$ <http://www.w3.org/2000/01/rdf-schema#comment> ?o } . } "; // + "LIMIT "
@@ -108,6 +111,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		}
 		this.includeIndividuals = includeIndividuals;
 		this.includeEdges = includeEdges;
+		this.cacheEdgeWeights = cacheEdgeWeights;
 
 		writeBuffer = new LinkedList<List<Node>>();
 		log.info("Initializing the model");
@@ -119,9 +123,9 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 	 */
 	public SecondOrderWalksGenerator(String inputFile, String outputFile, String secondOutputFile, int numberOfThreads,
 			int walkDepth, int limit, int numberOfWalks, int offset, double p, double q, String outputFormat,
-			boolean includeIndividuals, boolean includeEdges) {
+			boolean includeIndividuals, boolean includeEdges, boolean cacheEdgeWeights) {
 		this(inputFile, outputFile, numberOfThreads, walkDepth, limit, numberOfWalks, offset, p, q, outputFormat,
-				includeIndividuals, includeEdges);
+				includeIndividuals, includeEdges, cacheEdgeWeights);
 
 		this.secondOutputFile = secondOutputFile;
 	}
@@ -139,8 +143,16 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		}
 		log.info("initializing node graph");
 		initializeNodeGraph();
+		log.info("Added " + numEdges + " edges");
 		log.info("staring to generate walks");
-//		closeModel(); // at this stage the model is not longer needed
+		long numElementsInDoc = numberOfClasses * numberOfWalks * walkDepth;
+		double estimatedSizeUri = (40 * numElementsInDoc) / (double) 1000000;
+		double estimatedSizePart = (7 * numElementsInDoc) / (double) 1000000;
+		log.info("Estimating size of output documents ... the final sizes depend on the ontology vocabulary ... ");
+		log.info("if URI document: " + estimatedSizeUri + " MB");
+		log.info("if URI part document: " + estimatedSizePart + " MB");
+
+		closeModel(); // at this stage the model is not longer needed
 		walkTheGraph();
 		log.info("closing document writer");
 		closeDocumentWriter(outputWriter);
@@ -205,7 +217,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		long startTime = System.nanoTime();
 		List<Node> nodeList = findAllClasses();
 //		nodeList.forEach(System.out::println);
-		graph = new NodeGraph(nodeList, p, q, includeEdges);
+		graph = new NodeGraph(nodeList, p, q, includeEdges, cacheEdgeWeights);
 		for (Node n : nodeList) {
 			List<Edge> currentEdges = findAdjacentEdges(n);
 			n.edges.addAll(currentEdges);
@@ -225,9 +237,10 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		String queryString = "SELECT DISTINCT ?s WHERE"
 				+ " {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class>  }";
 //				+ " OFFSET " + offset + " LIMIT " + limit;
-
+		TupleIterator tupIt = null;
+		
 		try {
-			TupleIterator tupIt = model.compileQuery(queryString, prefixes);
+			tupIt = model.compileQuery(queryString, prefixes);
 			for (long multiplicity = tupIt.open(); multiplicity > 0; multiplicity = tupIt.advance()) {
 				Resource resource = tupIt.getResource(0);
 				String rString = StringUtils.removeBrackets(resource.toString());
@@ -251,9 +264,14 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 			e.printStackTrace();
 			System.out.println("FAILED: " + queryString);
 		}
+		finally {
+			if (tupIt != null) {
+				tupIt.dispose();
+			}
+		}
 
 		numberOfClasses = nodeList.size();
-		System.out.println("TOTAL CLASSES: " + numberOfClasses);
+		log.info("TOTAL CLASSES: " + numberOfClasses);
 		return nodeList;
 	}
 
@@ -263,9 +281,9 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		String queryString = synonymsQuery.replace("$CLASS$", "<" + className + ">");
 //		System.out.println(queryString);
 
+		TupleIterator tupIt = null;
 		try {
-			TupleIterator tupIt = model.compileQuery(queryString);
-
+			tupIt = model.compileQuery(queryString);
 			for (long multiplicity = tupIt.open(); multiplicity > 0; multiplicity = tupIt.advance()) {
 				String synonym = tupIt.getResource(0).toString();
 				if (!StringUtils.isUri(StringUtils.removeBrackets(synonym))) {
@@ -275,6 +293,10 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
+		} finally {
+			if (tupIt != null) {
+				tupIt.dispose();
+			}
 		}
 		return synonyms;
 
@@ -283,14 +305,14 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 	public List<Edge> findAdjacentEdges(Node node) {
 		String className = node.label;
 		ArrayList<Edge> edgeList = new ArrayList<>();
+		TupleIterator tupIt = null;
 		String queryString = adjacentPropertiesQuery.replace("$CLASS$", "<" + className + ">");
 		try {
-			TupleIterator tupIt = model.compileQuery(queryString);
+			tupIt = model.compileQuery(queryString);
 			if (tupIt.getArity() == 0) {
 				return edgeList;
 			}
 			int numRes = 0;
-
 			for (long multiplicity = tupIt.open(); multiplicity > 0; multiplicity = tupIt.advance()) {
 				Resource resource = tupIt.getResource(0);
 				String rString = resource.toString();
@@ -320,6 +342,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 						currentEdge.outNode = nextNode;
 						currentEdge.inNode = node;
 						if (currentEdge.weight > 0) {
+							numEdges++;
 							edgeList.add(currentEdge);
 						}
 
@@ -345,7 +368,14 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("The query that failed was: " + queryString);
+			System.out.println(tupIt.toString());
+//			return new ArrayList<Edge>();
 			return null;
+		}
+		finally {
+			if (tupIt != null) {
+				tupIt.dispose();
+			}
 		}
 	}
 
@@ -353,8 +383,10 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		String className = node.label;
 		ArrayList<Edge> members = new ArrayList<>();
 		String queryString = membersQuery.replace("$CLASS$", "<" + className + ">");
+		TupleIterator tupIt = null;
+		
 		try {
-			TupleIterator tupIt = model.compileQuery(queryString);
+			tupIt = model.compileQuery(queryString);
 
 			for (long multiplicity = tupIt.open(); multiplicity > 0; multiplicity = tupIt.advance()) {
 				int numRes = 0;
@@ -371,6 +403,11 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 			e.printStackTrace();
 			System.out.println("The query that failed was: " + queryString);
 			return null;
+		}
+		finally {
+			if (tupIt != null) {
+				tupIt.dispose();
+			}
 		}
 	}
 
@@ -513,12 +550,16 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 
 		System.out.println("starting projection");
 
-//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/pizza.owl");
+		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/pizza.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/NTNames.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/foaf.rdf");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/human.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/bio_data/go.owl");
-		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/ekaw.owl");
+//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/ekaw.owl");
+//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/oaei_FMA_small_overlapping_nci.owl");
+//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/oaei_NCI_small_overlapping_snomed.owl");
+//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/oaei_SNOMED_extended_overlapping_fma_nci.owl");
+
 		projector.projectOntology();
 		projector.saveModel(TestRunUtils.modelPath);
 
@@ -534,7 +575,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 
 		SecondOrderWalksGenerator walks = new SecondOrderWalksGenerator(TestRunUtils.modelPath,
 				"/home/ole/master/test_onto/walks_out.txt", "/home/ole/master/test_onto/labels_out.txt", 12, 40, 100000,
-				100, 0, 1, 1, "fulluri", false, false);
+				100, 0, 1, 1, "fulluri", false, false, true);
 //		walks.useRdf4jModel(rdf4jModel);
 		walks.generateWalks();
 

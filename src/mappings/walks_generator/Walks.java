@@ -102,7 +102,7 @@ public class Walks {
 			double p = TestRunUtils.p;
 			double q = TestRunUtils.q;
 			walks = new SecondOrderWalksGenerator(inputFile, outputFile, labelOutputFile, numThreads, walkDepth, classLimit,
-					numWalks, offset, p, q, TestRunUtils.whatToEmbed, TestRunUtils.includeIndividuals, TestRunUtils.includeEdges);
+					numWalks, offset, p, q, TestRunUtils.whatToEmbed, TestRunUtils.includeIndividuals, TestRunUtils.includeEdges, TestRunUtils.cacheEdgeWeights);
 			System.out.println("Using secondOrderWalks");
 		}
 

@@ -47,13 +47,19 @@ public abstract class Element {
 		}
 		return cache;
 	}
-	
+
 	public String getUriPartNoNormalized() {
-		return StringUtils.getUriPart(label);
+		if (cache == null) {
+			cache = StringUtils.getUriPart(label);
+		}
+		return cache;
 	}
 
 	public String getUriWords() {
-		return StringUtils.normalizeFullIRI(label);
+		if (cache == null) {
+			cache = StringUtils.normalizeFullIRI(label);
+		}
+		return cache;
 	}
 
 	public String getTwoDocumentsFormat() {
@@ -71,7 +77,7 @@ public abstract class Element {
 			return label;
 		}
 	}
-	
+
 	public String getOneSynonymAsWords() {
 		String synonym = getOneSynonym();
 		Set<String> stringSet = StringUtils.string2Set(synonym);
@@ -79,32 +85,39 @@ public abstract class Element {
 	}
 
 	public String getAllSynonymsAsWords() {
-		String synonyms = getAllSynonyms();
-		Set<String> stringSet = StringUtils.string2Set(synonyms);
-		return stringSet.stream().collect(Collectors.joining(" "));
+		if (cache == null) {
+			String synonyms = getAllSynonyms();
+			Set<String> stringSet = StringUtils.string2Set(synonyms);
+			cache = stringSet.stream().collect(Collectors.joining(" "));
+		}
+		return cache;
 	}
-	
+
 	public String getAllSynonyms() {
-		if (!synonyms.isEmpty()) {
+		if (cache == null) {
+			if (!synonyms.isEmpty()) {
+				StringBuilder strs = new StringBuilder();
+				for (String s : synonyms) {
+					strs.append(s + " ");
+				}
+				cache = strs.toString();
+			} else {
+				cache = label;
+			}
+		}
+		return cache;
+	}
+
+	public String getAllSynonymsAndUri() {
+		if (cache == null) {
 			StringBuilder strs = new StringBuilder();
 			for (String s : synonyms) {
 				strs.append(s + " ");
 			}
-			return strs.toString();
-		} else {
-			return label;
+			strs.append(StringUtils.normalizeFullIRINoSpace(label) + " ");
+			strs.append(label);
+			cache = strs.toString();
 		}
+		return cache;
 	}
-
-	public String getAllSynonymsAndUri() {
-		StringBuilder strs = new StringBuilder();
-		for (String s : synonyms) {
-			strs.append(s + " ");
-		}
-		strs.append(StringUtils.normalizeFullIRINoSpace(label) + " ");
-		strs.append(label);
-		return strs.toString();
-	}
-
-
 }

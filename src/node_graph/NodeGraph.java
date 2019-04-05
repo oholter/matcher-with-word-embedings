@@ -17,14 +17,16 @@ public class NodeGraph {
 	private HashMap<String, Node> uri2Node;
 	private boolean includeEdges;
 	private HashMap<Node, HashMap<Node, EdgeCollection>> edgeCollections;
+	private boolean cacheEdgeWeights;
 
-	public NodeGraph(List<Node> nodeList, double p, double q, boolean includeEdges) {
+	public NodeGraph(List<Node> nodeList, double p, double q, boolean includeEdges, boolean cacheEdgeWeights) {
 		this.q = q;
 		this.p = p;
 		this.nodeList = nodeList;
 		this.uri2Node = createUri2Node();
 		this.includeEdges = includeEdges;
 		this.edgeCollections = new HashMap<>();
+		this.cacheEdgeWeights = cacheEdgeWeights;
 	}
 
 	public int size() {
@@ -73,19 +75,26 @@ public class NodeGraph {
 	 */
 	public Edge findNextEdge(Node src, Node dst) {
 		if (dst.edges.size() > 0 && src.edges.size() > 0) {
-			HashMap<Node, EdgeCollection> lookup = edgeCollections.get(src);
+			if (dst.edges.size() == 1) { // only one possible edge, return this
+				return dst.edges.stream().findFirst().get();
+			}
+			
+			HashMap<Node, EdgeCollection> lookup = null;
 			EdgeCollection col = null;
 
-			// if collection is cached, return next
-			if (lookup != null) {
-				col = lookup.get(dst);
-			}
-			if (col != null) {
-				return col.next();
+			if (cacheEdgeWeights) {
+				lookup = edgeCollections.get(src);
+				// if collection is cached, return next
+				if (lookup != null) {
+					col = lookup.get(dst);
+				}
+				if (col != null) {
+					return col.next();
+				}
 			}
 
 			// if not cached -> find, cache and return next edge
-			
+
 			col = new EdgeCollection();
 //			System.out.println("src: " + src.toString() + " dst: " + dst.toString());
 
@@ -102,20 +111,17 @@ public class NodeGraph {
 					updatedWeight /= q;
 				}
 
-//				if (e.inNode == src) {
-//					updatedWeight /= q; // penalizing src edges
-//				}
 				col.add(updatedWeight, e);
 			}
-			if (lookup == null) {
+			
+			if (cacheEdgeWeights && lookup == null) {
 				HashMap<Node, EdgeCollection> newMap = new HashMap<>();
 				edgeCollections.put(src, newMap);
 				newMap.put(dst, col);
 			}
+			
 			return col.next();
-		} else if (dst.edges.size() == 0)
-
-		{
+		} else if (dst.edges.size() == 0) {
 			Edge e = findNextEdge(src);
 			if (e != null && !e.outNode.equals(dst)) {
 				return e;
@@ -134,7 +140,27 @@ public class NodeGraph {
 	 */
 	public Edge findNextEdge(Node node) {
 		if (node.edges != null && node.edges.size() > 0) {
-			EdgeCollection col = new EdgeCollection();
+			
+			if (node.edges.size() == 1) { // only one possible edge, return this
+				return node.edges.stream().findFirst().get();
+			}
+			
+			HashMap<Node, EdgeCollection> lookup = null;
+			EdgeCollection col = null;
+			
+			if (cacheEdgeWeights) {
+				lookup = edgeCollections.get(node);
+				// if collection is cached, return next
+				if (lookup != null) {
+					col = lookup.get(null);
+					
+				}
+				if (col != null) {
+					return col.next();
+				}
+			}
+
+			col = new EdgeCollection();
 			for (Edge e : node.edges) {
 				double updatedWeight = e.weight;
 				if (e.outNode == node) {
@@ -142,8 +168,16 @@ public class NodeGraph {
 				}
 				col.add(updatedWeight, e);
 			}
+			
+			if (cacheEdgeWeights && lookup == null) {
+				HashMap<Node, EdgeCollection> newMap = new HashMap<>();
+				edgeCollections.put(node, newMap);
+				newMap.put(null, col);
+			}
+			
 			return col.next();
-		} else {
+			
+		} else { // no where to go
 //			System.out.println("Ended here");
 			return null;
 		}
