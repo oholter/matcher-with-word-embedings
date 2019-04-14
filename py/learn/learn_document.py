@@ -22,7 +22,7 @@ def read_input(input_file):
 logging.info("reading input_file: {}".format(input_file))
 documents = list(read_input(input_file))
 
-model = gensim.models.Word2Vec(documents, size=100, window=10, min_count=1,
+model = gensim.models.Word2Vec(documents, size=50, window=10, min_count=1,
         workers=12, iter=1, sg=1, hs=0, negative=25)
 model.wv.save_word2vec_format(output_file, binary=False)
 #model.save("model.bin")

@@ -39,6 +39,14 @@ public class LogMapEvaluator {
 	private static PrintWriter out;
 	private static HashSet<String> anchorSet;
 
+	private static int outlierType;
+
+	private static final int TOP_20 = 0;
+	private static final int TOP_1000 = 1;
+	private static final int MEAN_STDEV = 2;
+	private static final int IQR = 3;
+	private static final int TOP_5 = 4;
+
 	public static void generateWalks() throws Exception {
 		long startTime = System.nanoTime();
 
@@ -75,9 +83,10 @@ public class LogMapEvaluator {
 //		SecondOrderWalksGenerator(String inputFile, String outputFile, int numberOfThreads, int walkDepth,
 //		int limit, int numberOfWalks, int offset, int p, int q)
 
-		SecondOrderWalksGenerator walks = new SecondOrderWalksGenerator(TestRunUtils.modelPath,
-				"/home/ole/master/test_onto/walks_out.txt", 12, 8, 1000000, 10, 0, TestRunUtils.p, TestRunUtils.q, TestRunUtils.whatToEmbed,
-				TestRunUtils.includeIndividuals, TestRunUtils.includeEdges);
+		SecondOrderWalksGenerator walks = new SecondOrderWalksGenerator(TestRunUtils.modelPath, TestRunUtils.walksFile,
+				TestRunUtils.numThreads, TestRunUtils.walkDepth, TestRunUtils.classLimit, TestRunUtils.numWalks,
+				TestRunUtils.offset, TestRunUtils.p, TestRunUtils.q, TestRunUtils.whatToEmbed,
+				TestRunUtils.includeIndividuals, TestRunUtils.includeEdges, TestRunUtils.cacheEdgeWeights);
 		walks.generateWalks();
 
 		long endTime = System.nanoTime();
@@ -144,16 +153,6 @@ public class LogMapEvaluator {
 				totCosine += cos;
 			}
 		}
-
-		/**
-		 * not possible to compare
-		 */
-
-//		if (numMappings > 0) {
-//			double diff = (totCosine - totStrConf);
-//			double avgDiff = diff / (double) numMappings;
-//			printBoth("Avg increase: " + avgDiff);
-//		}
 	}
 
 	public static void createAnchorSet() {
@@ -168,27 +167,35 @@ public class LogMapEvaluator {
 		anchorSet.addAll(right);
 	}
 
-	public static Set<MappingObjectStr> findWrongDiscardedMappings(Set<MappingObjectStr> discarded, WordEmbeddingsTrainer trainer) throws Exception {
-//		Set<Double> allCosines = discarded.stream().map(m -> trainer.getCosine(m.getIRIStrEnt1(), m.getIRIStrEnt1()))
-//				.collect(Collectors.toSet());
-		Set<Double> allCosines = discarded.stream()
-				.map(m -> (trainer.getCosine(m.getIRIStrEnt1(), m.getIRIStrEnt2())))
+	public static Set<MappingObjectStr> findWrongDiscardedMappings(Set<MappingObjectStr> discarded,
+			WordEmbeddingsTrainer trainer) throws Exception {
+		Set<Double> allCosines = discarded.stream().map(m -> (trainer.getCosine(m.getIRIStrEnt1(), m.getIRIStrEnt2())))
 				.collect(Collectors.toSet());
 //		System.out.println("\nall cosines:");
 //		allCosines.forEach(System.out::println);
 		double mean = StatUtils.getMean(allCosines);
 		double stdDev = StatUtils.getStandardDeviation(allCosines);
-//		double cutoff = 0;
-//		double cutoff = mean;
-//		double cutoff = mean + stdDev;
-//		double cutoff = mean + (2 * stdDev);
-//		double cutoff = StatUtils.getIQROutLayersCutoff(allCosines, true);
-		double cutoff = StatUtils.getTopnCutoff(allCosines, 20);
+		final double cutoff;
+
+		if (outlierType == TOP_20) {
+			cutoff = StatUtils.getTopnCutoff(allCosines, 20);
+		} else if (outlierType == TOP_1000) {
+			cutoff = StatUtils.getTopnCutoff(allCosines, 1000);
+		} else if (outlierType == MEAN_STDEV) {
+			cutoff = mean + stdDev;
+		} else if (outlierType == IQR) {
+			cutoff = StatUtils.getIQROutLayersCutoff(allCosines, true);
+		} else if (outlierType == TOP_5) {
+			cutoff = StatUtils.getTopnCutoff(allCosines, 5);
+		} else {
+			log.warn("unknown outlierType: " + outlierType + " returning all");
+			cutoff = 0.0;
+		}
 
 		// remove missing values for the large bio track
-		allCosines = allCosines.stream().filter(n -> ! Double.isNaN(n)).collect(Collectors.toSet());
-		
-		Set<MappingObjectStr> possible = discarded.stream()
+		allCosines = allCosines.stream().filter(n -> !Double.isNaN(n)).collect(Collectors.toSet());
+
+		Set<MappingObjectStr> possible = discarded.parallelStream()
 				.filter(m -> trainer.getCosine(m.getIRIStrEnt1(), m.getIRIStrEnt2()) > cutoff)
 				.collect(Collectors.toSet());
 
@@ -197,80 +204,93 @@ public class LogMapEvaluator {
 		if (anchorSet == null) {
 			createAnchorSet();
 		}
-		
 
-		
-		// Can discard if already exist in anchor. - not useful for largebio 
+		// Can discard if already exist in anchor. - not useful for largebio
 //		Set<MappingObjectStr> notInAnchors = possible.parallelStream()
 //				.filter(m -> !anchorSet.contains(m.getIRIStrEnt1()) && !anchorSet.contains(m.getIRIStrEnt2()))
 //				.collect(Collectors.toSet());
 
 		System.out.println("mean: " + mean + ", stdDev: " + stdDev + ", " + "cutoff: " + cutoff);
-		
+
 		return possible;
 	}
 
 	public static Set<MappingObjectStr> findDubiousAnchors(WordEmbeddingsTrainer trainer) throws Exception {
 		Set<MappingObjectStr> lmapAnchors = logMapMatcher.getLogmap2_anchors();
 		Set<Double> allCosines = lmapAnchors.stream()
-				.map(m -> (trainer.getCosine(m.getIRIStrEnt1(), m.getIRIStrEnt2())))
-				.collect(Collectors.toSet());
+				.map(m -> (trainer.getCosine(m.getIRIStrEnt1(), m.getIRIStrEnt2()))).collect(Collectors.toSet());
 //		System.out.println("\nAll cosines:");
 //		allCosines.forEach(System.out::println);
 		double mean = StatUtils.getMean(allCosines);
 		double stdDev = StatUtils.getStandardDeviation(allCosines);
-//		double cutoff = 1;
-//		double cutoff = mean;
-//		double cutoff = (mean - stdDev);
-//		double cutoff = mean - (2 * stdDev);
-//		double cutoff = StatUtils.getIQROutLayersCutoff(allCosines, false);
-		double cutoff = StatUtils.getBotnCutoff(allCosines, 20);
+//		
+		final double cutoff;
+		if (outlierType == TOP_20) {
+			cutoff = StatUtils.getBotnCutoff(allCosines, 20);
+		} else if (outlierType == TOP_1000) {
+			cutoff = StatUtils.getBotnCutoff(allCosines, 1000);
+		} else if (outlierType == MEAN_STDEV) {
+			cutoff = mean - stdDev;
+		} else if (outlierType == IQR) {
+			cutoff = StatUtils.getIQROutLayersCutoff(allCosines, false);
+		} else if (outlierType == TOP_5) {
+			cutoff = StatUtils.getBotnCutoff(allCosines, 5);
+		} else {
+			log.warn("unknown outlierType: " + outlierType + " returning all");
+			cutoff = 1.0;
+		}
 
-		
 		// remove missing vocabulary for the largebio track
-		allCosines = allCosines.stream().filter(n -> ! Double.isNaN(n)).collect(Collectors.toSet());
+		allCosines = allCosines.stream().filter(n -> !Double.isNaN(n)).collect(Collectors.toSet());
 
 		Set<MappingObjectStr> dubious = lmapAnchors.parallelStream()
 				.filter(m -> trainer.getCosine(m.getIRIStrEnt1(), m.getIRIStrEnt2()) < cutoff)
 				.collect(Collectors.toSet());
 		printResults(dubious, trainer, "Dubious anchors");
 		System.out.println("mean: " + mean + ", stdDev: " + stdDev + ", " + "cutoff: " + cutoff);
-		
+
 		return dubious;
 	}
-	
+
 	public static void improveAlignment(WordEmbeddingsTrainer trainer) throws Exception {
 		Set<MappingObjectStr> dAnchors = findDubiousAnchors(trainer);
-		Set<MappingObjectStr> whard = findWrongDiscardedMappings(logMapMatcher.getLogmap2_HardDiscardedMappings(), trainer);
-		Set<MappingObjectStr> wconflict = findWrongDiscardedMappings(logMapMatcher.getLogmap2_ConflictiveMappings(), trainer);
-		Set<MappingObjectStr> wdiscarded = findWrongDiscardedMappings(logMapMatcher.getLogmap2_DiscardedMappings(), trainer);
-		
+		Set<MappingObjectStr> whard = findWrongDiscardedMappings(logMapMatcher.getLogmap2_HardDiscardedMappings(),
+				trainer);
+		Set<MappingObjectStr> wconflict = findWrongDiscardedMappings(logMapMatcher.getLogmap2_ConflictiveMappings(),
+				trainer);
+		Set<MappingObjectStr> wdiscarded = findWrongDiscardedMappings(logMapMatcher.getLogmap2_DiscardedMappings(),
+				trainer);
+
 		AlignmentsReader alignmentsReader = new OAEIAlignmentsReader(TestRunUtils.referenceAlignmentsFile);
 		alignmentsReader.readMappings();
-		
+
 		Set<MappingObjectStr> gs = alignmentsReader.getMappingsAsSet();
-		
+
 		double anchorsSize = dAnchors.size();
 		dAnchors = dAnchors.stream().filter(m -> !gs.contains(m)).collect(Collectors.toSet());
 		printBoth("\nFiltering potentially bad anchors and discarded mappings");
-		printBoth("Anchors --- Before: " + anchorsSize + " after: " + dAnchors.size());
-		
+		printBoth("Anchors --- Before: " + anchorsSize + " In gs: " + dAnchors.size() + " fraction "
+				+ dAnchors.size() / anchorsSize);
+
 		double whardSize = whard.size();
 		whard = whard.stream().filter(m -> gs.contains(m)).collect(Collectors.toSet());
-		printBoth("Hard --- Before: " + whardSize + " after: " + whard.size());
-		
+		printBoth(
+				"Hard --- Before: " + whardSize + " In gs: " + whard.size() + " fraction: " + whard.size() / whardSize);
+
 		double wconflictSize = wconflict.size();
 		wconflict = wconflict.stream().filter(m -> gs.contains(m)).collect(Collectors.toSet());
-		printBoth("Conflict --- Before: " + wconflictSize + " after: " + wconflict.size());
+		printBoth("Conflict --- Before: " + wconflictSize + " In gs: " + wconflict.size() + " fraction: "
+				+ wconflict.size() / wconflictSize);
 
 		double wdiscardedSize = wdiscarded.size();
 		wdiscarded = wdiscarded.stream().filter(m -> gs.contains(m)).collect(Collectors.toSet());
-		printBoth("Discarded --- Before: " + wdiscardedSize + " after: " + wdiscarded.size());
+		printBoth("Discarded --- Before: " + wdiscardedSize + " In gs: " + wdiscarded.size() + " fraction: "
+				+ wdiscarded.size() / wdiscardedSize);
 	}
 
 	public static void main(String[] args) throws Exception {
 		out = new PrintWriter(new File(TestRunUtils.logFile));
-		
+
 //		generateWalks();
 //		long startTime = System.nanoTime();
 //		TestRunUtils.trainEmbeddings(TestRunUtils.embeddingsSystem);
@@ -278,6 +298,11 @@ public class LogMapEvaluator {
 //		long duration = (endTime - startTime) / 1000000;
 //		printBoth("time to train: " + duration + "ms");
 
+//		outlierType = TOP_5;
+//		outlierType = TOP_20;
+//		outlierType = TOP_1000;
+		outlierType = MEAN_STDEV;
+//		outlierType = IQR;
 		evaluateEmbeddings();
 
 		out.close();

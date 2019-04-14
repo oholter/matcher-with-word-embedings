@@ -1,7 +1,7 @@
 package mappings.utils;
 
 public class TestRunUtils {
-	
+
 	// EKAW-EKAW
 //	public static String firstOntologyFile = "/home/ole/master/test_onto/ekaw.owl";
 //	public static String secondOntologyFile = "/home/ole/master/test_onto/ekaw2.owl";
@@ -21,13 +21,13 @@ public class TestRunUtils {
 //	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/cmt-ekaw.rdf";
 
 	// PIZZA
-//	public static String firstOntologyFile = "";
-//	public static String secondOntologyFile = "/home/ole/master/test_onto/pizza.owl";
-//	public static String nameSpaceString1 = "";
-//	public static String nameSpaceString2 = "pizza.owl";
-//	public static String baseUriString1 = "";
-//	public static String baseUriString2 = "http://www.co-ode.org/ontologies/pizza/pizza.owl";
-//	public static String referenceAlignmentsFile = "";
+	public static String firstOntologyFile = "";
+	public static String secondOntologyFile = "/home/ole/master/test_onto/pizza.owl";
+	public static String nameSpaceString1 = "";
+	public static String nameSpaceString2 = "pizza.owl";
+	public static String baseUriString1 = "";
+	public static String baseUriString2 = "http://www.co-ode.org/ontologies/pizza/pizza.owl";
+	public static String referenceAlignmentsFile = "";
 
 	// ANATOMY
 //	public static String firstOntologyFile = "/home/ole/master/test_onto/mouse.owl";
@@ -38,16 +38,34 @@ public class TestRunUtils {
 //	public static String baseUriString2 = "http://human";
 //	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/mouse-human.rdf";
 
-	// Largebio small
-	public static String firstOntologyFile = "/home/ole/master/test_onto/oaei_FMA_small_overlapping_nci.owl";
-	public static String secondOntologyFile = "/home/ole/master/test_onto/oaei_NCI_small_overlapping_fma.owl";
-	public static String nameSpaceString1 = "nci";
-	public static String nameSpaceString2 = "fma";
-	public static String baseUriString1 = "http://nci";
-	public static String baseUriString2 = "http://fma";
-	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/oaei_FMA2NCI_UMLS_mappings_with_flagged_repairs.rdf";
+	// Largebio small FMA NCI
+//	public static String firstOntologyFile = "/home/ole/master/test_onto/oaei_FMA_small_overlapping_nci.owl";
+//	public static String secondOntologyFile = "/home/ole/master/test_onto/oaei_NCI_small_overlapping_fma.owl";
+//	public static String nameSpaceString1 = "nci";
+//	public static String nameSpaceString2 = "fma";
+//	public static String baseUriString1 = "http://nci";
+//	public static String baseUriString2 = "http://fma";
+//	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/oaei_FMA2NCI_UMLS_mappings_with_flagged_repairs.rdf";
 
-	// Largebio complete
+	// Largebio small FMA SNOMED
+//	public static String firstOntologyFile = "/home/ole/master/test_onto/oaei_FMA_small_overlapping_snomed.owl";
+//	public static String secondOntologyFile = "/home/ole/master/test_onto/oaei_SNOMED_small_overlapping_fma.owl";
+//	public static String nameSpaceString1 = "nci";
+//	public static String nameSpaceString2 = "snomed";
+//	public static String baseUriString1 = "http://nci";
+//	public static String baseUriString2 = "http://snomed";
+//	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/oaei_FMA2SNOMED_UMLS_mappings_with_flagged_repairs.rdf";
+	
+	// largebio small Snomed-NCI
+//	public static String firstOntologyFile = "/home/ole/master/test_onto/oaei_NCI_small_overlapping_snomed.owl";
+//	public static String secondOntologyFile = "/home/ole/master/test_onto/oaei_SNOMED_small_overlapping_nci.owl";
+//	public static String nameSpaceString1 = "nci";
+//	public static String nameSpaceString2 = "snomed";
+//	public static String baseUriString1 = "http://nci";
+//	public static String baseUriString2 = "http://snomed";
+//	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/oaei_SNOMED2NCI_UMLS_mappings_with_flagged_repairs.rdf";
+
+	// Largebio complete NCI-FMA
 //	public static String firstOntologyFile = "/home/ole/master/test_onto/oaei_FMA_whole_ontology.owl";
 //	public static String secondOntologyFile = "/home/ole/master/test_onto/oaei_NCI_whole_ontology.owl";
 //	public static String nameSpaceString1 = "nci";
@@ -55,9 +73,7 @@ public class TestRunUtils {
 //	public static String baseUriString1 = "http://nci";
 //	public static String baseUriString2 = "http://fma";
 //	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/oaei_FMA2NCI_UMLS_mappings_with_flagged_repairs.rdf";
-	
-	
-	
+
 //	public static String walksType = "synonymsowl2vec";
 //	public static String walksType = "owl2vec";
 //	public static String walksType = "rdf2vec";
@@ -66,7 +82,7 @@ public class TestRunUtils {
 	public static String walksType = "secondorder";
 
 	public static String whatToEmbed = "fulluri";
-	
+
 	public static String embeddingsSystem = "word2vec";
 //	public static String embeddingsSystem = "fasttext";
 
@@ -96,8 +112,8 @@ public class TestRunUtils {
 
 	public static double p = 1; // revisit
 	public static double q = 1.0; // in/out
-	public static int numWalks = 50;
-	public static int walkDepth = 40;
+	public static int numWalks = 10;
+	public static int walkDepth = 3;
 //	public static int walkDepth = 4;
 	public static int numThreads = 12;
 	public static int offset = 0;

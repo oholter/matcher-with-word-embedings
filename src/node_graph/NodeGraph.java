@@ -3,9 +3,8 @@ package node_graph;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import mappings.utils.StringUtils;
@@ -16,7 +15,9 @@ public class NodeGraph {
 	private List<Node> nodeList;
 	private HashMap<String, Node> uri2Node;
 	private boolean includeEdges;
-	private HashMap<Node, HashMap<Node, EdgeCollection>> edgeCollections;
+	private ConcurrentHashMap<Node, ConcurrentHashMap<Node, EdgeCollection>> edgeCollections;
+	private final Node nullNode = new Node("0"); // dummy node to store and look up in map when only one node
+
 	private boolean cacheEdgeWeights;
 
 	public NodeGraph(List<Node> nodeList, double p, double q, boolean includeEdges, boolean cacheEdgeWeights) {
@@ -25,7 +26,7 @@ public class NodeGraph {
 		this.nodeList = nodeList;
 		this.uri2Node = createUri2Node();
 		this.includeEdges = includeEdges;
-		this.edgeCollections = new HashMap<>();
+		this.edgeCollections = new ConcurrentHashMap<>();
 		this.cacheEdgeWeights = cacheEdgeWeights;
 	}
 
@@ -79,7 +80,7 @@ public class NodeGraph {
 				return dst.edges.stream().findFirst().get();
 			}
 			
-			HashMap<Node, EdgeCollection> lookup = null;
+			ConcurrentHashMap<Node, EdgeCollection> lookup = null;
 			EdgeCollection col = null;
 
 			if (cacheEdgeWeights) {
@@ -115,7 +116,7 @@ public class NodeGraph {
 			}
 			
 			if (cacheEdgeWeights && lookup == null) {
-				HashMap<Node, EdgeCollection> newMap = new HashMap<>();
+				ConcurrentHashMap<Node, EdgeCollection> newMap = new ConcurrentHashMap<>();
 				edgeCollections.put(src, newMap);
 				newMap.put(dst, col);
 			}
@@ -145,14 +146,14 @@ public class NodeGraph {
 				return node.edges.stream().findFirst().get();
 			}
 			
-			HashMap<Node, EdgeCollection> lookup = null;
+			ConcurrentHashMap<Node, EdgeCollection> lookup = null;
 			EdgeCollection col = null;
 			
 			if (cacheEdgeWeights) {
 				lookup = edgeCollections.get(node);
 				// if collection is cached, return next
 				if (lookup != null) {
-					col = lookup.get(null);
+					col = lookup.get(nullNode);
 					
 				}
 				if (col != null) {
@@ -170,9 +171,9 @@ public class NodeGraph {
 			}
 			
 			if (cacheEdgeWeights && lookup == null) {
-				HashMap<Node, EdgeCollection> newMap = new HashMap<>();
+				ConcurrentHashMap<Node, EdgeCollection> newMap = new ConcurrentHashMap<>();
 				edgeCollections.put(node, newMap);
-				newMap.put(null, col);
+				newMap.put(nullNode, col);
 			}
 			
 			return col.next();

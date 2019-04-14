@@ -550,10 +550,10 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 
 		System.out.println("starting projection");
 
-		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/pizza.owl");
+//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/pizza.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/NTNames.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/foaf.rdf");
-//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/human.owl");
+		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/human.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/bio_data/go.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/ekaw.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/oaei_FMA_small_overlapping_nci.owl");
