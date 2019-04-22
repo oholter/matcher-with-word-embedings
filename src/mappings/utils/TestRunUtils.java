@@ -21,22 +21,22 @@ public class TestRunUtils {
 //	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/cmt-ekaw.rdf";
 
 	// PIZZA
-	public static String firstOntologyFile = "";
-	public static String secondOntologyFile = "/home/ole/master/test_onto/pizza.owl";
-	public static String nameSpaceString1 = "";
-	public static String nameSpaceString2 = "pizza.owl";
-	public static String baseUriString1 = "";
-	public static String baseUriString2 = "http://www.co-ode.org/ontologies/pizza/pizza.owl";
-	public static String referenceAlignmentsFile = "";
+//	public static String firstOntologyFile = "";
+//	public static String secondOntologyFile = "/home/ole/master/test_onto/pizza.owl";
+//	public static String nameSpaceString1 = "";
+//	public static String nameSpaceString2 = "pizza.owl";
+//	public static String baseUriString1 = "";
+//	public static String baseUriString2 = "http://www.co-ode.org/ontologies/pizza/pizza.owl";
+//	public static String referenceAlignmentsFile = "";
 
 	// ANATOMY
-//	public static String firstOntologyFile = "/home/ole/master/test_onto/mouse.owl";
-//	public static String secondOntologyFile = "/home/ole/master/test_onto/human.owl";
-//	public static String nameSpaceString1 = "mouse";
-//	public static String nameSpaceString2 = "human";
-//	public static String baseUriString1 = "http://mouse";
-//	public static String baseUriString2 = "http://human";
-//	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/mouse-human.rdf";
+	public static String firstOntologyFile = "/home/ole/master/test_onto/mouse.owl";
+	public static String secondOntologyFile = "/home/ole/master/test_onto/human.owl";
+	public static String nameSpaceString1 = "mouse";
+	public static String nameSpaceString2 = "human";
+	public static String baseUriString1 = "http://mouse";
+	public static String baseUriString2 = "http://human";
+	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/mouse-human.rdf";
 
 	// Largebio small FMA NCI
 //	public static String firstOntologyFile = "/home/ole/master/test_onto/oaei_FMA_small_overlapping_nci.owl";
@@ -55,7 +55,7 @@ public class TestRunUtils {
 //	public static String baseUriString1 = "http://nci";
 //	public static String baseUriString2 = "http://snomed";
 //	public static String referenceAlignmentsFile = "/home/ole/master/test_onto/reference_alignments/oaei_FMA2SNOMED_UMLS_mappings_with_flagged_repairs.rdf";
-	
+
 	// largebio small Snomed-NCI
 //	public static String firstOntologyFile = "/home/ole/master/test_onto/oaei_NCI_small_overlapping_snomed.owl";
 //	public static String secondOntologyFile = "/home/ole/master/test_onto/oaei_SNOMED_small_overlapping_nci.owl";
@@ -82,6 +82,8 @@ public class TestRunUtils {
 	public static String walksType = "secondorder";
 
 	public static String whatToEmbed = "fulluri";
+//	public static String whatToEmbed = "twodocuments";
+
 
 	public static String embeddingsSystem = "word2vec";
 //	public static String embeddingsSystem = "fasttext";
@@ -98,22 +100,22 @@ public class TestRunUtils {
 	public static String labelsFile = "/home/ole/master/test_onto/labels_out.txt";
 	public static String logFile = "/home/ole/master/test_onto/log.txt";
 	public static String walksModel = "/home/ole/master/test_onto/model.bin";
-	public static String labelModel = "/home/ole/master/test_onto/labels.bin";
+	public static String labelModel = "/home/ole/master/test_onto/label.bin";
 
 	public static String referenceFilePath = "/home/ole/master/test_onto/ref.txt";
 	public static String resultFilePath = "/home/ole/master/test_onto/res.txt";
 
 	public static String relatedConceptsPath = "/home/ole/src/thesis/evaluation/ekaw.xml";
 
-	public static double equalityThreshold = 0.90;
-	public static double fractionOfMappings = 0.6;
+	public static double equalityThreshold = 0.8;
+	public static double fractionOfMappings = 1.0;
 
 	public static double labelEqualityThreshold = 0.70; // for the two document
 
-	public static double p = 1; // revisit
-	public static double q = 1.0; // in/out
-	public static int numWalks = 10;
-	public static int walkDepth = 3;
+	public static double p = 1.2; // revisit
+	public static double q = 0.5; // in/out
+	public static int numWalks = 50;
+	public static int walkDepth = 10;
 //	public static int walkDepth = 4;
 	public static int numThreads = 12;
 	public static int offset = 0;
@@ -131,7 +133,13 @@ public class TestRunUtils {
 			command = new String[2];
 			command[0] = "/home/ole/anaconda3/bin/python";
 			command[1] = "/home/ole/workspace/MatcherWithWordEmbeddings/py/learn/learn_document.py";
-		} else if (model.toLowerCase().equals("fasttext")) {
+		} else if (model.equals("twodocumentlabels")) {
+			command = new String[2];
+			command[0] = "/home/ole/anaconda3/bin/python";
+			command[1] = "/home/ole/workspace/MatcherWithWordEmbeddings/py/learn/learn_label_words.py";
+		} else if (model.toLowerCase().equals("fasttext"))
+
+		{
 			System.out.println("Running fasttext");
 			command = new String[2];
 			command[0] = "/home/ole/anaconda3/bin/python";

@@ -9,7 +9,7 @@ import mappings.utils.StringUtils;
 
 public abstract class Element {
 	public String label;
-	public String cache;
+	public String cache = null;
 	public List<String> synonyms;
 
 	/** assuming we have synonyms, return any of the names **/
@@ -114,7 +114,7 @@ public abstract class Element {
 			for (String s : synonyms) {
 				strs.append(s + " ");
 			}
-			strs.append(StringUtils.normalizeFullIRINoSpace(label) + " ");
+//			strs.append(StringUtils.normalizeFullIRINoSpace(label) + " ");
 			strs.append(label);
 			cache = strs.toString();
 		}

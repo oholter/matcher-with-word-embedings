@@ -3,28 +3,28 @@ import scipy.stats as stats
 x = np.array([1, 0.8, 0.6, 0.4, 0.2, 0])
 
 # EKAW-EKAW
-#y = np.array([0.32, 0.33, 0.36, 0.31, 0.2, 0.02]) #owl2vec best
-#y = np.array([0.68, 0.66, 0.73, 0.61, 0.4, 0.02]) #owl2vec disambiguate
-#y = np.array([0.90, 0.93, 0.93, 0.85, 0.69, 0.13]) #synonyms best
-#y = np.array([0.93, 0.94, 0.93, 0.83, 0.66, 0.16]) #synonyms disambiguate
-#y = np.array([0.92, 0.92, 0.92, 0.83, 0.67, 0.14]) #synonyms all relations
+#y = np.array([0.75, 0.65, 0.48, 0.31, 0.12, 0.01]) #struc best
+#y = np.array([1.0, 0.97, 0.84, 0.62, 0.34, 0.03]) #struc disambiguate
+#y = np.array([0.81, 0.75, 0.61, 0.42, 0.29, 0.13]) #synonyms best
+#y = np.array([0.97, 0.91, 0.85, 0.68, 0.62, 0.34]) #synonyms disambiguate
+#y = np.array([0.92, 0.82, 0.72, 0.52, 0.29, 0.15]) #synonyms all relations
 #y = np.array([0.90, 0.90, 0.77, 0.49, 0.23, 0.01]) #synonyms translation m
-#y = np.array([0.12, 0.12, 0.14, 0.12, 0.12, 0.13]) #rdf2vec best
-#y = np.array([0.77, 0.70, 0.70, 0.68, 0.46, 0.04]) #two documents
-#y = np.array([0.89, 0.89, 0.66, 0.51, 0.31, 0.0]) # secondorder
+#y = np.array([0.63, 0.60, 0.44, 0.27, 0.14, 0.0]) #rdf2vec best
+#y = np.array([0.48, 0.47, 0.52, 0.56, 0.56, 0.29]) #two documents
+#y = np.array([0.87, 0.79, 0.66, 0.41, 0.21, 0.01]) # secondorder
 #y = np.array([0.60, 0.69, 0.68, 0.65, 0.48, 0.04]) # subclass
 
 
 # EKAW-CMT
-#y = np.array([0.68, 0.50, 0.33, 0.25, 0.25, 0.10]) #owl2vec best
-#y = np.array([0.68, 0.50, 0.33, 0.25, 0.25, 0.10]) #owl2vec disambiguate
-#y = np.array([0.65, 0.43, 0.28, 0.13, 0.15, 0.15]) #synonyms best
-#y = np.array([0.55, 0.43, 0.28, 0.15, 0.13, 0.15]) #synonyms disambiguate
-#y = np.array([0.55, 0.43, 0.38, 0.18, 0.13, 0.15]) #synonyms all relations
+#y = np.array([0.60, 0.48, 0.30, 0.23, 0.10, 0.00]) #struc best
+#y = np.array([0.85, 0.70, 0.53, 0.43, 0.33, 0.08]) #struc disambiguate
+#y = np.array([0.45, 0.33, 0.20, 0.23, 0.05, 0.05]) #synonyms best
+#y = np.array([0.68, 0.65, 0.45, 0.23, 0.15, 0.05]) #synonyms disambiguate
+#y = np.array([0.40, 0.30, 0.33, 0.18, 0.18, 0.03]) #synonyms all relations
 #y = np.array([1.00, 0.75, 0.63, 0.38, 0.38, 0.13]) #synonyms translation m
-#y = np.array([0.05, 0.13, 0.05, 0.06, 0.10, 0.04]) #rdf2vec best
-#y = np.array([0.58, 0.50, 0.38, 0.18, 0.20, 0.23]) #two documents
-#y = np.array([1.00, 0.75, 0.75, 0.25, 0.13, 0.0]) # secondorder
+#y = np.array([0.13, 0.0, 0.0, 0.0, 0.0, 0.0]) #rdf2vec best
+#y = np.array([0.75, 0.58, 0.70, 0.70, 0.63, 0.20]) #two documents
+#y = np.array([0.98, 0.78, 0.55, 0.50, 0.23, 0.03]) # secondorder
 y = np.array([0.95, 0.80, 0.75, 0.53, 0.40, 0.23]) # subclass
 
 

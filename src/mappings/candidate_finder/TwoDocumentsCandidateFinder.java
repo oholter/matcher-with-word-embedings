@@ -131,7 +131,7 @@ public class TwoDocumentsCandidateFinder extends DisambiguateClassAnchorsFinder 
 		// For training of ontology start:
 		OWLOntology mergedOnto = OntologyReader.mergeOntologies("merged", new OWLOntology[] { onto1, onto2 });
 		TwoDocumentsCandidateFinder finder = new TwoDocumentsCandidateFinder(onto1, onto2, mergedOnto,
-				currentDir + "/temp/out.txt", equalityThreshold, TestRunUtils.labelEqualityThreshold);
+				TestRunUtils.modelPath, equalityThreshold, TestRunUtils.labelEqualityThreshold);
 
 //		TwoDocumentsCandidateFinder finder = new TwoDocumentsCandidateFinder(onto1, onto2, allOntos,
 //				currentDir + "/temp/out.txt", equalityThreshold, TestRunUtils.labelEqualityThreshold);
@@ -162,6 +162,14 @@ public class TwoDocumentsCandidateFinder extends DisambiguateClassAnchorsFinder 
 				TestRunUtils.labelsFile, TestRunUtils.numWalks, TestRunUtils.walkDepth, TestRunUtils.numThreads,
 				TestRunUtils.offset, TestRunUtils.classLimit);
 		walks.generateWalks();
+		
+		
+		/**
+		 * Training with gensim
+		 */
+		
+		TestRunUtils.trainEmbeddings("word2vec");
+		TestRunUtils.trainEmbeddings("twodocumentlabels");
 
 		String walksFile = walks.getOutputFile();
 		System.out.println("WalksFile: " + walksFile);
@@ -174,7 +182,7 @@ public class TwoDocumentsCandidateFinder extends DisambiguateClassAnchorsFinder 
 		finder.setTrainer(trainer);
 
 		WordEmbeddingsTrainer labelTrainer = new WordEmbeddingsTrainer(TestRunUtils.modelPath,
-				TestRunUtils.pretrainedModelOutputPath);
+				TestRunUtils.labelModel);
 		labelTrainer.loadGensimModel(TestRunUtils.labelModel);
 		finder.setLabelTrainer(labelTrainer);
 

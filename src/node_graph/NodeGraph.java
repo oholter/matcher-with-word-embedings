@@ -197,7 +197,6 @@ public class NodeGraph {
 			str = lst.stream().map(n -> n.toString()).collect(Collectors.joining(" "));
 		} else if (outputFormat.toLowerCase().equals("uripart")) {
 			str = lst.stream().map(n -> n.getUriPart()).collect(Collectors.joining(" "));
-			str = StringUtils.getUriPart(str);
 		} else if (outputFormat.toLowerCase().equals("words")) {
 			str = lst.stream().map(n -> n.getUriWords()).collect(Collectors.joining(" "));
 		} else if (outputFormat.toLowerCase().equals("onesynonym")) {

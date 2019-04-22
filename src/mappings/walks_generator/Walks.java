@@ -1,3 +1,7 @@
+/**
+ * Todo: too much hard coded here, must do a major change in this file
+ * Todo: getting file paths from TestRunUtils is not good
+ */
 package mappings.walks_generator;
 
 import java.io.File;
@@ -70,7 +74,7 @@ public class Walks {
 	}
 
 	public String getLabelOutputFile() {
-		return labelOutputFile;
+		return TestRunUtils.labelsFile;
 	}
 
 	public void generateWalks() {

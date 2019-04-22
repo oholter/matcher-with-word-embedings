@@ -291,18 +291,20 @@ public class LogMapEvaluator {
 	public static void main(String[] args) throws Exception {
 		out = new PrintWriter(new File(TestRunUtils.logFile));
 
-//		generateWalks();
-//		long startTime = System.nanoTime();
-//		TestRunUtils.trainEmbeddings(TestRunUtils.embeddingsSystem);
-//		long endTime = System.nanoTime();
-//		long duration = (endTime - startTime) / 1000000;
-//		printBoth("time to train: " + duration + "ms");
+		generateWalks();
+		long startTime = System.nanoTime();
+		TestRunUtils.trainEmbeddings(TestRunUtils.embeddingsSystem);
+		long endTime = System.nanoTime();
+		long duration = (endTime - startTime) / 1000000;
+		printBoth("time to train: " + duration + "ms");
 
 //		outlierType = TOP_5;
 //		outlierType = TOP_20;
 //		outlierType = TOP_1000;
 		outlierType = MEAN_STDEV;
 //		outlierType = IQR;
+		
+		
 		evaluateEmbeddings();
 
 		out.close();

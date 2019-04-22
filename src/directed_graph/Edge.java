@@ -15,7 +15,7 @@ public class Edge {
 	int INVERSE_OF_WEIGHT = 0;
 	int RANGE_DOMAIN_WEIGHT = 0;
 	int TYPE_WEIGHT = 0; // 5?
-	int NORMAL_PROPERTY_WEIGHT = 0;
+	int NORMAL_PROPERTY_WEIGHT = 2;
 	int RANDOM_JUMP_WEIGHT = 0; // 1
 	
 	public String label;

@@ -251,7 +251,8 @@ public class WeightedDirectedGraph {
 
 	public void generateSubClassWalk(Node node, int level, ArrayList<String> walks, String tmp) {
 		String nodeName = replaceNamespaces(node.label);
-		if (!tmp.contains(nodeName) || !tmp.contains(StringUtils.normalizeFullIRI(node.label))) { // avoid looping over the same nodes
+		if (!tmp.contains(nodeName) || !tmp.contains(StringUtils.normalizeFullIRI(node.label))) { // avoid looping over
+																									// the same nodes
 			tmp += nodeName + " ";
 //			tmp += StringUtils.normalizeFullIRINoSpace(node.label)+ " "; 
 			if (level < walkDepth && node.edges != null && node.edges.size() > 0) {
@@ -287,9 +288,15 @@ public class WeightedDirectedGraph {
 		tmpWalk += replaceNamespaces(node.label) + " ";
 		if (level < walkDepth) {
 			Edge nextEdge = chooseRandomEdge(node.edges);
-			Node nextNode = chooseRandomNode(nextEdge.outNodes);
-//			tmpWalk += replaceNamespaces(nextEdge.label) + " ";
-			tmpWalk += generateRandomWalk(nextNode, level + 1);
+			if (nextEdge != null) {
+				Node nextNode = chooseRandomNode(nextEdge.outNodes);
+//				tmpWalk += replaceNamespaces(nextEdge.label) + " ";
+				tmpWalk += generateRandomWalk(nextNode, level + 1);
+			} else {
+//				System.out.println(level);
+//				System.out.println(node.edges);
+//				System.out.println(node.label + " does not have edges");
+			}
 		}
 		return tmpWalk;
 	}

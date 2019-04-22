@@ -24,12 +24,12 @@ public class WordEmbeddingsTrainer {
 	String outputFilePath;
 	Word2Vec model;
 	int windowSize = 20; // 15
-	int numIterations = 5; // 1
-	int layerSize = 200; // 100
+	int numIterations = 50; // 1
+	int layerSize = 100; // 100
 	int minWordFrequency = 1;
 	int seed = 42; // 42
 	int batchSize = 50; // 50
-	int numNegativeSamples = 0; // 25
+	int numNegativeSamples = 25; // 25
 	WordVectors gensimModel;
 
 	public WordEmbeddingsTrainer(String inputFile, String outputFile) throws Exception {

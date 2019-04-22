@@ -8,8 +8,8 @@ logging.basicConfig(level=logging.INFO)
 
 @click.command()
 @click.argument("model_file", default="/home/ole/master/test_onto/model.bin")
-@click.argument("ns1", default="cmt")
-@click.argument("ns2", default="sigkdd")
+@click.argument("ns1", default="ekaw")
+@click.argument("ns2", default="cmt")
 def main(model_file, ns1, ns2):
     model = KeyedVectors.load_word2vec_format(model_file, binary=False)
 
@@ -35,6 +35,8 @@ def main(model_file, ns1, ns2):
     simil = np.dot(first_vector, second_vector) / (np.linalg.norm(first_vector) * np.linalg.norm(second_vector))
     print("Read {} concepts from first and {} concepts from second".format(num_first_concept, num_second_concept))
     print("Similarity: {}".format(simil))
+    print("{} is most similar to the concept: {}".format(ns1, model.most_similar(positive=[first_vector], topn=2)))
+    print("{} is most similar to the concept: {}".format(ns2, model.most_similar(positive=[second_vector], topn=2)))
 
 if __name__ == "__main__":
     main()

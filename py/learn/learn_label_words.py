@@ -6,7 +6,8 @@ from gensim.models import KeyedVectors
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
-walks_document = '/home/ole/workspace/MatcherWithWordEmbeddings/target/classes/temp/out/label.txt'
+walks_document = '/home/ole/master/test_onto/labels_out.txt'
+output_model = '/home/ole/master/test_onto/label.bin'
 
 def read_input(input_file):
     """This method reads the input file format"""
@@ -22,7 +23,7 @@ def read_input(input_file):
 logging.info("reading input_file: {}".format(walks_document))
 documents = list(read_input(walks_document))
 
-model = Word2Vec(documents, size=100, min_count=1, window=10, workers=8, iter=50)
-model.wv.save_word2vec_format('label.bin', binary=False)
+model = Word2Vec(documents, size=100, min_count=1, window=20, workers=12, iter=50)
+model.wv.save_word2vec_format(output_model, binary=False)
 
 #model.save("label_pretrained.bin")

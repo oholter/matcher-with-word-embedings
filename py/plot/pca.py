@@ -38,8 +38,8 @@ wanted_words2 = ['Person',
                  'Conference',
                  'Scientific_Event']
 
-word_list = model.vocab
-#word_list = wanted_words
+#word_list = model.vocab
+word_list = wanted_words
 # word_list = [word for word in model.wv.vocab if 'yeast' in word]
 # print(word_list)
 x = model[word_list]

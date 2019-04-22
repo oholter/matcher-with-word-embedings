@@ -66,6 +66,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 	protected String[] UNDESIRED_PROPERTIES = { "http://www.w3.org/2002/07/owl#inverseOf" };
 	private String adjacentPropertiesQuery;
 	private String synonymsQuery;
+	private String objectPropertyQuery;
 	private String membersQuery = "SELECT DISTINCT ?e WHERE {?e a $CLASS$}";
 	private int processedClasses = 0;
 	private int numberOfClasses = 0;
@@ -80,7 +81,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 	final private String[] synonymOutputFormats = { "onesynonym", "allsynonyms", "allsynonymsanduri", "twodocuments" };
 	private String secondOutputFile;
 	private BufferedWriter secondOutputWriter;
-	private boolean includeUriPartInSynonyms = false;
+	private boolean includeUriPartInSynonyms = true;
 	private boolean includeCommentsInSynonyms = false;
 	private boolean includeEdges;
 	private Prefixes prefixes = Prefixes.DEFAULT_IMMUTABLE_INSTANCE;
@@ -92,7 +93,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 			boolean includeEdges, boolean cacheEdgeWeights) {
 		super(inputFile, outputFile, numberOfThreads, walkDepth, limit, numberOfWalks, offset);
 		boolean validOutputFormat = Arrays.stream(validOutputFormats).anyMatch(outputFormat.toLowerCase()::equals);
-		
+
 		if (!validOutputFormat) {
 			throw new IllegalArgumentException("Output format: " + outputFormat + " is not known");
 		}
@@ -101,6 +102,10 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		this.q = q;
 		this.outputFormat = outputFormat;
 		this.adjacentPropertiesQuery = "SELECT DISTINCT ?p ?o WHERE { $CLASS$ ?p ?o . } "; // LIMIT " + limit;
+		this.objectPropertyQuery = "SELECT DISTINCT ?p ?o WHERE "
+				+ "{ ?p a <http://www.w3.org/2002/07/owl#ObjectProperty> . "
+				+ "$CLASS$ ?p <http://www.w3.org/2002/07/owl#Thing> . "
+				+ "<http://www.w3.org/2002/07/owl#Thing> ?p ?o }";
 		if (includeCommentsInSynonyms) {
 			this.synonymsQuery = "SELECT DISTINCT ?o WHERE { { $CLASS$ <http://www.w3.org/2000/01/rdf-schema#label> ?o } "
 					+ "UNION " + "{ $CLASS$ <http://www.w3.org/2000/01/rdf-schema#comment> ?o } . } "; // + "LIMIT "
@@ -238,7 +243,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 				+ " {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class>  }";
 //				+ " OFFSET " + offset + " LIMIT " + limit;
 		TupleIterator tupIt = null;
-		
+
 		try {
 			tupIt = model.compileQuery(queryString, prefixes);
 			for (long multiplicity = tupIt.open(); multiplicity > 0; multiplicity = tupIt.advance()) {
@@ -253,7 +258,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 					if (needSynonyms) {
 						newNode.synonyms = findSynonyms(newNode);
 						if (includeUriPartInSynonyms) {
-							newNode.synonyms.add(newNode.getUriPart());
+							newNode.synonyms.add(StringUtils.normalizeFullIRINoSpace(newNode.label));
 						}
 					}
 					nodeList.add(newNode);
@@ -263,8 +268,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("FAILED: " + queryString);
-		}
-		finally {
+		} finally {
 			if (tupIt != null) {
 				tupIt.dispose();
 			}
@@ -301,6 +305,71 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		return synonyms;
 
 	}
+
+	public List<Edge> findObjectPropertyEdges(Node node) {
+		String className = node.label;
+		ArrayList<Edge> edgeList = new ArrayList<>();
+		TupleIterator tupIt = null;
+		String queryString = objectPropertyQuery.replace("$CLASS$", "<" + className + ">");
+		try {
+			tupIt = model.compileQuery(queryString);
+			if (tupIt.getArity() == 0) {
+				return edgeList;
+			}
+			int numRes = 0;
+			for (long multiplicity = tupIt.open(); multiplicity > 0; multiplicity = tupIt.advance()) {
+				Resource resource = tupIt.getResource(0);
+				String rString = resource.toString();
+				String currentProperty = StringUtils.removeBrackets(rString);
+								
+				Edge currentEdge = new Edge(currentProperty);
+				Resource outNodeResource = tupIt.getResource(1);
+				String outRString = outNodeResource.toString();
+				
+				System.out.println("Found: " + className + " " + currentProperty + " " + outRString);
+				
+				String outNodeString = StringUtils.removeBrackets(outRString);
+				if (node.label.equals(outNodeString)) {
+					continue; // not adding an edge returning to itself
+				}
+
+				Node nextNode;
+
+				if (graph.containsUri(outNodeString)) {
+					nextNode = graph.getNodeFromUri(outNodeString);
+				} else {
+//							nextNode = new Node(outNodeString); // a literal
+					continue;
+				}
+				currentEdge.outNode = nextNode;
+				currentEdge.inNode = node;
+				if (currentEdge.weight > 0) {
+					numEdges++;
+					edgeList.add(currentEdge);
+				}
+
+				// Adding the superClassNodes to the superClass as well as subClassNodes
+
+			}
+			return edgeList;
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("The query that failed was: " + queryString);
+			System.out.println(tupIt.toString());
+//			return new ArrayList<Edge>();
+			return null;
+		} finally {
+			if (tupIt != null) {
+				tupIt.dispose();
+			}
+		}
+	}
+	
+//	public List<Edge> findAdjacentEdges(Node node) {
+//		List<Edge> edges = findHierarchyEdges(node);
+//		edges.addAll(findObjectPropertyEdges(node));
+//		return edges;
+//	}
 
 	public List<Edge> findAdjacentEdges(Node node) {
 		String className = node.label;
@@ -371,8 +440,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 			System.out.println(tupIt.toString());
 //			return new ArrayList<Edge>();
 			return null;
-		}
-		finally {
+		} finally {
 			if (tupIt != null) {
 				tupIt.dispose();
 			}
@@ -384,7 +452,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		ArrayList<Edge> members = new ArrayList<>();
 		String queryString = membersQuery.replace("$CLASS$", "<" + className + ">");
 		TupleIterator tupIt = null;
-		
+
 		try {
 			tupIt = model.compileQuery(queryString);
 
@@ -403,8 +471,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 			e.printStackTrace();
 			System.out.println("The query that failed was: " + queryString);
 			return null;
-		}
-		finally {
+		} finally {
 			if (tupIt != null) {
 				tupIt.dispose();
 			}
@@ -553,9 +620,9 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/pizza.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/NTNames.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/foaf.rdf");
-		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/human.owl");
+//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/human.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/bio_data/go.owl");
-//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/ekaw.owl");
+		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/ekaw.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/oaei_FMA_small_overlapping_nci.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/oaei_NCI_small_overlapping_snomed.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/oaei_SNOMED_extended_overlapping_fma_nci.owl");
@@ -575,7 +642,7 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 
 		SecondOrderWalksGenerator walks = new SecondOrderWalksGenerator(TestRunUtils.modelPath,
 				"/home/ole/master/test_onto/walks_out.txt", "/home/ole/master/test_onto/labels_out.txt", 12, 40, 100000,
-				100, 0, 1, 1, "fulluri", false, false, true);
+				100, 0, 1, 1, "fulluri", false, true, true);
 //		walks.useRdf4jModel(rdf4jModel);
 		walks.generateWalks();
 

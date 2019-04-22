@@ -8,7 +8,7 @@ public class Edge extends Element {
 	double SUBCLASS_WEIGHT = 1.0; //
 	double SUPERCLASS_WEIGHT = 0.7;
 	double TYPE_WEIGHT = 0.0; //
-	double NORMAL_PROPERTY_WEIGHT = 0.3;
+	double NORMAL_PROPERTY_WEIGHT = 0.2;
 	double RANDOM_JUMP_WEIGHT = 0; //
 	double MEMBER_WEIGHT = 0;
 

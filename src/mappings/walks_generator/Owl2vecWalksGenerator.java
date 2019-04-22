@@ -446,7 +446,7 @@ public class Owl2vecWalksGenerator extends WalksGenerator {
 //		RandomWalksGenerator(String inputFile, String outputFile, int numberOfThreads, int walkDepth,
 //		int limit, int numberOfWalks, int offset, int childLimit)
 		Owl2vecWalksGenerator walks = new Owl2vecWalksGenerator("/home/ole/master/test_onto/merged.ttl",
-				"/home/ole/master/test_onto/walks_out.txt", 8, 3, 100, 100, 0, 100);
+				"/home/ole/master/test_onto/walks_out.txt", 8, 4, 100, 100, 0, 100);
 		walks.generateWalks();
 	}
 }

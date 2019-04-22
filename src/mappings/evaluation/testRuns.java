@@ -2,10 +2,13 @@ package mappings.evaluation;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import org.apache.log4j.BasicConfigurator;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,16 +67,19 @@ public class testRuns {
 
 	public static void main(String[] args) throws Exception {
 
-		int numberOfRuns = 5;
+		int numberOfRuns = 1;
 //		String[] anchorCandidateTypes = new String[] { "allrelationsanchorcandidatefinder",
 //				"bestcandidatefinder", "disambiguateclassanchorsfinder", twodocuments" };
 
 		String type = "bestcandidatefinder";
+//		String type = "twodocuments";
+//		String type = "disambiguateclassanchorsfinder";
+//		String type = "allrelationsanchorcandidatefinder";
 //		String type = "translationmatrixcandidatefinder";
 
 		String[] candidateTypes = new String[] { "translationmatrixcandidatefinder",
 				"pretrainedvectorcandidatesfinder" };
-		
+
 		File outputFile = createLogFile(type);
 		out = new PrintWriter(outputFile);
 //		out.println("--------------------------------------------");
@@ -126,9 +132,42 @@ public class testRuns {
 
 		out.close();
 	}
+	
+	public static void deleteRepository(String path) throws Exception {
+		String repo = path;
+		Path repoPath = Paths.get(repo);
+		int numFiles = 0;
+		if (Files.exists(repoPath)) {
+			for (File f : Files.walk(repoPath).map(Path::toFile).collect(Collectors.toList())) {
+				numFiles++;
+			}
+
+			System.out.println("num files before: " + numFiles);
+//			Files.walk(repoPath).map(Path::toString).forEach(System.out::println);
+			Files.walk(repoPath).map(Path::toFile).forEach(File::delete);
+
+			numFiles = 0;
+			if (Files.exists(repoPath)) {
+				for (File f : Files.walk(repoPath).map(Path::toFile).collect(Collectors.toList())) {
+					numFiles++;
+				}
+			}
+
+			System.out.println("num files after: " + numFiles);
+//			System.exit(0);
+		}
+	}
 
 	public static void runTest(String finderType, int runNo) throws Exception {
 
+		/**
+		 * for RDF2Vec - must remove content in repo before each run
+		 */
+		if (walksType.toLowerCase().equals("rdf2vec")) {
+			deleteRepository("/home/ole/master/test_onto/test_repo/");
+			deleteRepository("/home/ole/master/test_repo/");
+		}
+		
 		OntologyReader reader = new OntologyReader();
 		reader.setFname(firstOntologyFile);
 		reader.readOntology();
@@ -162,6 +201,8 @@ public class testRuns {
 			System.exit(0);
 		}
 
+	
+
 		AlignmentsReader alignmentsReader = new OAEIAlignmentsReader(referenceAlignmentsFile, onto1, onto2);
 		List<MappingObjectStr> mappings = alignmentsReader.getMappings();
 		Collections.shuffle(mappings);
@@ -176,8 +217,9 @@ public class testRuns {
 		OntologyProjector projector = new OntologyProjector(mergedOwlPath);
 		projector.projectOntology();
 		projector.saveModel(modelPath);
-		Walks walks = new Walks(modelPath, walksType, walksFile, labelsFile, numWalks, walkDepth, numThreads, offset,
+		Walks walks = new Walks(modelPath, walksType, walksFile, numWalks, walkDepth, numThreads, offset,
 				classLimit);
+		
 		walks.generateWalks();
 		String walksFile = walks.getOutputFile();
 
@@ -220,7 +262,7 @@ public class testRuns {
 		// For training of ontology start:
 		OWLOntology mergedOnto = OntologyReader.mergeOntologies("merged", new OWLOntology[] { onto1, onto2 });
 		TwoDocumentsCandidateFinder finder = new TwoDocumentsCandidateFinder(onto1, onto2, mergedOnto,
-				currentDir + "/temp/out.txt", equalityThreshold, TestRunUtils.labelEqualityThreshold);
+				TestRunUtils.modelPath, equalityThreshold, TestRunUtils.labelEqualityThreshold);
 
 		/* Adding anchors by reading an alignments file */
 		AlignmentsReader alignmentsReader = new OAEIAlignmentsReader(referenceAlignmentsFile, onto1, onto2);
@@ -239,25 +281,25 @@ public class testRuns {
 		projector.projectOntology();
 		projector.saveModel(modelPath);
 
-		Walks walks = new Walks(modelPath, walksType);
+		Walks walks = new Walks(TestRunUtils.modelPath, TestRunUtils.walksType, TestRunUtils.walksFile,
+				TestRunUtils.labelsFile, TestRunUtils.numWalks, TestRunUtils.walkDepth, TestRunUtils.numThreads,
+				TestRunUtils.offset, TestRunUtils.classLimit);
 		walks.generateWalks();
 		String walksFile = walks.getOutputFile();
 		String labelOutputFile = walks.getLabelOutputFile();
-
-		WordEmbeddingsTrainer trainer = new WordEmbeddingsTrainer(walksFile, TestRunUtils.modelPath);
-		trainer.train();
-		finder.setTrainer(trainer);
-
-		WordEmbeddingsTrainer labelTrainer = new WordEmbeddingsTrainer(labelOutputFile, TestRunUtils.labelsFile);
-//		labelTrainer.train();
 
 		/**
 		 * python gensim trainer
 		 */
 		TestRunUtils.trainEmbeddings(TestRunUtils.embeddingsSystem);
+		TestRunUtils.trainEmbeddings("twodocumentlabels");
 
+		WordEmbeddingsTrainer trainer = new WordEmbeddingsTrainer(walksFile, TestRunUtils.modelPath);
 		trainer.loadGensimModel("/home/ole/master/test_onto/model.bin");
+		finder.setTrainer(trainer);
 
+		WordEmbeddingsTrainer labelTrainer = new WordEmbeddingsTrainer(labelOutputFile, TestRunUtils.labelsFile);
+		labelTrainer.loadGensimModel("/home/ole/master/test_onto/label.bin");
 		finder.setLabelTrainer(labelTrainer);
 
 		finder.createMappings(); // this runs the program
