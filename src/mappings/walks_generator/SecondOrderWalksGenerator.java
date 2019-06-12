@@ -620,9 +620,9 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/pizza.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/NTNames.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/foaf.rdf");
-//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/human.owl");
+		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/human.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/bio_data/go.owl");
-		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/ekaw.owl");
+//		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/ekaw.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/oaei_FMA_small_overlapping_nci.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/oaei_NCI_small_overlapping_snomed.owl");
 //		OntologyProjector projector = new OntologyProjector("file:/home/ole/master/test_onto/oaei_SNOMED_extended_overlapping_fma_nci.owl");
@@ -637,12 +637,13 @@ public class SecondOrderWalksGenerator extends WalksGenerator {
 		System.out.println("starting walksgenerator");
 //		org.eclipse.rdf4j.model.Model rdf4jModel = projector.getModel();
 
-//		SecondOrderWalksGenerator(String inputFile, String outputFile, int numberOfThreads, int walkDepth,
-//		int limit, int numberOfWalks, int offset, int p, int q)
+//		public SecondOrderWalksGenerator(String inputFile, String outputFile, int numberOfThreads, int walkDepth, int limit,
+//		int numberOfWalks, int offset, double p, double q, String outputFormat, boolean includeIndividuals,
+//		boolean includeEdges, boolean cacheEdgeWeights)
 
 		SecondOrderWalksGenerator walks = new SecondOrderWalksGenerator(TestRunUtils.modelPath,
 				"/home/ole/master/test_onto/walks_out.txt", "/home/ole/master/test_onto/labels_out.txt", 12, 40, 100000,
-				100, 0, 1, 1, "fulluri", false, true, true);
+				50, 0, 1, 1, "fulluri", false, false, true);
 //		walks.useRdf4jModel(rdf4jModel);
 		walks.generateWalks();
 

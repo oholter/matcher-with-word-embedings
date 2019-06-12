@@ -43,6 +43,8 @@ import mappings.walks_generator.Walks;
 import uk.ac.ox.krr.logmap2.mappings.objects.MappingObjectStr;
 
 public class TranslationMatrixCandidateFinder extends CandidateFinder {
+	public static Logger log = LoggerFactory.getLogger(TranslationMatrixCandidateFinder.class);
+
 	final double ANCHOR_SIMILARITY = 0.95;
 	final double MAX_ERROR = 1E-3;
 	final int NUM_ITERATIONS = 150000;
@@ -665,9 +667,7 @@ public class TranslationMatrixCandidateFinder extends CandidateFinder {
 		String nameSpaceString = TestRunUtils.nameSpaceString1;
 		String mergedOwlPath = TestRunUtils.mergedOwlPath;
 
-		Logger log = LoggerFactory.getLogger(WordEmbeddingsTrainer.class);
 		String currentDir = new File(ClassLoader.getSystemClassLoader().getResource("").getPath()).toString();
-		BasicConfigurator.configure();
 
 		// 1) Reading in the two ontologies
 		OntologyReader reader = new OntologyReader();

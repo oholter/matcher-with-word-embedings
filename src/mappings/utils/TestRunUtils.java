@@ -107,7 +107,7 @@ public class TestRunUtils {
 
 	public static String relatedConceptsPath = "/home/ole/src/thesis/evaluation/ekaw.xml";
 
-	public static double equalityThreshold = 0.8;
+	public static double equalityThreshold = 0.6;
 	public static double fractionOfMappings = 1.0;
 
 	public static double labelEqualityThreshold = 0.70; // for the two document
@@ -115,7 +115,7 @@ public class TestRunUtils {
 	public static double p = 1.2; // revisit
 	public static double q = 0.5; // in/out
 	public static int numWalks = 50;
-	public static int walkDepth = 10;
+	public static int walkDepth = 40;
 //	public static int walkDepth = 4;
 	public static int numThreads = 12;
 	public static int offset = 0;

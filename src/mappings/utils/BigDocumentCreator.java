@@ -20,6 +20,7 @@ import mappings.walks_generator.Walks;
 import uk.ac.ox.krr.logmap2.mappings.objects.MappingObjectStr;
 
 public class BigDocumentCreator {
+	public static Logger log = LoggerFactory.getLogger(WordEmbeddingsTrainer.class);
 
 	public static String[] ontologyFiles = { "/home/ole/master/test_onto/ekaw.owl",
 			"/home/ole/master/test_onto/cmt.owl", "/home/ole/master/test_onto/edas.owl",
@@ -33,9 +34,7 @@ public class BigDocumentCreator {
 
 	public static void main(String[] args) throws Exception {
 
-		Logger log = LoggerFactory.getLogger(WordEmbeddingsTrainer.class);
 		String currentDir = new File(ClassLoader.getSystemClassLoader().getResource("").getPath()).toString();
-		BasicConfigurator.configure();
 
 		OntologyReader reader = new OntologyReader();
 		OWLOntology[] ontologies = new OWLOntology[ontologyFiles.length];
@@ -113,14 +112,25 @@ public class BigDocumentCreator {
 		projector.projectOntology();
 		projector.saveModel("/home/ole/master/test_onto/merged.ttl");
 
-		Walks walks = new Walks("/home/ole/master/test_onto/merged.ttl", walksType);
+		Walks walks = new Walks(TestRunUtils.modelPath, walksType, TestRunUtils.walksFile, TestRunUtils.numWalks,
+				TestRunUtils.walkDepth, TestRunUtils.numThreads, TestRunUtils.offset, TestRunUtils.classLimit);
+//		Walks walks = new Walks("/home/ole/master/test_onto/merged.ttl", walksType);
 //		Walks_rdf2vec walks = new Walks_rdf2vec();
 //		walks.loadFromRdfFile("/home/ole/master/test_onto/merged.ttl");
 		walks.generateWalks();
 		String walksFile = walks.getOutputFile();
 
 		WordEmbeddingsTrainer trainer = new WordEmbeddingsTrainer(walksFile, currentDir + "/temp/out.txt");
-		trainer.train();
+//		trainer.train();
+		
+		/**
+		 * calling a python script! -> model.bin
+		 */
+		TestRunUtils.trainEmbeddings(TestRunUtils.embeddingsSystem);
+
+		trainer.loadGensimModel("/home/ole/master/test_onto/model.bin");
+		
+		
 		finder.setTrainer(trainer);
 
 		finder.createMappings(); // this runs the program

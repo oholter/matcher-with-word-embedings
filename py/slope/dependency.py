@@ -25,11 +25,11 @@ x = np.array([1, 0.8, 0.6, 0.4, 0.2, 0])
 #y = np.array([0.13, 0.0, 0.0, 0.0, 0.0, 0.0]) #rdf2vec best
 #y = np.array([0.75, 0.58, 0.70, 0.70, 0.63, 0.20]) #two documents
 #y = np.array([0.98, 0.78, 0.55, 0.50, 0.23, 0.03]) # secondorder
-y = np.array([0.95, 0.80, 0.75, 0.53, 0.40, 0.23]) # subclass
+#y = np.array([0.95, 0.80, 0.75, 0.53, 0.40, 0.23]) # subclass
 
 
 # ANATOMY
-#y = np.array([0.69, 0.56, 0.44, 0.28, 0.14, 0.00]) #synonyms best
+y = np.array([0.78, 0.60, 0.47, 0.34, 0.21, 0.00]) #synonyms best
 #y = np.array([0.69, 0.62, 0.56, 0.45, 0.33, 0.14]) #synonyms best
 
 
